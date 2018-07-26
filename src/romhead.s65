@@ -26,7 +26,7 @@ send_poke
 headtitle
 	.text	"Hackers ROM"
 	.byte	0	; Title
-	.text	"@VERSION"	; Version string
+	.text	VERSION	; Version string
 headcopy
 	.byte	0
 	.text	"(C) James Bonfield & Stephen Youell 1993"
@@ -550,23 +550,23 @@ GENERAL_COMS = false
 subjects
 
 	.if	MEMORY_COMS
-	.text	"MEMORY|@"
+	.text	"MEMORY",0
 	.endif
 
 	.if	DISC_COMS
-	.text	"DISC|@"
+	.text	"DISC",0
 	.endif
 
 	.if	FILE_COMS
-	.text	"FILE|@"
+	.text	"FILE",0
 	.endif
 
 	.if	ROM_COMS
-	.text	"ROM|@"
+	.text	"ROM",0
 	.endif
 
 	.if	GENERAL_COMS
-	.text	"GENERAL|@"
+	.text	"GENERAL",0
 	.endif
 
 	.byte	$FF
@@ -793,28 +793,28 @@ comm
 	.if	MEMORY_COMS
 memcomm
 	.if	X_MEM
-	.text	"MEM|@"
+	.text	"MEM",0
 	.endif
 	.if	X_MDIS
-	.text	"MDIS|@"
+	.text	"MDIS",0
 	.endif
 	.if	X_MCOPY
-	.text	"MCOPY|@"
+	.text	"MCOPY",0
 	.endif
 	.if	X_MSWAP
-	.text	"MSWAP|@"
+	.text	"MSWAP",0
 	.endif
 	.if	X_MCMP
-	.text	"MCMP|@"
+	.text	"MCMP",0
 	.endif
 	.if	X_MFILL
-	.text	"MFILL|@"
+	.text	"MFILL",0
 	.endif
 	.if	X_MSEARCH
-	.text	"MSEARCH|@"
+	.text	"MSEARCH",0
 	.endif
 	.if	X_MCRC
-	.text	"MCRC|@"
+	.text	"MCRC",0
 	.endif
 	.byte	$80,$00
 	.endif
@@ -822,43 +822,43 @@ memcomm
 	.if	DISC_COMS
 disccomm
 	.if	X_DEDIT
-	.text	"DEDIT|@"
+	.text	"DEDIT",0
 	.endif
 	.if	X_EDITID
-	.text	"EDITID|@"
+	.text	"EDITID",0
 	.endif
 	.if	X_FORMAT
-	.text	"FORMAT|@"
+	.text	"FORMAT",0
 	.endif
 	.if	X_SECTLOAD
-	.text	"SECTLOAD|@"
+	.text	"SECTLOAD",0
 	.endif
 	.if	X_SECTSAVE
-	.text	"SECTSAVE|@"
+	.text	"SECTSAVE",0
 	.endif
 	.if	X_LOADIDS
-	.text	"LOADIDS|@"
+	.text	"LOADIDS",0
 	.endif
 	.if	X_PIDS
-	.text	"PIDS|@"
+	.text	"PIDS",0
 	.endif
 	.if	X_VERIFY
-	.text	"VERIFY|@"
+	.text	"VERIFY",0
 	.endif
 	.if	X_DMAP
-	.text	"DMAP|@"
+	.text	"DMAP",0
 	.endif
 	.if	X_DFILL
-	.text	"DFILL|@"
+	.text	"DFILL",0
 	.endif
 	.if	X_FBACKUP
-	.text	"FBACKUP|@"
+	.text	"FBACKUP",0
 	.endif
 	.if	X_PENABLE
-	.text	"PENABLE|@"
+	.text	"PENABLE",0
 	.endif
 	.if	X_GAPS
-	.text	"GAPS|@"
+	.text	"GAPS",0
 	.endif
 	.byte	$80,$00
 	.endif
@@ -866,40 +866,40 @@ disccomm
 	.if	FILE_COMS
 filecomm
 	.if	X_DLOAD
-	.text	"DLOAD|@"
+	.text	"DLOAD",0
 	.endif
 	.if	X_DRUN
-	.text	"DRUN|@"
+	.text	"DRUN",0
 	.endif
 	.if	X_FDELETE
-	.text	"FDELETE|@"
+	.text	"FDELETE",0
 	.endif
 	.if	X_FCRC
-	.text	"FCRC|@"
+	.text	"FCRC",0
 	.endif
 	.if	X_TOUCH
-	.text	"TOUCH|@"
+	.text	"TOUCH",0
 	.endif
 	.if	X_CONCAT
-	.text	"CONCAT|@"
+	.text	"CONCAT",0
 	.endif
 	.if	X_FCOPY
-	.text	"FCOPY|@"
+	.text	"FCOPY",0
 	.endif
 	.if	X_FDIS
-	.text	"FDIS|@"
+	.text	"FDIS",0
 	.endif
 	.if	X_SPOOLDIS
-	.text	"SPOOLDIS|@"
+	.text	"SPOOLDIS",0
 	.endif
 	.if	X_CLOSE
-	.text	"CLOSE|@"
+	.text	"CLOSE",0
 	.endif
 	.if	X_DES
-	.text	"DES|@"
+	.text	"DES",0
 	.endif
 	.if	X_FCMP
-	.text	"FCMP|@"
+	.text	"FCMP",0
 	.endif
 	.byte	$80,$00
 	.endif
@@ -907,40 +907,40 @@ filecomm
 	.if	ROM_COMS
 romcomm
 	.if	X_RLIST
-	.text	"RLIST|@"
+	.text	"RLIST",0
 	.endif
 	.if	X_RON
-	.text	"RON|@"
+	.text	"RON",0
 	.endif
 	.if	X_ROFF
-	.text	"ROFF|@"
+	.text	"ROFF",0
 	.endif
 	.if	X_RLOAD
-	.text	"RLOAD|@"
+	.text	"RLOAD",0
 	.endif
 	.if	X_RSAVE
-	.text	"RSAVE|@"
+	.text	"RSAVE",0
 	.endif
 	.if	X_RINFO
-	.text	"RINFO|@"
+	.text	"RINFO",0
 	.endif
 	.if	X_SRLOAD
-	.text	"SRLOAD|@"
+	.text	"SRLOAD",0
 	.endif
 	.if	X_SRSAVE
-	.text	"SRSAVE|@"
+	.text	"SRSAVE",0
 	.endif
 	.if	X_SRREAD
-	.text	"SRREAD|@"
+	.text	"SRREAD",0
 	.endif
 	.if	X_SRWRITE
-	.text	"SRWRITE|@"
+	.text	"SRWRITE",0
 	.endif
 	.if	X_RFSMAKE
-	.text	"RFSMAKE|@"
+	.text	"RFSMAKE",0
 	.endif
 	.if	X_SEND
-	.text	"SEND|@"
+	.text	"SEND",0
 	.endif
 	.byte	$80,$00
 	.endif
@@ -948,34 +948,34 @@ romcomm
 	.if	GENERAL_COMS
 gencomm
 	.if	X_PBUFF
-	.text	"PBUFF|@"
+	.text	"PBUFF",0
 	.endif
 	.if	X_LVECTORS
-	.text	"LVECTORS|@"
+	.text	"LVECTORS",0
 	.endif
 	.if	X_KEYLIST
-	.text	"KEYLIST|@"
+	.text	"KEYLIST",0
 	.endif
 	.if	X_KEYSAVE
-	.text	"KEYSAVE|@"
+	.text	"KEYSAVE",0
 	.endif
 	.if	X_KEYLOAD
-	.text	"KEYLOAD|@"
+	.text	"KEYLOAD",0
 	.endif
 	.if	X_BASE
-	.text	"BASE|@"
+	.text	"BASE",0
 	.endif
 	.if	X_BREAK
-	.text	"BREAK|@"
+	.text	"BREAK",0
 	.endif
 	.if	X_HBREAK
-	.text	"HBREAK|@"
+	.text	"HBREAK",0
 	.endif
 	.if	X_RECOVER
-	.text	"RECOVER|@"
+	.text	"RECOVER",0
 	.endif
 	.if	X_ECHO
-	.text	"ECHO|@"
+	.text	"ECHO",0
 	.endif
 	.endif
 	.byte	$FF

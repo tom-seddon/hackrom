@@ -116,7 +116,7 @@ rinfoendtl
 	CPY	tmpx
 	BNE	vj1
 	JSR	pcprint
-	.text	"None|@"
+	.text	"None",0
 	JMP	rinfoendvl
 vj1
 	INY
@@ -192,7 +192,7 @@ rinfoendcopy
 	AND	#$40
 	BNE	isalang
 	JSR	pcprint
-	.text	"Not a language|@"
+	.text	"Not a language",0
 	JMP	langdone
 isalang
 	LDY	#0
@@ -200,7 +200,7 @@ isalang
 	CMP	#$4C
 	BEQ	langok
 	JSR	pcprint
-	.text	"Unknown|@"
+	.text	"Unknown",0
 	JMP	langdone
 langok
 	LDY	#2
@@ -220,7 +220,7 @@ langdone
 	PHA
 	BMI	hasserv
 	JSR	pcprint
-	.text	"None|@"
+	.text	"None",0
 	JMP	servdone
 hasserv
 	LDY	#5
@@ -240,7 +240,7 @@ servdone
 	AND	#$20
 	BNE	istube
 	JSR	pcprint
-	.text	"None|@"
+	.text	"None",0
 	JMP	tubedone
 istube
 	LDY	#7
@@ -291,11 +291,11 @@ typetab
 	.word	reserved
 	.word	reserved
 
-c6502	.text	"6502 BASIC|@"
-c6502NB	.text	"6502 (NOT BASIC)|@"
-c6800	.text	"6800 code|@"
-cZ80	.text	"Z80 code|@"
-c32016	.text	"32016 code|@"
-c80186	.text	"80186 code|@"
-c80286	.text	"80286 code|@"
-reserved	.text	"reserved|@"
+c6502	.text	"6502 BASIC",0
+c6502NB	.text	"6502 (NOT BASIC)",0
+c6800	.text	"6800 code",0
+cZ80	.text	"Z80 code",0
+c32016	.text	"32016 code",0
+c80186	.text	"80186 code",0
+c80286	.text	"80286 code",0
+reserved	.text	"reserved",0

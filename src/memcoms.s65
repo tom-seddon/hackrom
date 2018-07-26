@@ -1,7 +1,7 @@
 ;	ORG	$1100
 ;	EXEC	mcopypa
 
-membuf = 74;75 76 77 78 79 7A 7B
+membuf = $74;75 76 77 78 79 7A 7B
 memsrc = membuf+0;1
 memlen = membuf+2;3
 memdest = membuf+4;5
@@ -69,7 +69,7 @@ rdor3
 	LDX	#$07
 memr
 	LDA	membuf,X
-	STA	block,X
+        STA@w	block,X
 	DEX
 	BPL	memr
 	RTS
@@ -81,12 +81,12 @@ memorycom1
 ; parse <(to)(+len)>
 	JSR	mrdnum
 	SEC
-	LDA	mfto
-	SBC	mffrom
-	STA	mfto
-	LDA	mfto+1
-	SBC	mffrom+1
-	STA	mfto+1
+	LDA@w	mfto
+	SBC@w	mffrom
+	STA@w	mfto
+	LDA@w	mfto+1
+	SBC@w	mffrom+1
+	STA@w	mfto+1
 	RTS
 
 mfbuf = membuf
@@ -128,19 +128,19 @@ msrchpal
 	JSR	msearch
 	BCC	msrchpae
 	SEC
-	LDA	mSms
+	LDA@w	mSms
 	SBC	#$01
 	STA	numlo
-	LDA	mSms+1
+	LDA@w	mSms+1
 	SBC	#$00
 	STA	numhi
 	JSR	ldigit
 	LDA	#' '
 	JSR	$FFEE
-	LDA	mSml+1
+	LDA@w	mSml+1
 	CMP	#$FF
 	BNE	msrchpal
-	LDA	mSml
+	LDA@w	mSml
 	CMP	#$FF
 	BNE	msrchpal
 msrchpae
@@ -183,9 +183,9 @@ mcmppa
 	RTS
 mcdiff
 	JSR	pcprint
-	.text	"Differ at |@"
-	LDA	mc1s+1
+	.text	"Differ at ",0
+	LDA@w	mc1s+1
 	JSR	wdigit
-	LDA	mc1s
+	LDA@w	mc1s
 	JSR	wdigit
 	JMP	$FFE7

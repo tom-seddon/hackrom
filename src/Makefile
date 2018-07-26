@@ -10,4 +10,3 @@ all:
 	$(TASS) hackrom.s65 -L$(OUTPUT)/hackrom.lst -o$(OUTPUT)/hackrom.rom
 	$(CHECKSUM) $(OUTPUT)/hackrom.rom
 	$(CHECKSUM) $(ORIGINAL)/bin/HACKROM
-#	cmp $(OUTPUT)/hackrom.rom $(ORIGINAL)/bin/HACKROM || sh -c 'diff <(dump $(OUTPUT)/hackrom.rom) <(dump $(ORIGINAL)/bin/HACKROM) | head -n 5'

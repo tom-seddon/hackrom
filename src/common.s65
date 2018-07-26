@@ -65,8 +65,8 @@ letter
 	.text	"_$%&'()*+,-./0123456789:;<=>?"
 	.text	"@"
 	.text	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	.text	"[\]^^`#"
-	.text	"abcdefghijklmnopqrstuvwxyz{||}~"
+	.text	"[\]^`#"
+	.text	"abcdefghijklmnopqrstuvwxyz{|}~"
 	.byte	127
 cursor2
 	.word	$4BCF
@@ -460,7 +460,7 @@ rdexit2
 	RTS
 notvar
 	JSR	pcprint
-	.text	"Unknown variable|M|@"
+	.text	"Unknown variable",13,0
 	JMP	fatal
 
 wipeclib
@@ -651,7 +651,7 @@ loopHD1
 ; ------------------------------
 nan
 	JSR	pcprint
-	.text	"Not a number.|M|@"
+	.text	"Not a number.",13,0
 
 	.if !X_ROM_HEAD
 	.if !X_HACK_HEAD

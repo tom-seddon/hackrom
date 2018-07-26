@@ -36,7 +36,7 @@ listkey
 	TXA
 	PHA
 	JSR	pcprint
-	.text	'*KEY |@'
+	.text	'*KEY ',0
 	PLA
 	PHA
 	TAX
@@ -110,7 +110,7 @@ klnotquotes
 	BNE	klloop3
 kljmp3
 	JSR	pcprint
-	.text	'"|M|@'
+	.text	'"',13,0
 	PLA
 	TAX
 	RTS

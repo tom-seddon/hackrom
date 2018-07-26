@@ -411,9 +411,4 @@ rlcvecs
 	.byte	$3F,$FF,$42,$FF,$45,$FF
 
 entries
-	.byte	>insentry
-	.byte	<insentry
-	.byte	>rementry
-	.byte	<rementry
-	.byte	>cnpentry
-	.byte	<cnpentry
+                .word insentry,rementry,cnpentry

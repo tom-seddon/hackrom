@@ -1077,8 +1077,8 @@ cursor3
 
 
 ; The three modes
-dismsg	.text	"Disassembly|@"
-hexmsg	.text	"Hexadecimal|@"
+dismsg	.text	"Disassembly",0
+hexmsg	.text	"Hexadecimal",0
 ascmsg	.text	"ASCII"
 	.byte	152
 	.byte	0

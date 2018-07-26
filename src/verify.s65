@@ -121,9 +121,8 @@ verloop1
 	ASL	A
 	STA	buffer1+3
 	INC	buffer1+3
-	JSR	sort_ids
-	STA	vnumsects
-
+        JSR	sort_ids
+	STA@w	vnumsects
 	LDY	#$00
 verloop2
 	TYA
@@ -171,7 +170,7 @@ verOK
 	PLA
 	TAY
 	INY
-	CPY	vnumsects
+	CPY@w	vnumsects
 	BNE	verloop2
 	LDA	#134
 	JSR	$FFEE
