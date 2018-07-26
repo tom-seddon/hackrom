@@ -8,5 +8,8 @@ ACORN	= true
 ; What our Field separator is for
 ; MFILL, MSEARCH and DFILL
 IFS	=	";"
-VERSION	=	"1.18"
+VERSION	=	"1.19"
 DFS	=	WATFORD
+
+oswrch = $ffee
+osnewl = $ffe7
