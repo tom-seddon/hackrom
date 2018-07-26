@@ -8,5 +8,3 @@ MKDIR:=mkdir -p
 all:
 	$(MKDIR) $(OUTPUT)
 	$(TASS) hackrom.s65 -L$(OUTPUT)/hackrom.lst -o$(OUTPUT)/hackrom.rom
-	$(CHECKSUM) $(OUTPUT)/hackrom.rom
-	$(CHECKSUM) $(ORIGINAL)/bin/HACKROM

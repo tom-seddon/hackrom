@@ -122,7 +122,7 @@ verloop1:
                 STA	buffer1+3
                 INC	buffer1+3
                 JSR	sort_ids
-                STA@w	vnumsects
+                STA	vnumsects
                 LDY	#$00
 verloop2:
                 TYA
@@ -170,7 +170,7 @@ verOK:
                 PLA
                 TAY
                 INY
-                CPY@w	vnumsects
+                CPY	vnumsects
                 BNE	verloop2
                 LDA	#134
                 JSR	$FFEE

@@ -69,7 +69,7 @@ rdor3:
                 LDX	#$07
 memr:
                 LDA	membuf,X
-                STA@w	block,X
+                STA	block,X
                 DEX
                 BPL	memr
                 RTS
@@ -81,12 +81,12 @@ memorycom1:
                 ; parse <(to)(+len)>
                 JSR	mrdnum
                 SEC
-                LDA@w	mfto
-                SBC@w	mffrom
-                STA@w	mfto
-                LDA@w	mfto+1
-                SBC@w	mffrom+1
-                STA@w	mfto+1
+                LDA	mfto
+                SBC	mffrom
+                STA	mfto
+                LDA	mfto+1
+                SBC	mffrom+1
+                STA	mfto+1
                 RTS
 
 mfbuf = membuf
@@ -128,19 +128,19 @@ msrchpal:
                 JSR	msearch
                 BCC	msrchpae
                 SEC
-                LDA@w	mSms
+                LDA	mSms
                 SBC	#$01
                 STA	numlo
-                LDA@w	mSms+1
+                LDA	mSms+1
                 SBC	#$00
                 STA	numhi
                 JSR	ldigit
                 LDA	#' '
                 JSR	$FFEE
-                LDA@w	mSml+1
+                LDA	mSml+1
                 CMP	#$FF
                 BNE	msrchpal
-                LDA@w	mSml
+                LDA	mSml
                 CMP	#$FF
                 BNE	msrchpal
 msrchpae:
@@ -184,8 +184,8 @@ mcmppa:
 mcdiff:
                 JSR	pcprint
                 .text	"Differ at ",0
-                LDA@w	mc1s+1
+                LDA	mc1s+1
                 JSR	wdigit
-                LDA@w	mc1s
+                LDA	mc1s
                 JSR	wdigit
                 JMP	$FFE7

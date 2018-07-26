@@ -120,11 +120,11 @@ rdwr1s:
                 STA	romid
                 RTS
 rdwr2s:
-                LDA@w	ms2s; block+4/5
+                LDA	ms2s; block+4/5
                 STA	poslo
-                LDA@w	ms2s+1
+                LDA	ms2s+1
                 STA	poshi
-                LDA@w	ms2r; block+7
+                LDA	ms2r; block+7
                 STA	romid
                 ; zero flag (handily) clear or set here
                 ; correctly when jumped to from mcmp
