@@ -1,7 +1,19 @@
 # Hackrom
 
-Handy utility ROM for the BBC Micro. Not very useful so far, but in
-the long run it'll be buildable on your PC, and so on.
+Handy utility ROM for the BBC Micro by James Bonfield and Stephen
+Youell.
+
+## Building
+
+Prerequisites:
+
+* Some kind of Unix with all the usual Unix stuff
+* GNU Make
+* [64tass](https://sourceforge.net/projects/tass64/)
+
+To build, type `make`.
+
+The ROM is written to `.build/hackrom.rom`.
 
 ## Licence
 
@@ -15,8 +27,7 @@ From the original readme:
 > the authors do not hold themselves responsible for any death or
 > mutilation caused by use of the code ;-)
 
-I'll try to figure out which standard open source licence this is
-closest to.
+There's probably a modern open source analogue to this...
 
 ## Original code
 
@@ -24,5 +35,5 @@ See the `hackrom-1.18` folder. I tried building this on my Master 128,
 and it produced an identical binary to the one supplied.
 
 If you want to try it: rename `S.ROMROFF` to `S.RONROFF`. And maybe
-convert the line endings, which I've left as-is in the Git repo in the
-interests of historical accuracy. 
+convert the line endings. I've left this all as-is in the Git repo in
+the interests of historical accuracy.
