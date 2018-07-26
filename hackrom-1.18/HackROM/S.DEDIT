@@ -1,0 +1,1115 @@
+char	HEX	'030F0F0F'
+posblpos
+	HEX	'00010101'
+	DW	&0707
+	DB	&07
+ptrcoords
+	HEX	'00010305'
+	DW	&0F07
+	DB	&17
+xcoord
+	HEX	'07161725'
+	DB	&26
+	HEX	'0B0C14
+	HEX	'16171819'
+	DW	&1B1A
+	DB	&1C
+	HEX	'080B0E11'
+	HEX	'14171A1D'
+	HEX	'1F202122'
+	HEX	'23242526'
+
+trkhdlo
+	HEX	'01020408'
+	HEX	'06020408'
+	DB	&06,&02
+trkhdhi
+	HEX	'00000000'
+	HEX	'0103060C'
+	DB	&19,&33
+
+ycoord
+	DB	[5]0
+	DB	[10]1
+	DB	[16]&C
+cursor
+	DB	[5]&4B
+	DW	&4BCF
+
+getpsect
+	LDX	&7C33
+	LDY	&7C34
+	JMP	asc_hex
+getlsect
+	LDX	&7C25
+	LDY	&7C26
+	JMP	asc_hex
+gettrk
+	LDX	&7C16
+	LDY	&7C17
+	JMP	asc_hex
+getdrv
+	LDA	&7C07
+	AND	#&03
+	RTS
+putpsect
+	JSR	hex_asc
+	STA	&7C33
+	STY	&7C34
+	RTS
+putlsect
+	JSR	hex_asc
+	STA	&7C25
+	STY	&7C26
+	RTS
+puttrk
+	JSR	hex_asc
+	STA	&7C16
+	STY	&7C17
+	RTS
+
+getlstd
+	JSR	getlsect
+	JMP	gettd
+
+getpstd
+	JSR	getpsect
+gettd
+	PHA
+	JSR	gettrk
+	TAX
+	PLA
+	TAY
+	JSR	getdrv
+	RTS
+
+putlst
+	TXA
+	PHA
+	TYA
+	JSR	putlsect
+	PLA
+	JSR	puttrk
+	RTS
+
+; -------------------------------------
+phys_logi
+	JSR	getpsect
+	ASL	A
+	ASL	A
+	TAX
+	LDA	buffer3+2,X
+	STA	dlsect
+	JSR	putlsect
+	RTS
+
+; ------------------------------------
+logi_phys
+	JSR	getlsect
+	LDX	#&00
+lploop0
+	CMP	buffer1+2,X
+	BEQ	lpfnd
+	INX
+	INX
+	INX
+	INX
+	CPX	#&80
+	BNE	lploop0
+	LDA	#&18
+	SEC
+	RTS
+lpfnd
+	TXA
+	LSR	A
+	LSR	A
+	JSR	putpsect
+	CLC
+	RTS
+
+; ---------------------------------
+message
+	STA	tmp4
+	TXA
+	PHA
+	TYA
+	PHA
+	LDA	#7
+	JSR	&FFEE
+	LDA	tmp4
+	JSR	get_err_entry
+	LDA	msg_point,Y
+	STA	tmpx
+	LDA	msg_point+1,Y
+	STA	tmpy
+	LDY	#&FF
+msgloop
+	INY
+	LDA	(tmpx),Y
+	STA	&7F98,Y
+	BNE	msgloop
+	PLA
+	TAY
+	PLA
+	TAX
+	RTS
+; --------------------------------
+blankmsg
+	LDX	#20
+	LDA	#32
+blankloop
+	STA	&7F98,X
+	DEX
+	BPL	blankloop
+	RTS
+; --------------------------------
+round
+	LDA	#<buffer2
+	CMP	bytehi
+	BCC	ok1
+	BNE	setlo
+	LDA	#>buffer2
+	CMP	bytelo
+	BCC	ok1
+	BNE	setlo
+ok1
+	LDA	#>buffer2
+	CLC
+	ADC	sectsizelo
+	STA	resultlo
+	LDA	#<buffer2
+	ADC	sectsizehi
+	STA	resulthi
+	SEC
+	LDA	bytehi
+	CMP	resulthi
+	BCC	ok2
+	BNE	sethi
+	LDA	bytelo
+	CMP	resultlo
+	BCC	ok2
+sethi
+	LDA	resultlo
+	SEC
+	SBC	#8
+	STA	bytelo
+	LDA	resulthi
+	SBC	#0
+	STA	bytehi
+	JMP	notsetlo
+setlo
+	LDA	#>buffer2
+	STA	bytelo
+	LDA	#<buffer2
+	STA	bytehi
+notsetlo
+ok2
+	RTS
+; --------------------------------
+dedinit
+	LDA	#&4B
+	JSR	setcursor
+	JSR	pcprint
+	DB	31,7,0
+	LDA	#0
+	JSR	&FFEE
+	STA	input
+	STA	pos
+	LDA	#&FF
+	STA	dedpl
+	LDA	#&05
+	STA	loaded
+	RTS
+; --------------------------------
+deditpa
+	LDA	&F4
+	PHA
+	LDA	&27D
+	PHA
+	LDA	&254
+	PHA
+	LDA	&255
+	PHA
+deddrawtitle
+	JSR	pcprint
+dedtitmsg
+	DW	&0716
+	DB	129
+	ASC	"DRIVE"
+	DB	134
+	ASC	"0"
+	DB	129
+	ASC	"  PHYS TRACK"
+	DB	134
+	ASC	"00"
+	DB	129
+	ASC	"  LOGI SECT"
+	DB	134
+	ASC	"00"
+	DB	&0D
+	DB	129
+physmsg
+	ASC	"PHYS SECT"
+	DB	134
+	ASC	"00"
+	ASC	" "
+	DB	129
+	ASC	"FILE"
+	DB	134
+	ASC	"$."
+	DB	&0D
+	DB	130
+logimsg
+	ASC	"LOGI TRACK"
+	DB	135
+	ASC	"   "
+	DB	130
+	ASC	"SECTORS"
+	DB	135
+	ASC	"  x     "
+	DB	133
+	DB	0
+	LDA	&248
+	PHA
+	JSR	dedinit
+dedmloop
+	LDA	#<(dedmloop-1)
+	PHA
+	LDA	#>(dedmloop-1)
+	PHA
+	LDA	dedpl
+	BEQ	dedplx
+	LDA	#logimsg-physmsg
+dedplx
+	TAX
+	LDY	#&00
+dedplloop
+	LDA	physmsg,X
+	STA	&7C74,Y
+	INX
+	INY
+	CPY	#4
+	BNE	dedplloop
+	LDA	loaded
+	AND	#&0F
+	CMP	#5
+	BEQ	nodisp
+	JSR	deddisplay
+nodisp
+	LDX	input
+	LDA	cursor,X
+	STA	&FE20
+	STA	&248
+	LDA	#31
+	JSR	&FFEE
+	LDA	ptrcoords,X
+	CLC
+	ADC	pos
+	TAX
+	LDA	xcoord,X
+	JSR	&FFEE
+	LDA	ycoord,X
+	JSR	&FFEE
+dedmloopx
+	LDA	#&81
+	LDX	#&FF
+	LDY	#&FF
+	JSR	&FFF4 
+	STX	shift
+	LDX	#&FE
+	LDY	#&FF
+	JSR	&FFF4
+	STX	control
+	LDX	#0
+	LDY	#0
+	JSR	&FFF4
+	CPY	#&FF
+	BEQ	dedmloopx
+	TXA
+	PHA
+	JSR	blankmsg
+	CPY	#&1B
+	BNE	dednotend
+	PLA
+;Escape
+	LDA	#&7E
+	JSR	&FFF4
+	BIT	control
+	BMI	dedend
+	LDA	input
+	CMP	#5
+	BCC	dedend
+	JMP	dedinit
+dedend
+	JMP	escape
+dednotend
+	LDA	#15
+	LDX	#1
+	JSR	&FFF4
+	PLA
+	TAX
+	CPX	#9
+	BEQ	dedtab
+	JMP	dednottab
+dedtab
+	LDA	input
+	CMP	#6
+	BNE	diftab
+	LDA	#4
+	STA	input
+diftab
+	INC	input
+	LDA	loaded
+	AND	#&F
+	CMP	input
+	BNE	dednotmod
+	LDA	#0
+	STA	input
+dednotmod
+	LDA	input
+	CMP	#5
+	BCS	dednot0pos
+	LDA	#0
+	STA	pos
+dednot0pos
+	RTS
+
+dednottab
+	LDA	input
+	BNE	doarrows
+	JMP	drivekeys
+doarrows
+	CMP	#5
+	BCS	up_down
+	JMP	notup_down
+up_down
+	CPX	#&8A
+	BNE	dednotdown
+	LDA	#8
+	STA	tmpscrlo
+	BIT	shift
+	BMI	deddown2
+	BIT	control
+	BMI	downsect
+deddown1
+	LDA	bytelo
+	CLC
+	ADC	#8
+	STA	bytelo
+	BCC	mdedmloop
+deddown2
+	INC	bytehi
+mdedmloop
+	JMP	round
+downsect
+	LDA	dedpl
+	BMI	dslogi
+	JSR	getpstd
+	JSR	prevpsect
+	BCC	okdown2
+	JSR	message
+	JMP	okdown2
+dslogi
+	JSR	getlstd
+	JSR	prevlsect
+	BCC	okdown
+	JSR	message
+	LDA	param
+okdown
+gonextsect
+	JSR	putlst
+	LDA	#&02
+gonextsct
+	STA	input
+	LDX	#&0D
+	JMP	dednotcopy
+okdown2
+gonextpsect
+	JSR	gonextsect
+	LDA	#&00
+	STA	dedpl
+	RTS
+
+dednotdown
+	CPX	#&8B
+	BEQ	dedup
+	JMP	dednotup
+dedup
+	LDA	#8
+	STA	tmpscrlo
+	BIT	shift
+	BMI	dedup2
+	BIT	control
+	BMI	upsect
+dedup1
+	LDA	bytelo
+	SEC
+	SBC	#8
+	STA	bytelo
+	BCS	mdedmloop
+dedup2
+	DEC	bytehi
+	JMP	round
+upsect
+	LDA	dedpl
+	BMI	uslogi
+	JSR	getpstd
+	JSR	nextpsect
+	BCC	okup0
+	JSR	message
+okup0
+	JMP	gonextpsect
+uslogi
+	JSR	getlstd
+	JSR	nextlsect
+	BCC	okup
+	JSR	message
+	LDA	param
+okup
+	JMP	gonextsect
+
+
+dednotup
+notup_down
+	CPX	#&88
+	BEQ	dedISleft
+	JMP	dednotleft
+dedISleft
+	CMP	#5
+	BCS	editleft
+	LDA	pos
+	BEQ	return1
+	DEC	pos
+	RTS
+editleft
+	BIT	shift
+	BMI	dedsleft
+	BIT	control
+	BMI	downtrack 
+	LDA	pos
+	BEQ	rjmp
+	DEC	pos
+	RTS
+rjmp
+	LDA	#7
+	STA	pos
+	LDA	#8
+	STA	tmpscrlo
+	JMP	dedup1
+dedsleft
+	LDA	#0
+	STA	pos
+return1
+	RTS
+downtrack
+	JSR	gettrk
+	BEQ	exitdt
+	TAX
+	DEX
+	TXA
+	JSR	puttrk
+	LDA	dedpl
+	BEQ	upt
+	LDA	#&02
+	JMP	gonextsct
+upt
+	JMP	gonextpsect
+exitdt
+	RTS
+
+dednotleft
+	CPX	#&89
+	BEQ	dedskip0
+	JMP	dednotright
+dedskip0
+	CMP	#5
+	BCS	editright
+dedright
+	LDX	input
+	LDA	pos
+	CMP	posblpos,X
+	BEQ	return2
+	INC	pos
+return2
+	RTS
+editright
+	BIT	shift
+	BMI	dedsright
+	BIT	control
+	BMI	uptrack
+dedrightx
+	LDA	pos
+	CMP	#7
+	BEQ	rjmp2
+	INC	pos
+	RTS
+rjmp2
+	LDA	#0
+	STA	pos
+	LDA	#8
+	STA	tmpscrlo
+	JMP	deddown1
+dedsright
+	LDA	#7
+	STA	pos
+	RTS
+uptrack
+	JSR	gettrk
+	TAX
+	INX
+	TXA
+	JSR	puttrk
+	LDA	dedpl
+	BEQ	dpt
+	LDA	#&02
+	JMP	gonextsct
+dpt
+	JMP	gonextpsect
+
+
+drivekeys
+dednotright
+	CPX	#&0C
+	BNE	notctrlL
+ctrlL
+	LDA	#&FF
+	STA	dedpl
+	RTS
+
+notctrlL
+	CPX	#&10
+	BNE	notctrlP
+ctrlP
+	LDA	#&00
+	STA	dedpl
+	RTS
+
+notctrlP
+	CPX	#&87
+	BNE	dednotcopy
+	CMP	#5
+	BCC	exitcopy
+copy
+	JSR	save
+exitcopy
+	RTS
+
+dednotcopy
+	CPX	#13
+	BNE	dednotCR
+	CMP	#5
+	BCS	dednotCR
+	LDA	input
+	CMP	#2
+	BNE	dedoverb
+	JSR	ctrlL
+	BNE	dedoverc
+dedoverb
+	CMP	#3
+	BNE	dedoverc
+	JSR	ctrlP
+dedoverc
+	LDA	input
+	CMP	#4
+	BNE	dednotfile
+	JSR	dedloadfile
+	BCS	noload
+dednotfile
+goload
+	JSR	dedload
+	BCC	dedrts
+noload
+	JSR	message
+	LDA	#0
+	STA	sectsizelo
+	STA	sectsizehi
+	JSR	deddisplay
+dedrts
+	RTS
+
+dednotCR
+	TXA
+	PHA
+	LDX	input
+	CPX	#4
+	BEQ	fileinput
+	BCS	editmem
+	LDA	char,X
+	TAX
+	PLA
+dedloop
+	CMP	num,X
+	BEQ	dedfound
+	DEX
+	BPL	dedloop
+	RTS
+dedfound
+	JSR	&FFEE
+	JMP	dedright
+fileinput
+	PLA
+	AND	#&7F
+	CMP	#&7F
+	BNE	normkey
+	LDA	pos
+	CMP	#1
+	BEQ	donothing
+	LDA	&7C44
+	CMP	#32
+	BNE	del7
+	DEC	pos
+del7
+	LDA	ptrcoords+4
+	CLC
+	ADC	pos
+	TAX
+	LDA	#31
+	JSR	&FFEE
+	LDA	xcoord,X
+	JSR	&FFEE
+	LDA	ycoord,X
+	JSR	&FFEE
+	LDA	#32
+	JMP	&FFEE
+normkey
+	JSR	&FFEE
+	JMP	dedright
+donothing
+	RTS
+
+editmem
+	PLA
+	AND	#&7F
+	LDX	input
+	CPX	#5
+	BNE	store
+	LDX	#&F
+dedloop2
+	CMP	num,X
+	BEQ	dedfound2
+	DEX
+	BPL	dedloop2
+	RTS
+dedfound2
+	CMP	#':'
+	BCC	number
+	SEC
+	SBC	#7
+number
+	SEC
+	SBC	#&30
+	STA	tmp
+	LDA	toggle
+	EOR	#&FF
+	STA	toggle
+	LDY	pos
+	LDA	(byte),Y
+	ASL	A
+	ASL	A
+	ASL	A
+	ASL	A
+	ORA	tmp
+store
+	LDY	pos
+	STA	(byte),Y
+	LDA	toggle
+	BEQ	goright
+	LDA	input
+	CMP	#6
+	BEQ	goright
+	RTS
+goright
+	JMP	dedrightx
+
+dedload
+	JSR	gettrk
+	STA	dtrk
+	TAX
+	JSR	ptabcom
+	JSR	getdrv
+	JSR	load_ids
+	LDA	param+10
+	AND	#&1E
+	BNE	dednotok
+	JSR	sort_ids
+	LDA	input
+	CMP	#&02
+	BNE	nogetl
+dolp
+	JSR	logi_phys
+	LDA	#&18
+	BCS	dednotok
+	LDA	#&FF
+	STA	dedpl
+	JSR	getlsect
+	JMP	dedover
+nogetl
+	CMP	#&03
+	BNE	nogetp
+dopl
+	JSR	phys_logi
+	LDA	#&00
+	STA	dedpl
+	JSR	getpsect
+	JMP	dedover
+nogetp
+	LDA	dedpl
+	BEQ	dopl
+	BNE	dolp
+dedover
+
+	TAY
+	LDX	dtrk
+	JSR	getdrv
+	CLC
+	JSR	loadsector
+	BCC	loadOK
+dednotok
+	SEC
+	RTS
+loadOK
+	LDA	param+10
+	BEQ	notdeldata
+	TXA
+	PHA
+	TYA
+	PHA
+	JSR	blankmsg
+	LDA	#2
+	JSR	message
+	PLA
+	TAY
+	PLA
+	TAX
+notdeldata
+	LDA	loaded
+	CMP	#&07
+	BEQ	noreset
+	LDA	#0
+	STA	pos
+	LDA	#<buffer2
+	STA	bytehi
+	LDA	#>buffer2
+	STA	bytelo
+noreset
+	LDA	#5
+	STA	input
+	LDA	loaded
+	AND	#&F0
+	ORA	#&07
+	STA	loaded
+	TXA
+	JSR	hex_asc
+	STA	&7C5C
+	STY	&7C5D
+	LDX	tmp3
+	LDA	sectsizes,X
+	STA	sectsizehi
+	INX
+	LDA	sectsizes,X
+	STA	sectsizelo
+	JSR	hex_asc
+	STA	&7C6E
+	STY	&7C6F
+	LDA	sectsizehi
+	JSR	hex_asc
+	STA	&7C6C
+	STY	&7C6D
+	LDA	#'&'
+	STA	&7C6B
+	LDA	tmp4
+	LSR	A
+	LSR	A
+	JSR	hex_asc
+	STA	&7C68
+	STY	&7C69
+	CLC
+notloaded
+	RTS
+
+save
+	LDX	&7C5C
+	LDY	&7C5D
+	JSR	asc_hex
+	PHA
+	JSR	getlsect
+	TAY
+	PLA
+	TAX
+	JSR	getdrv
+	JSR	savesect
+	CPX	#0
+	BEQ	exitsave
+	JSR	message
+exitsave
+	RTS
+
+
+dedloadfile
+	LDA	#0
+	STA	toggle
+	LDX	#8
+caploop2
+	LDA	&7C3C,X
+	JSR	capitalise
+	STA	&7C3C,X
+	DEX
+	BPL	caploop2
+	JSR	getdrv
+	LDX	#0
+	LDY	#0
+	SEC
+	JSR	loadsector
+	BCC	nextbit
+	LDA	param+&0A
+	RTS
+nextbit
+	LDX	#0
+caploop
+	LDA	buffer2,X
+	JSR	capitalise
+	STA	buffer2,X
+	INX
+	BNE	caploop
+	LDA	#>buffer2
+	STA	tmp
+	LDA	#<buffer2
+	STA	tmp2
+comploop1
+	LDY	#0
+comploop2
+	LDA	(tmp),Y
+	CMP	&7C3E,Y
+	BNE	notcomp
+	INY
+	CPY	#7
+	BNE	comploop2
+	LDA	(tmp),Y
+	CMP	&7C3C
+	BEQ	comp
+notcomp
+
+	LDA	tmp
+	CLC
+	ADC	#8
+	STA	tmp
+	BCC	comploop1
+	LDA	toggle
+	EOR	#&02
+	STA	toggle
+	BEQ	exitcomp
+	LDA	param
+	JSR	check62files
+	BCC	exitcomp
+	BNE	exitcomp
+	JMP	nextbit
+exitcomp
+	JSR	dedinit
+	LDA	#0
+	SEC
+	RTS
+
+comp
+	LDA	tmp
+	PHA
+	LDA	tmp2
+	PHA
+	LDA	param
+	LDX	#0
+	LDY	toggle
+
+	INY
+	SEC
+	JSR	loadsector
+	BCC	nextbit2
+	TAX
+	PLA
+	PLA
+	RTS
+nextbit2
+
+	PLA
+	STA	tmp2
+	PLA
+	STA	tmp
+	LDY	#&06
+	LDA	(tmp),Y
+	PHA
+	INY
+	LDA	(tmp),Y
+
+	STA	tmp
+	PLA
+	STA	tmp2
+
+	LDA	#&00
+	STA	tmp4
+	STA	tmp5
+	LDY	#&FF
+trkhdlp
+	TYA
+	PHA
+	LDA	tmp4
+	JSR	putlsect
+	LDA	tmp5
+	JSR	puttrk
+	PLA
+	TAY
+	INY
+	CPY	#&0A
+	BEQ	trkhdexit
+	LSR	tmp2
+	ROR	tmp
+	BCC	trkhdlp
+	LDA	trkhdlo,Y
+	CLC
+	SED
+	ADC	tmp4
+	CLD
+	STA	tmp4
+	CLC
+	AND	#&F0
+	BEQ	nohdcarry
+	SEC
+	LDA	tmp4
+	AND	#&0F
+	STA	tmp4
+nohdcarry
+	LDA	trkhdhi,Y
+	ADC	tmp5
+	STA	tmp5
+	JMP	trkhdlp
+trkhdexit
+	LDA	tmp4
+	JSR	putlsect
+	LDA	tmp5
+	JSR	puttrk
+	LDA	#&FF
+	STA	dedpl
+	LDA	#&00
+	RTS
+
+deddisplay
+	LDA	#130
+	STA	&7DE5
+	LDA	#129
+	STA	&7DFE
+	LDA	#2
+dedhsloop0
+	BIT	&FE4D
+	BNE	dedhsloop0
+	LDA	#&A1
+	STA	screenlo
+	LDA	#&7C
+	STA	screenhi
+	LDX	#0
+	SEC
+	LDA	bytelo
+	SBC	#&40
+	STA	tmpscrlo
+	LDA	bytehi
+	SBC	#0
+	STA	tmpscrhi
+dedhsloop2
+	LDA	tmpscrhi
+	CMP	#<buffer2
+	BCC	blankline
+	LDA	#<buffer2
+	CLC
+	ADC	sectsizehi
+	CMP	tmpscrhi
+	BCC	blankline
+	BNE	displine
+	LDA	#>buffer2
+	CLC
+	ADC	sectsizelo
+	STA	tmp3
+	LDA	tmpscrlo
+	CMP	tmp3
+	BCS	blankline
+	JMP	displine
+blankline
+	LDY	#39
+	LDA	#0
+dedhsloop4
+	STA	(screenlo),Y
+	DEY
+	BPL	dedhsloop4
+	LDA	#40
+	CLC
+	ADC	screenlo
+	STA	screenlo
+	BCC	dedhsjmp2
+	INC	screenhi
+dedhsjmp2
+	LDA	#8
+	CLC
+	ADC	tmpscrlo
+	STA	tmpscrlo
+	BCC	dedhsjmp3
+	INC	tmpscrhi
+dedhsjmp3
+	TXA
+	CLC
+	ADC	#8
+	TAX
+	JMP	dedhsjmp7
+displine
+	LDA	tmpscrhi
+	SEC
+	SBC	#<buffer2
+	JSR	printnumx
+	LDA	tmpscrlo
+	SEC
+	SBC	#>buffer2
+	JSR	printnumx
+	LDA	screenlo
+	CLC
+	ADC	#2
+	STA	screenlo
+	LDY	#0
+dedhsloop1
+	LDA	(tmpscrlo),Y
+	SEC
+	JSR	printnum
+	INX
+	INY
+	CPY	#8
+	BNE	dedhsloop1
+	LDY	#7
+dedhsloop3
+	LDA	(tmpscrlo),Y
+	AND	#&7F
+	STX	tmp3
+	TAX
+	LDA	letter,X
+	LDX	tmp3
+	STA	(screenlo),Y
+	DEY
+	BPL	dedhsloop3
+	LDA	screenlo
+	CLC
+	ADC	#10
+	STA	screenlo
+	BCC	dedhsjmp6
+	INC	screenhi
+dedhsjmp6
+	LDA	tmpscrlo
+	CLC
+	ADC	#8
+	STA	tmpscrlo
+	BCC	dedhsjmp7
+	INC	tmpscrhi
+dedhsjmp7
+	CPX	#&90
+	BEQ	notdedhsloop2
+	JMP	dedhsloop2
+notdedhsloop2
+	RTS
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

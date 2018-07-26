@@ -1,0 +1,21 @@
+;*************************************
+; Definitions
+;*************************************
+
+WATFORD	EQU	0
+ACORN	EQU	-1
+
+; What our Field separator is for
+; MFILL, MSEARCH and DFILL
+IFS	EQU	';'
+VERSION	ASET	'1.18'
+DFS	EQU	WATFORD
+
+
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

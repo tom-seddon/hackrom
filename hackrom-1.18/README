@@ -1,0 +1,63 @@
+This code is copyright 1993 by James Bonfield and Stephen Youell. You may copy
+and distribute copies of this source code provided that this copyright notice
+stays intact and that it is distributed without charge. You may modify this
+code and redistribute provided you clearly document your changes. This code
+carries no warranty and the authors do not hold themselves responsible for any
+death or mutilation caused by use of the code ;-)
+
+Welcome to the first release of HackROM.
+
+We are very interested in feedback, be it positive or negative, on our
+ROM. We can be contacted via email at jkb@mrc-lmb.cam.ac.uk (also
+rince@dcs.warwick.ac.uk), or syouell@dcs.warwick.ac.uk (also
+Stephen_Youell.wgc-e@rx.xerox.com).
+
+I have split the distribution over several directories for neatness sake.
+These can all be combined into one directory if this makes things easier.
+However you may have trouble fitting that many files on a single side of disk
+unless, like us, you use a DFS capable of 62 file.
+
+To assembled you require Alan Phillip's 65C02 Assembler. The code has been
+tested only on a BBC B. The simplest way to start is then to use:
+
+*ASSEMBLE M.HACKROM -O HACKROM -W
+
+However, for a more general and flexible method, the *MAKE utility should be
+used. This itself can be assembled up from source using:
+
+*ASSEMBLE S.MAKE -O MAKE -W
+
+Then, once armed with the *MAKE utility, you can assemble all, or just part,
+of HackROM into either a ROM or an executable (*HACK). "*MAKE ALL_ROM" and
+"*MAKE ALL_HACK" will make the ROM and the *HACK commands respectively.
+
+For more complete documention see the file MakeDoc for how to use the *MAKE
+utility and Manual for information on HackROM
+
+Should you wish to edit these source files using WordWise you will find that
+it objects to the use of TABs. Wordwise understands character 0335 (octal) as
+the TAB character for some bizarre reason. There are three alternatives.
+1) Use another wordprocessor
+2) Hack the wordwise ROM so that it uses proper TABs (011) instead
+3) Use the WWconv script in the top-level directory.
+
+Naturally, number 2) is the nicest :-)
+
+Share & Enjoy!
+
+	James Bonfield & Stephen Youell
+
+
+Release notes:
+
+12/10/93
+	First public release - Wow! (not much we can comment on as far as
+	change since last release go ;-)
+	The current status is that the all the working code is now available,
+	although you may find disabled bits in the assembly which correspond
+	to unfinished commands. Commands implemented are:
+	MEM, MDIS, MCOPY, MSWAP, MCMP, MFILL, MSEARCH,
+	DEDIT, FORMAT, SECTLOAD, SECTSAVE, LOADIDS, PIDS, VERIFY,
+	DLOAD, DRUN, TOUCH, CLOSE,
+	RLIST, RON, ROFF, RLOAD, RSAVE, RINFO, SEND,
+	PBUFF, LVECTORS, KEYLIST, KEYSAVE, KEYLOAD, RECOVER, ECHO.

@@ -1,0 +1,126 @@
+; ----------------------------------
+; Errors
+; ----------------------------------
+
+E_UNKNOWN_ERR	EQU	0
+E_CLOCK_ERR	EQU	&08
+E_SECTOR_ID_ERR	EQU	&0C
+E_DATA_CRC_ERR	EQU	&0E
+E_DRV_NOT_RDY	EQU	&10
+E_WRITE_PROTECT	EQU	&12
+E_TRK0_NOT_FND	EQU	&14
+E_WRITE_FAULT	EQU	&16
+E_SCTR_NOT_FND	EQU	&18
+
+E_SYNERR	EQU	&01
+
+; ----------------------------------
+; Error_die takes an error number in
+;  A and dies on that error
+; ----------------------------------
+
+error_die
+	LDX	#num_errors
+error_die_lp0
+	CMP	error_tab,X
+	BEQ	die_horribly
+	DEX
+	BNE	error_die_lp0
+die_horribly
+	ASL	A
+	TAX
+	LDA	error_pnt,X
+	STA	tmpx
+	LDA	error_pnt+1,X
+	STA	tmpy
+	JMP	(tmpx)
+
+error_tab
+	DB	E_UNKNOWN_ERR
+	DB	E_CLOCK_ERR
+	DB	E_SECTOR_ID_ERR
+	DB	E_DATA_CRC_ERR
+	DB	E_DRV_NOT_RDY
+	DB	E_WRITE_PROTECT
+	DB	E_WRITE_FAULT
+	DB	E_SCTR_NOT_FND
+end_error_tab
+
+num_errors	EQU	end_error_tab-error_tab-1
+
+error_pnt
+	DW	unknown_error
+	DW	clock_error
+	DW	sector_id_err
+	DW	data_crc_error
+	DW	drv_not_rdy
+	DW	write_protect
+	DW	trk0_not_fnd
+	DW	write_fault
+	DW	sctr_not_fnd
+
+
+
+
+errors
+
+unknown_error
+	JSR	fatal_error
+	DB	E_UNKNOWN_ERR
+	ASC	"Unknown error"
+	db	&00
+
+clock_error
+	JSR	fatal_error
+	DB	E_CLOCK_ERR
+	ASC	"Clock error"
+	DB	&00
+
+sector_id_err
+	JSR	fatal_error
+	DB	E_SECTOR_ID_ERR
+	ASC	"Sector Id CRC error"
+	DB	&00
+
+data_crc_error
+	JSR	fatal_error
+	DB	E_DATA_CRC_ERR
+	ASC	"Data CRC Error"
+	DB	&00
+
+drv_not_rdy
+	JSR	fatal_error
+	DB	E_DRV_NOT_RDY
+	ASC	"Drive not ready"
+	DB	&00
+
+write_protect
+	JSR	fatal_error
+	DB	E_WRITE_PROTECT
+	ASC	"Write protect"
+	DB	&00
+
+trk0_not_fnd
+	JSR	fatal_error
+	DB	E_TRK0_NOT_FND
+	ASC	"Track 0 not found"
+	DB	&00
+
+write_fault
+	JSR	fatal_error
+	DB	E_WRITE_FAULT
+	ASC	"Write fault"
+	DB	&00
+
+sctr_not_fnd
+	JSR	fatal_error
+	DB	E_SCTR_NOT_FND
+	ASC	"Sector not found"
+	DB	&00
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

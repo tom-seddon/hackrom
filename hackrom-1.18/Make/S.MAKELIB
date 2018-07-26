@@ -1,0 +1,596 @@
+LISTING	ASET	@$LST
+	LST	0
+
+tmp	EQU	&8E
+newy	EQU	&70
+endstr	EQU	&71
+numlo	EQU	&80
+numhi	EQU	&81
+clibuf	EQU	&84;85 86 87 (88 89 8A 8B)
+oldclibuf	EQU	&80;81 82 83
+ptrDH	EQU	&8C;8D
+dhinc	EQU	&7C;7D 7E 7F
+dhbits	EQU	&8E
+
+num
+	ASC	"0123456789ABCDEF"
+
+; --------------------------------
+; Capitalise
+;
+; Entry : A=char
+;
+; X,Y preserved
+;
+; Exit : If char was lower case; is
+;        returned as upper case. Other
+;        chars left alone
+; --------------------------------
+capitalise
+	AND	#&7F
+	CMP	#'z'+1
+	BCS	nochange
+	CMP	#'a'
+	BCC	nochange
+	SBC	#32
+nochange
+	RTS
+
+; --------------------------------
+; Hexadecimal to ascii converter
+;
+; Entry : A=hex value
+;
+; X destroyed
+;
+; Exit : A=high nibble ascii value
+;        Y=low nibble ascii value
+; --------------------------------
+hex_asc
+	PHA
+	AND	#&F
+	TAX
+	LDA	num,X
+	TAY
+	PLA
+	LSR	A
+	LSR	A
+	LSR	A
+	LSR	A
+	TAX
+	LDA	num,X
+	RTS
+
+; --------------------------------
+; Two byte ascii to hex converter
+;
+; Entry : X=high nibble ascii value
+;         Y=low nibble ascii value
+;
+; X,Y preserved
+;
+; Exit : A=hex value
+; --------------------------------
+asc_hex
+	TXA
+	JSR	convert
+	ASL	A
+	ASL	A
+	ASL	A
+	ASL	A
+	STA	tmp
+	TYA
+	JSR	convert
+	ORA	tmp
+	RTS
+
+; ------------------------------
+; Read a single 'item' from the
+; input line.
+; If 'item' is numeric then value
+; returned in clibuf and carry
+; is cleared. Otherwise string is
+; returned via Y reg/&F2/&F3 and
+; carry is set.
+; If no item found then set zero
+; flag.
+; ------------------------------
+
+; --- quoted strings ---
+; Search through string using GSREAD
+; style conversion. Write the converted
+; string back out over the top of the
+; old string and pad out with chars.
+gsinit	EQU	&FFC2
+gsread	EQU	&FFC5
+
+
+;
+rdquoted
+quote
+	INY
+	TYA
+	PHA
+	DEY
+	JSR	gsinit
+	STY	newy
+	STY	endstr
+quote1
+	JSR	gsread
+	BCS	quote2
+	STY	newy
+	LDY	endstr
+	STA	(&F2),Y
+	INC	endstr
+	LDY	newy
+; BNE instead?
+	JMP	quote1
+quote2
+	INC	newy
+	PLA
+	TAY
+; zero flag already clear
+	EOR	#&FF
+	CLC
+	ADC	endstr
+	TAX
+	INX
+	SEC
+	LDA	#&00
+rdstrend
+	RTS
+;
+rdstr
+	JSR	nonspace
+	BEQ	rdstrfail
+	CMP	#'"'
+	BEQ	rdquoted
+; force quotes
+	DEY
+	TYA
+	PHA
+	LDA	#'"'
+rdq1
+	DEY
+	STA	(&F2),Y
+	INY
+	INY
+	JSR	rdstrcom
+	CMP	#' '
+	BEQ	rdq2
+	CMP	#&0D
+	BNE	rdq1
+rdq2
+	DEY
+	LDA	#'"'
+	STA	(&F2),Y
+	PLA
+	TAY
+	DEY
+	BNE	rdquoted
+
+rdstrfail
+	LDX	#&00
+	INY
+	RTS
+
+nonspace
+	DEY
+nonspace0
+	INY
+	LDA	(&F2),Y
+	CMP	#' '
+	BEQ	nonspace0
+	BNE	nonspace2
+;
+rdstrcom
+	LDA	(&F2),Y
+	CMP	#' '
+	BEQ	nonspace1
+nonspace2
+	CMP	#'-'
+	BEQ	nonspace1
+	CMP	#'+'
+	BEQ	nonspace1
+	CMP	#&0D
+nonspace1
+	RTS
+
+; --- decimal ---
+decimal
+	JSR	sev
+	JSR	hexD
+	TYA
+	PHA
+	LDX	#>clibuf
+	LDY	#<clibuf
+	JSR	dec_hex
+	LDX	#3
+decloop0
+	LDA	clibuf+4,X
+	STA	clibuf,X
+	DEX
+	BPL	decloop0
+	PLA
+	TAY
+	LDX	#&00
+	CLC
+	RTS
+
+rdstrnum
+	JSR	nonspace
+	CMP	#'"'
+	BEQ	rdstr
+;
+rdnum
+	JSR	nonspace
+	CMP	#'+'
+	BEQ	plusnum
+	CMP	#'-'
+	BNE	rdnumx
+	BEQ	rdexitfail
+plusnum
+	INY
+	JSR	rdnumx
+	BEQ	swallow
+backone
+	DEY
+swallow
+	LDX	#&04
+	CLC
+rdadd
+	LDA	clibuf-1,X
+	ADC	oldclibuf-1,X
+	STA	clibuf-1,X
+	DEX
+	BNE	rdadd
+rdexitOK
+	CLC
+	RTS
+
+rdexitfail
+	LDX	#&FF
+	INY
+	RTS
+
+rdnumx
+	JSR	wipeclib
+; X now zero
+	JSR	nonspace
+	BEQ	rdexitfail
+	CMP	#'"'
+	BNE	rdn0
+	JMP	synerr
+rdn0
+	INY
+	CMP	#'@'
+	BEQ	var
+	CMP	#'#'
+	BEQ	decimal
+	CMP	#'%'
+	BEQ	binary
+	CMP	#'&'
+	BEQ	hex
+; defaults to hex
+	DEY
+hex
+	CLV
+hexD
+	JSR	rdstrcom
+	BEQ	rdexitOK
+	BVS	hexD2
+	JSR	ahex_A
+	BVC	hex3
+hexD2
+	JSR	adec_A
+hex3
+	LDX	#3
+hex2
+	ASL	clibuf
+	ROL	clibuf+1
+	ROL	clibuf+2
+	ROL	clibuf+3
+	DEX
+	BPL	hex2
+	ORA	clibuf
+	STA	clibuf
+	INY
+	BNE	hexD
+; --- Binary ---
+binary
+	LDA	(&F2),Y
+	JSR	rdstrcom
+	BEQ	rdexitOK
+	JSR	abin_C
+	ROL	clibuf
+	ROL	clibuf+1
+	ROL	clibuf+2
+	ROL	clibuf+3
+	INY
+	BNE	binary
+; --- A BASIC or OS variable ---
+var
+	LDA	(&F2),Y
+	ORA	#&20
+	CMP	#'p'	; PAGE
+	BNE	notpage
+	LDA	&18
+	STA	clibuf+1
+	JMP	var2
+notpage
+	CMP	#'t'	; TOP
+	BNE	nottop
+	LDX	#&12
+varz
+	LDA	0,X
+	STA	clibuf
+	LDA	1,X
+	STA	clibuf+1
+	JMP	var2
+nottop
+	CMP	#'l'	; LOMEM
+; X already zero here.
+	BEQ	varz
+notlomem
+	CMP	#'h'	; HIMEM
+	BNE	nothimem
+	LDX	#6
+	BNE	varz
+nothimem
+	CMP	#'o'	; OSHWM
+	BNE	notoshwm
+	LDA	&244
+	STA	clibuf+1
+	JMP	var2
+notoshwm
+	CMP	#'r'; ROM
+	BNE	notvar
+	LDA	#&80
+	STA	clibuf+1
+var2
+	INY
+	JSR	rdstrcom
+	BNE	var2
+rdexit2
+	RTS
+notvar
+	JSR	pc_print
+	ASC	"Unknown variable|M|@"
+	JMP	fatal
+
+wipeclib
+	LDX	#&04
+clearclib
+	LDA	clibuf-1,X
+	STA	oldclibuf-1,X
+	LDA	#&00
+	STA	clibuf-1,X
+	DEX
+	BNE	clearclib
+	RTS
+
+; ----------------------------------
+; Decimal to Hex base convert
+;
+; Entry : X,Y point to table
+;         decnum = first 4 bytes table
+;
+; A,X,Y destroyed
+;
+; Exit : hexnum = second 4 bytes table  ; ----------------------------------
+dec_hex
+	STX	ptrDH
+	STY	ptrDH+1
+	LDA	#0
+	STA	dhbits
+	LDY	#7
+zerohexnum
+	STA	(ptrDH),Y
+	DEY
+	CPY	#3
+	BNE	zerohexnum
+zeroinc
+	STA	dhinc,Y
+	DEY
+	BPL	zeroinc
+	INC	dhinc
+	LDA	#0
+	BEQ	overDH1
+dhmloop
+	LDA	dhbits
+	AND	#3
+	BNE	overDH1
+	LDY	#3
+	LDX	#&FF
+	CLC
+loopDH5
+	INX
+	PLA
+	ADC	dhinc,X
+	STA	dhinc,X
+	DEY
+	BPL	loopDH5
+overDH1
+	CMP	#1
+	BNE	overDH4
+	LDX	#3
+loopDH4
+	LDA	dhinc,X
+	PHA
+	DEX
+	BPL	loopDH4
+overDH4
+	LDY	#3
+	CLC
+shiftloop
+	LDA	(ptrDH),Y
+	ROR	A
+	STA	(ptrDH),Y
+	DEY
+	BPL	shiftloop
+	BCC	overDH2
+	CLC
+	LDY	#4
+	LDX	#0
+	PHP
+loopDH2
+	PLP
+	LDA	(ptrDH),Y
+	ADC	dhinc,X
+	STA	(ptrDH),Y
+	PHP
+	INX
+	INY
+	CPX	#4
+	BNE	loopDH2
+	PLP
+overDH2
+	LDA	dhbits
+	AND	#3
+	CMP	#3
+	BEQ	overDH3
+	CLC
+	LDX	#0
+	LDY	#3
+loopDH3
+	ROL	dhinc,X
+	INX
+	DEY
+	BPL	loopDH3
+overDH3
+	INC	dhbits
+	LDA	dhbits
+	CMP	#32
+	BNE	dhmloop
+	PLA
+	PLA
+	PLA
+	PLA
+	RTS
+
+; ------------------------------
+; Displays "Not a number" error
+; ------------------------------
+nan
+	JSR	pc_print
+	ASC	"Not a number.|M|@"
+; ------------------------------------
+; fatal error! Exit rom from any
+; position. Does so by setting the
+; stack pointer back to a remembered
+; one and RTSing
+; ------------------------------------
+fatal
+	LDX	temp_stack_ptr
+; include the RTS location
+; and quit
+	TXS
+	RTS
+
+; ------------------------------
+; Convert ascii ("0" / "1") in
+; A reg to binary number in Carry
+; ------------------------------
+abin_C
+	CMP	#'0'
+	BMI	nan
+	CMP	#'2'
+	BCS	nan
+	CMP	#'1'
+	RTS
+
+; ------------------------------
+; Convert ascii hex ("0"-"9" /
+; "A"-"F") in A reg to actual
+; value in A register
+; ------------------------------
+convert
+ahex_A
+	CMP	#'0'
+	BCC	nan
+	CMP	#':'
+	BCC	notA_F
+; Allow for &F and &f
+	ORA	#&20
+	CMP	#'a'
+	BCC	nan
+	CMP	#'g'
+	BCS	nan
+	SEC
+	SBC	#7
+notA_F
+	AND	#&0F
+	RTS
+
+; ------------------------------
+; Convert ascii dec. ("0"-"9") in
+; A reg to actual val in A register
+; ------------------------------
+adec_A
+	CMP	#'0'
+	BCC	nan
+	CMP	#':'
+	BCS	nan
+	AND	#&0F
+	RTS
+
+; --------------------------------
+; Display num in A reg as 2 hex
+; digits
+; --------------------------------
+wdigit
+	STA	tmp
+	TXA
+	PHA
+	TYA
+	PHA
+	LDA	tmp
+	JSR	hex_asc
+	JSR	&FFEE
+	TYA
+	JSR	&FFEE
+	PLA
+	TAY
+	PLA
+	TAX
+	RTS
+
+; --------------------------------
+; Print a string from mem loca
+; just after program counter.
+; --------------------------------
+pc_print
+	PLA
+	STA	numlo
+	PLA
+	STA	numhi
+	LDY	#1
+print1
+	LDA	(numlo),Y
+	BEQ	print2
+	JSR	&FFE3
+	INY
+	BNE	print1
+print2
+	TYA
+	CLC
+	ADC	numlo
+	TAX
+	LDA	numhi
+	ADC	#0
+	PHA
+	TXA
+	PHA
+	RTS
+
+sev
+	PHA
+	PHP
+	PLA
+	ORA	#&40
+	PHA
+	PLP
+	PLA
+	RTS
+
+	LST	@LISTING

@@ -1,0 +1,1779 @@
+xtablo	EQU	&70
+xtabhi	EQU	&71
+comrun	EQU	&70 ; &71
+mstmpy	EQU	&72
+htmp	EQU	&72
+helpind	EQU	&73 ; &74
+helpind2	EQU	&75 ; &76
+htmpy	EQU	&77
+xtmp	EQU	&78
+comprint	EQU	&79
+cpflag	EQU	&7A
+stacksave	EQU	&39F
+comnum	EQU	&3A0
+pbuffon	EQU	&3A1
+numzpage	EQU	&20
+
+;*********************************
+; The ROM header
+;*********************************
+send_poke
+	STX	&FE30	;*SEND
+	JMP	service	; Service entry
+	DB	&82	; ROM type
+	DB	headcopy-&8000	; Copyright ptr
+	DB	&01	; Version
+headtitle
+	ASC	"Hackers ROM"
+	DB	0	; Title
+	ASC	"@VERSION"	; Version string
+headcopy
+	DB	0
+	ASC	"(C) James Bonfield & Stephen Youell 1993"
+	DB	0	; Copyright string
+	DW	0	; Tube address
+	DW	0
+
+;*********************************
+; Service entry point
+;*********************************
+service
+	PHA
+	TXA
+	PHA
+	TYA
+	PHA
+	LDX	#numzpage-1
+heloop0
+	LDA	&70,X
+	PHA
+	DEX
+	BPL	heloop0
+	TSX
+	LDA	&103+numzpage,X
+	CMP	#&04
+	BNE	notcommand
+	JSR	command
+notcommand
+	CMP	#&09
+	BEQ	help
+	CMP	#&03
+	BNE	romquit
+; boot - print message on BREAK
+	LDA	#&00
+	STA	pbuffon
+	JSR	dispheadtitle
+	JSR	&FFE7
+romquit
+	LDX	#&00
+heloop1
+	PLA
+	STA	&70,X
+	INX
+	CPX	#numzpage
+	BCC	heloop1
+	PLA
+	TAY
+	PLA
+	TAX
+	PLA
+	RTS
+
+;*********************************
+; *HELP request
+;*********************************
+
+
+help
+	LDA	(&F2),Y
+	CMP	#&0D
+	BNE	spechelp
+	JSR	&FFE7
+	JSR	dispheadtitle
+; Now print subtopics
+	LDX	#0
+topic2
+	JSR	indent2
+topic
+	LDA	subjects,X
+	BEQ	endtopic
+	JSR	&FFEE
+	INX
+	BNE	topic
+endtopic
+	JSR	&FFE7
+	INX
+	LDA	subjects,X
+	BPL	topic2
+; Respond to specific *HELP
+; eg *HELP MEM.
+spechelp
+	JSR	spechelp2
+	JMP	romquit
+
+spechelp2
+	LDA	#>subjects
+	STA	xtablo
+	LDA	#<subjects
+	STA	xtabhi
+	LDA	#&00
+	STA	cpflag
+	TYA
+	PHA
+	JSR	matchstr
+	BCC	gospechelp
+	PLA
+	TAY
+	JSR	mchcomm
+	BCC	sphelpok
+	RTS
+sphelpok
+	STX	comprint
+	LDA	#&FF
+	STA	cpflag
+	PHA
+	LDA	comprint
+	LDX	#&FF
+sphlp
+	INX
+	CMP	psyntab,X
+	BCC	goshelp
+	CPX	#&05
+	BNE	sphlp
+	INX
+goshelp
+	DEX
+gospechelp
+	PLA
+	TXA
+	PHA
+	JSR	&FFE7
+	JSR	dispheadtitle
+	JSR	&FFE7
+	PLA
+	ASL	A
+	TAX
+	LDA	subjtab,X
+	STA	helpind
+	LDA	subjtab+1,X
+	STA	helpind+1
+	LDA	syntab+1,X
+	STA	helpind2+1
+	LDA	syntab,X
+	STA	helpind2
+	TXA
+	LSR	A
+	TAX
+	LDA	psyntab,X
+	TAX
+	LDY	#&FF
+	JSR	indent2
+helploop
+nh
+	INY
+	LDA	cpflag
+	CLC
+	ADC	#&01
+	LDA	(helpind),Y
+	BPL	norq
+	RTS
+norq
+	BEQ	nh2
+	BCC	showcom
+	CPX	comprint
+	BNE	nh
+showcom
+	JSR	&FFEE
+	JMP	nh
+nh2
+	TYA
+	PHA
+	TXA
+	PHA
+	LDA	helptab,X
+	STA	xtmp
+	BEQ	nextcom
+	BPL	go
+	AND	#&7F
+	STA	xtmp
+	SEC
+	LDA	helpind2
+	SBC	xtmp
+	STA	helpind2
+	BCS	hover
+	DEC	helpind2+1
+hover
+	LDA	xtmp
+go
+	TAY
+	LDA	cpflag
+	BEQ	cpok
+	CPX	comprint
+	BNE	skipcom
+cpok
+	LDA	#' '
+	JSR	&FFEE
+again
+	DEY
+	LDA	(helpind2),Y
+	BPL	nh4
+	TAX
+	LDA	toktab-&80,X
+	STA	htmp
+	LDA	toktab-&81,X
+	TAX
+	JMP	nh5
+nh3
+	JSR	&FFEE
+nh5
+	LDA	tokens,X
+	INX
+	CPX	htmp
+	BNE	nh3
+nh4
+	JSR	&FFEE
+	CPY	#0
+	BNE	again
+skipcom
+	CLC
+	LDA	xtmp
+	ADC	helpind2
+	STA	helpind2
+	BCC	hover2
+	INC	helpind2+1
+hover2
+nextcom
+	PLA
+	TAX
+	PLA
+	TAY
+	LDA	cpflag
+	BEQ	docr
+	CPX	comprint
+	BNE	nocr
+docr
+	JSR	&FFE7
+	JSR	indent2
+nocr
+	INX
+	JMP	helploop
+
+synerr
+	LDA	&20E
+	PHA
+	LDA	&20F
+	PHA
+	LDA	#>oswrch_con
+	STA	&20E
+	LDA	#<oswrch_con
+	STA	&20F
+	LDA	#&00
+	STA	&0100
+	LDX	comnum
+	JSR	sphelpok
+	LDA	#&00
+	STA	&100
+
+	LDA	#E_SYNERR
+	PLA
+	STA	&20F
+	PLA
+	STA	&20E
+
+	LDX	#&00
+xheloop1
+	PLA
+	STA	&70,X
+	INX
+	CPX	#numzpage
+	BCC	xheloop1
+	PLA
+	PLA
+	PLA
+
+	JMP	&100
+
+oswrch_con
+	PHP
+	STY	&101
+	CMP	#&0D
+	BEQ	oswrch_con_ok
+	CMP	#&0A
+	BEQ	oswrch_con_ok
+	CMP	#30
+	BCC	oswrch_con_exit
+oswrch_con_ok
+	LDY	&100
+	STA	&102,Y
+	PHA
+	LDA	#&00
+	STA	&103,Y
+	PLA
+	INY
+	STY	&100
+oswrch_con_exit
+	LDY	&101
+	PLP
+	RTS
+
+	IFDEF	X_MEM
+MEMORY_COMS	EQU	-1
+	ELSE
+	IFDEF	X_MDIS
+MEMORY_COMS	EQU	-1
+	ELSE
+	IFDEF	X_MCOPY
+MEMORY_COMS	EQU	-1
+	ELSE
+	IFDEF	X_MSWAP
+MEMORY_COMS	EQU	-1
+	ELSE
+	IFDEF	X_MCMP
+MEMORY_COMS	EQU	-1
+	ELSE
+	IFDEF	X_MFILL
+MEMORY_COMS	EQU	-1
+	ELSE
+	IFDEF	X_MSEARCH
+MEMORY_COMS	EQU	-1
+	ELSE
+	IFDEF	X_MCRC
+MEMORY_COMS	EQU	-1
+	ELSE
+MEMORY_COMS	EQU	0
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+
+	IFDEF	X_DEDIT
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_IDEDIT
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_FORMAT
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SECTLOAD
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SECTSAVE
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_LOADIDS
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_PIDS
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_VERIFY
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_DMAP
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_DFILL
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_FBACKUP
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_PENABLE
+DISC_COMS	EQU	-1
+	ELSE
+	IFDEF	X_GAPS
+DISC_COMS	EQU	-1
+	ELSE
+DISC_COMS	EQU	0
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+
+	IFDEF	X_DLOAD
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_DRUN
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_FDELETE
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_FCRC
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_TOUCH
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_CONCAT
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_FCOPY
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_FDIS
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SPOOLDIS
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_CLOSE
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_DES
+FILE_COMS	EQU	-1
+	ELSE
+	IFDEF	X_FCMP
+FILE_COMS	EQU	-1
+	ELSE
+FILE_COMS	EQU	0
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+
+	IFDEF	X_RLIST
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_RON
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_ROFF
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_RLOAD
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_RSAVE
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_RINFO
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SRLOAD
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SRSAVE
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SRREAD
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SRWRITE
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_RFSMAKE
+ROM_COMS	EQU	-1
+	ELSE
+	IFDEF	X_SEND
+ROM_COMS	EQU	-1
+	ELSE
+ROM_COMS	EQU	0
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+
+	IFDEF	X_PBUFF
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_LVECTORS
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_KEYLIST
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_KEYSAVE
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_KEYLOAD
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_BASE
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_BREAK
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_HBREAK
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_RECOVER
+GENERAL_COMS	EQU	-1
+	ELSE
+	IFDEF	X_ECHO
+GENERAL_COMS	EQU	-1
+	ELSE
+GENERAL_COMS	EQU	0
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+	FI
+
+
+subjects
+
+	IF	MEMORY_COMS
+	ASC	"MEMORY|@"
+	FI
+
+	IF	DISC_COMS
+	ASC	"DISC|@"
+	FI
+
+	IF	FILE_COMS
+	ASC	"FILE|@"
+	FI
+
+	IF	ROM_COMS
+	ASC	"ROM|@"
+	FI
+
+	IF	GENERAL_COMS
+	ASC	"GENERAL|@"
+	FI
+
+	DB	&FF
+
+subjtab
+
+	IF	MEMORY_COMS
+	DW	memcomm
+	FI
+
+	IF	DISC_COMS
+	DW	disccomm
+	FI
+
+	IF	FILE_COMS
+	DW	filecomm
+	FI
+
+	IF	ROM_COMS
+	DW	romcomm
+	FI
+
+	IF	GENERAL_COMS
+	DW	gencomm
+	FI
+
+syntab
+	IF	MEMORY_COMS
+	DW	h_mem_coms
+	FI
+
+	IF	DISC_COMS
+	DW	h_disc_coms
+	FI
+
+	IF	FILE_COMS
+	DW	h_file_coms
+	FI
+
+	IF	ROM_COMS
+	DW	h_rom_coms
+	FI
+
+	IF	GENERAL_COMS
+	DW	h_gen_coms
+	FI
+
+
+psyntab
+	IF	MEMORY_COMS
+	DB	memhelp-helptab
+	FI
+
+	IF	DISC_COMS
+	DB	dischelp-helptab
+	FI
+
+	IF	FILE_COMS
+	DB	filehelp-helptab
+	FI
+
+	IF	ROM_COMS
+	DB	romhelp-helptab
+	FI
+
+	IF	GENERAL_COMS
+	DB	genhelp-helptab
+	FI
+
+
+indent2
+	LDA	#' '
+	JSR	&FFEE
+	JSR	&FFEE
+	RTS
+
+dispheadtitle
+; Print ROM headtitle & version
+	LDY	#2
+	LDX	#0
+headloop0
+	LDA	headtitle,X
+	BEQ	hzero
+headloop1
+	JSR	&FFEE
+	INX
+	BNE	headloop0
+hzero
+	LDA	#&20
+	DEY
+	BNE	headloop1
+	JSR	&FFE7
+	RTS
+
+;*********************************
+; Check for * commands
+;*********************************
+mchcomm
+	LDA	#>comm
+	STA	xtablo
+	LDA	#<comm
+	STA	xtabhi
+	JMP	matchstr
+
+
+endcom
+	RTS
+command
+	JSR	mchcomm
+; fail
+	BCS	endcom
+; success
+	TXA
+	STA	comnum
+	ASL	A
+	TAX
+	LDA	comtab,X
+	STA	comrun
+	LDA	comtab+1,X
+	STA	comrun+1
+	TSX
+	STX	stacksave
+	JSR	runcom
+; claim *command
+	LDA	#&00
+	TSX
+	STA	&105+numzpage,X
+	RTS
+runcom
+	JMP	(comrun)
+
+;*********************************
+; Match cli string in &FF terminated
+; list of null ended strings. 
+; Returns X as string no. matched
+; and carry clear (success) or
+; set (fail).
+;*********************************
+matchstr
+	LDX	#&FF
+; We allow our commands to start with
+; an underscore, '_', and still be
+; recognised.
+	LDA	(&F2),Y
+	CMP	#'_'
+	BNE	msloop2
+	INY
+msloop2
+	INX
+	TYA
+	PHA
+msloop
+	LDA	(&F2),Y
+; uppercase it
+	JSR	capitalise
+	STY	mstmpy
+	LDY	#&00
+	CMP	(xtablo),Y
+	BNE	msnext
+	LDY	mstmpy
+
+	INC	xtablo
+	BNE	msskip1
+	INC	xtabhi
+msskip1
+	INY
+	BNE	msloop
+msnext
+	CMP	#'.'
+	BNE	nosuccess
+	INC	mstmpy
+; Z always clear
+	BNE	mssuccess
+nosuccess
+	CMP	#&0D
+	BEQ	mschkz
+	CMP	#' '
+	BNE	msnfail
+mschkz
+	LDA	(xtablo),Y
+	BEQ	mssuccess
+; Scan for zero terminator
+msnfail
+	LDA	(xtablo),Y
+	BEQ	msnfail2
+	CMP	#&FF
+	BEQ	msfail
+	INY
+	BNE	msnfail
+; Move to start of next command
+msnfail2
+	INY
+	LDA	(xtablo),Y
+	BMI	msnfail
+	TYA
+	CLC
+	ADC	xtablo
+	STA	xtablo
+	BCC	msskip2
+	INC	xtabhi
+msskip2
+	PLA
+	TAY
+	JMP	msloop2
+msfail
+	PLA
+	SEC
+	RTS
+mssuccess
+	INC	xtablo
+	BCC	msskip3
+	INC	xtabhi
+msskip3
+	LDY	mstmpy
+	PLA
+	CLC
+	RTS
+
+;*********************************
+; Table of *commands available
+;*********************************
+comm
+
+	IF	MEMORY_COMS
+memcomm
+	IFDEF	X_MEM
+	ASC	"MEM|@"
+	FI
+	IFDEF	X_MDIS
+	ASC	"MDIS|@"
+	FI
+	IFDEF	X_MCOPY
+	ASC	"MCOPY|@"
+	FI
+	IFDEF	X_MSWAP
+	ASC	"MSWAP|@"
+	FI
+	IFDEF	X_MCMP
+	ASC	"MCMP|@"
+	FI
+	IFDEF	X_MFILL
+	ASC	"MFILL|@"
+	FI
+	IFDEF	X_MSEARCH
+	ASC	"MSEARCH|@"
+	FI
+	IFDEF	X_MCRC
+	ASC	"MCRC|@"
+	FI
+	DB	&80,&00
+	FI
+
+	IF	DISC_COMS
+disccomm
+	IFDEF	X_DEDIT
+	ASC	"DEDIT|@"
+	FI
+	IFDEF	X_EDITID
+	ASC	"EDITID|@"
+	FI
+	IFDEF	X_FORMAT
+	ASC	"FORMAT|@"
+	FI
+	IFDEF	X_SECTLOAD
+	ASC	"SECTLOAD|@"
+	FI
+	IFDEF	X_SECTSAVE
+	ASC	"SECTSAVE|@"
+	FI
+	IFDEF	X_LOADIDS
+	ASC	"LOADIDS|@"
+	FI
+	IFDEF	X_PIDS
+	ASC	"PIDS|@"
+	FI
+	IFDEF	X_VERIFY
+	ASC	"VERIFY|@"
+	FI
+	IFDEF	X_DMAP
+	ASC	"DMAP|@"
+	FI
+	IFDEF	X_DFILL
+	ASC	"DFILL|@"
+	FI
+	IFDEF	X_FBACKUP
+	ASC	"FBACKUP|@"
+	FI
+	IFDEF	X_PENABLE
+	ASC	"PENABLE|@"
+	FI
+	IFDEF	X_GAPS
+	ASC	"GAPS|@"
+	FI
+	DB	&80,&00
+	FI
+
+	IF	FILE_COMS
+filecomm
+	IFDEF	X_DLOAD
+	ASC	"DLOAD|@"
+	FI
+	IFDEF	X_DRUN
+	ASC	"DRUN|@"
+	FI
+	IFDEF	X_FDELETE
+	ASC	"FDELETE|@"
+	FI
+	IFDEF	X_FCRC
+	ASC	"FCRC|@"
+	FI
+	IFDEF	X_TOUCH
+	ASC	"TOUCH|@"
+	FI
+	IFDEF	X_CONCAT
+	ASC	"CONCAT|@"
+	FI
+	IFDEF	X_FCOPY
+	ASC	"FCOPY|@"
+	FI
+	IFDEF	X_FDIS
+	ASC	"FDIS|@"
+	FI
+	IFDEF	X_SPOOLDIS
+	ASC	"SPOOLDIS|@"
+	FI
+	IFDEF	X_CLOSE
+	ASC	"CLOSE|@"
+	FI
+	IFDEF	X_DES
+	ASC	"DES|@"
+	FI
+	IFDEF	X_FCMP
+	ASC	"FCMP|@"
+	FI
+	DB	&80,&00
+	FI
+
+	IF	ROM_COMS
+romcomm
+	IFDEF	X_RLIST
+	ASC	"RLIST|@"
+	FI
+	IFDEF	X_RON
+	ASC	"RON|@"
+	FI
+	IFDEF	X_ROFF
+	ASC	"ROFF|@"
+	FI
+	IFDEF	X_RLOAD
+	ASC	"RLOAD|@"
+	FI
+	IFDEF	X_RSAVE
+	ASC	"RSAVE|@"
+	FI
+	IFDEF	X_RINFO
+	ASC	"RINFO|@"
+	FI
+	IFDEF	X_SRLOAD
+	ASC	"SRLOAD|@"
+	FI
+	IFDEF	X_SRSAVE
+	ASC	"SRSAVE|@"
+	FI
+	IFDEF	X_SRREAD
+	ASC	"SRREAD|@"
+	FI
+	IFDEF	X_SRWRITE
+	ASC	"SRWRITE|@"
+	FI
+	IFDEF	X_RFSMAKE
+	ASC	"RFSMAKE|@"
+	FI
+	IFDEF	X_SEND
+	ASC	"SEND|@"
+	FI
+	DB	&80,&00
+	FI
+
+	IF	GENERAL_COMS
+gencomm
+	IFDEF	X_PBUFF
+	ASC	"PBUFF|@"
+	FI
+	IFDEF	X_LVECTORS
+	ASC	"LVECTORS|@"
+	FI
+	IFDEF	X_KEYLIST
+	ASC	"KEYLIST|@"
+	FI
+	IFDEF	X_KEYSAVE
+	ASC	"KEYSAVE|@"
+	FI
+	IFDEF	X_KEYLOAD
+	ASC	"KEYLOAD|@"
+	FI
+	IFDEF	X_BASE
+	ASC	"BASE|@"
+	FI
+	IFDEF	X_BREAK
+	ASC	"BREAK|@"
+	FI
+	IFDEF	X_HBREAK
+	ASC	"HBREAK|@"
+	FI
+	IFDEF	X_RECOVER
+	ASC	"RECOVER|@"
+	FI
+	IFDEF	X_ECHO
+	ASC	"ECHO|@"
+	FI
+	FI
+	DB	&FF
+
+
+comtab
+	IFDEF	X_MEM
+	DW	mempa
+	FI
+	IFDEF	X_MDIS
+	DW	mdispa
+	FI
+	IFDEF	X_MCOPY
+	DW	mcopypa
+	FI
+	IFDEF	X_MSWAP
+	DW	mswappa
+	FI
+	IFDEF	X_MCMP
+	DW	mcmppa
+	FI
+	IFDEF	X_MFILL
+	DW	mfillpa
+	FI
+	IFDEF	X_MSEARCH
+	DW	msearchpa
+	FI
+	IFDEF	X_MCRC
+	DW	mcrcpa
+	FI
+;disc
+	IFDEF	X_DEDIT
+	DW	deditpa
+	FI
+	IFDEF	X_IDEDIT
+	DW	ideditpa
+	FI
+	IFDEF	X_FORMAT
+	DW	formatpa
+	FI
+	IFDEF	X_SECTLOAD
+	DW	sectloadpa
+	FI
+	IFDEF	X_SECTSAVE
+	DW	sectsavepa
+	FI
+	IFDEF	X_LOADIDS
+	DW	loadidspa
+	FI
+	IFDEF	X_PIDS
+	DW	pidspa
+	FI
+	IFDEF	X_VERIFY
+	DW	verifypa
+	FI
+	IFDEF	X_DMAP
+	DW	dmappa
+	FI
+	IFDEF	X_DFILL
+	DW	dfillpa
+	FI
+	IFDEF	X_FBACKUP
+	DW	fbackuppa
+	FI
+	IFDEF	X_PENABLE
+	DW	penablepa
+	FI
+	IFDEF	X_GAPS
+	DW	gapspa
+	FI
+;file
+	IFDEF	X_DLOAD
+	DW	dloadpa
+	FI
+	IFDEF	X_DRUN
+	DW	drunpa
+	FI
+	IFDEF	X_FDELETE
+	DW	fdeletepa
+	FI
+	IFDEF	X_FCRC
+	DW	fcrcpa
+	FI
+	IFDEF	X_TOUCH
+	DW	touchpa
+	FI
+	IFDEF	X_CONCAT
+	DW	concatpa
+	FI
+	IFDEF	X_FCOPY
+	DW	fcopypa
+	FI
+	IFDEF	X_FDIS
+	DW	fdispa
+	FI
+	IFDEF	X_SPOOLDIS
+	DW	spooldispa
+	FI
+	IFDEF	X_CLOSE
+	DW	closepa
+	FI
+	IFDEF	X_DES
+	DW	despa
+	FI
+	IFDEF	X_FCMP
+	DW	fcmppa
+	FI
+;rom
+	IFDEF	X_RLIST
+	DW	rlistpa
+	FI
+	IFDEF	X_RON
+	DW	ronpa
+	FI
+	IFDEF	X_ROFF
+	DW	roffpa
+	FI
+	IFDEF	X_RLOAD
+	DW	rloadpa
+	FI
+	IFDEF	X_RSAVE
+	DW	rsavepa
+	FI
+	IFDEF	X_RINFO
+	DW	rinfopa
+	FI
+	IFDEF	X_SRLOAD
+	DW	srloadpa
+	FI
+	IFDEF	X_SRSAVE
+	DW	srsavepa
+	FI
+	IFDEF	X_SRREAD
+	DW	sreadpa
+	FI
+	IFDEF	X_SRWRITE
+	DW	srwritepa
+	FI
+	IFDEF	X_RFSMAKE
+	DW	rfsmakepa
+	FI
+	IFDEF	X_SEND
+	DW	sendpa
+	FI
+;gen
+	IFDEF	X_PBUFF
+	DW	pbuffpa
+	FI
+	IFDEF	X_LVECTORS
+	DW	lvectorspa
+	FI
+	IFDEF	X_KEYLIST
+	DW	keylistpa
+	FI
+	IFDEF	X_KEYSAVE
+	DW	keysavepa
+	FI
+	IFDEF	X_KEYLOAD
+	DW	keyloadpa
+	FI
+	IFDEF	X_BASE
+	DW	basepa
+	FI
+	IFDEF	X_BREAK
+	DW	breakpa
+	FI
+	IFDEF	X_HBREAK
+	DW	hbreakpa
+	FI
+	IFDEF	X_RECOVER
+	DW	recoverpa
+	FI
+	IFDEF	X_ECHO
+	DW	echopa
+	FI
+
+;*********************************
+; Help for each of the commands
+;*********************************
+helptab
+memhelp
+	IFDEF	X_MEM
+	DB	&06 ;mem
+	IFDEF	X_MDIS
+	DB	&86 ;mdis
+	FI
+	ELSE
+	IFDEF	X_MDIS
+	DB	&06
+	FI
+	FI
+	IFDEF	X_MCOPY
+	DB	&12 ;mcopy
+	IFDEF	X_MSWAP
+	DB	&92 ;mswap
+	FI
+	IFDEF	X_MCMP
+	DB	&92 ;mcmp
+	FI
+	ELSE
+	IFDEF	X_MSWAP
+	DB	&12 ;mswap
+	IFDEF	X_MCMP
+	DB	&92 ;mcmp
+	FI
+	ELSE
+	IFDEF	X_MCMP
+	DB	&12 ;mcmp
+	FI
+	FI
+	FI
+	IFDEF	X_MFILL
+	DB	&0F ;mfill
+	IFDEF	X_MSEARCH
+	DB	&8F ;msearch
+	FI
+	ELSE
+	IFDEF	X_MSEARCH
+	DB	&0F ;msearch
+	FI
+	FI
+	IFDEF	X_MCRC
+	DB	&04 ;mcrc
+	FI
+dischelp
+	IFDEF	X_DEDIT
+	DB	&00 ;dedit
+	FI
+	IFDEF	X_IDEDIT
+	DB	&00 ;idedit
+	FI
+	IFDEF	X_FORMAT
+	DB	&1A ;format
+	FI
+	IFDEF	X_SECTLOAD
+	DB	&10 ;sectload
+	IFDEF	X_SECTSAVE
+	DB	&90 ;sectsave
+	FI
+	ELSE
+	IFDEF	X_SECTSAVE
+	DB	&10 ;sectsave
+	FI
+	FI
+	IFDEF	X_LOADIDS
+	DB	&08 ;loadids
+	FI
+	IFDEF	X_PIDS
+	DB	&06 ;pids
+	FI
+	IFDEF	X_VERIFY
+	DB	&0C ;verify
+	FI
+	IFDEF	X_DMAP
+	DB	&0A ;dmap
+	FI
+	IFDEF	X_DFILL
+	DB	&0F ;dfill
+	FI
+	IFDEF	X_FBACKUP
+	DB	&03 ;fbackup
+	FI
+	IFDEF	X_PENABLE
+	DB	&08 ;penable
+	FI
+	IFDEF	X_GAPS
+	DB	&03 ;gaps
+	FI
+filehelp
+	IFDEF	X_DLOAD
+	DB	&01 ;dload
+	IFDEF	X_DRUN
+	DB	&81 ;drun
+	FI
+	IFDEF	X_FDELETE
+	DB	&81 ;fdelete
+	FI
+	IFDEF	X_FCRC
+	DB	&81 ;fcrc
+	FI
+	ELSE
+	IFDEF	X_DRUN
+	DB	&01 ;drun
+	IFDEF	X_FDELETE
+	DB	&81 ;fdelete
+	FI
+	IFDEF	X_FCRC
+	DB	&81 ;fcrc
+	FI
+	ELSE
+	IFDEF	X_FDELETE
+	DB	&01 ;fdelete
+	IFDEF	X_FCRC
+	DB	&81 ;fcrc
+	FI
+	ELSE
+	IFDEF	X_FCRC
+	DB	&01 ;fcrc
+	FI
+	FI
+	FI
+	FI
+	IFDEF	X_TOUCH
+	DB	&0F ;touch
+	FI
+	IFDEF	X_CONCAT
+	DB	&08 ;concat
+	FI
+	IFDEF	X_FCOPY
+	DB	&07 ;fcopy
+	FI
+	IFDEF	X_FDIS
+	DB	&06 ;fdis
+	FI
+	IFDEF	X_SPOOLDIS
+	DB	&06 ;spooldis
+	FI
+	IFDEF	X_CLOSE
+	DB	&0A ;close
+	FI
+	IFDEF	X_DES
+	DB	&19 ;des
+	FI
+	IFDEF	X_FCMP
+	DB	&03 ;fcmp
+	FI
+romhelp
+	IFDEF	X_RLIST
+	DB	&00 ;rlist
+	FI
+	IFDEF	X_RON
+	DB	&03 ;ron
+	IFDEF	X_ROFF
+	DB	&83 ;roff
+	FI
+	ELSE
+	IFDEF	X_ROFF
+	DB	&03 ;roff
+	FI
+	FI
+	IFDEF	X_RLOAD
+	DB	&04 ;rload
+	IFDEF	X_RSAVE
+	DB	&84 ;rsave
+	FI
+	ELSE
+	IFDEF	X_RSAVE
+	DB	&04 ;rsave
+	FI
+	FI
+	IFDEF	X_RINFO
+	DB	&04 ;rinfo
+	FI
+	IFDEF	X_SRLOAD
+	DB	&08 ;srload
+	FI
+	IFDEF	X_SRSAVE
+	DB	&0D ;srsave
+	FI
+	IFDEF	X_SRREAD
+	DB	&10 ;srread
+	FI
+	IFDEF	X_SRWRITE
+	DB	&0E ;srwrite
+	FI
+	IFDEF	X_RFSMAKE
+	DB	&08 ;rfsmake
+	FI
+	IFDEF	X_SEND
+	DB	&05 ;send
+	FI
+genhelp
+	IFDEF	X_PBUFF
+	DB	&04 ;pbuff
+	FI
+	IFDEF	X_LVECTORS
+	DB	&00 ;lvectors
+	FI
+	IFDEF	X_KEYLIST
+	DB	&08 ;keylist
+	FI
+	IFDEF	X_KEYSAVE
+	DB	&01 ;keysave
+	IFDEF	X_KEYLOAD
+	DB	&81 ;keyload
+	FI
+	ELSE
+	IFDEF	X_KEYLOAD
+	DB	&01 ;keyload
+	FI
+	FI
+	IFDEF	X_BASE
+	DB	&05 ;base
+	FI
+	IFDEF	X_BREAK
+	DB	&00 ;break
+	FI
+	IFDEF	X_HBREAK
+	DB	&00 ;hbreak
+	FI
+	IFDEF	X_RECOVER
+	DB	&00 ;recover
+	FI
+	IFDEF	X_ECHO
+	DB	&10
+	FI
+
+toktab
+	DB	tok0-tokens
+	DB	tok1-tokens
+	DB	tok2-tokens
+	DB	tok3-tokens
+	DB	tok4-tokens
+	DB	tok5-tokens
+	DB	tok6-tokens
+	DB	tok7-tokens
+	DB	tok8-tokens
+	DB	tok9-tokens
+	DB	tok10-tokens
+	DB	tok11-tokens
+	DB	tok12-tokens
+	DB	tok13-tokens
+	DB	tok14-tokens
+	DB	tok15-tokens
+	DB	tok16-tokens
+	DB	tok17-tokens
+	DB	tok18-tokens
+	DB	tok19-tokens
+	DB	tok20-tokens
+	DB	tok21-tokens
+	DB	tok22-tokens
+	DB	tok23-tokens
+	DB	tok24-tokens
+	DB	tok25-tokens
+	DB	tok26-tokens
+	DB	tok27-tokens
+	DB	tok28-tokens
+	DB	tok29-tokens
+	DB	tok30-tokens
+	DB	tok31-tokens
+	DB	tok32-tokens
+	DB	tok33-tokens
+
+tokens
+tok0
+	ASC	"<fsp>"
+tok1
+	ASC	"<drv>"
+tok2
+	ASC	"bank>"
+tok3
+	ASC	"<from"
+tok4
+	ASC	"addr>"
+tok5
+	ASC	"<(to)(+"
+tok6
+	ASC	"<(to "
+tok7
+	ASC	")(+"
+tok8
+	ASC	"start>"
+tok9
+	ASC	"len)>"
+tok10
+	ASC	"dest"
+tok11
+	ASC	"trks)> "
+tok12
+	ASC	"trk> "
+tok13
+	ASC	"trk"
+tok14
+	ASC	"<no. sects> "
+tok15
+	ASC	"<sect"
+tok16
+	ASC	'<(byte)("'
+tok17
+	ASC	"string"
+tok18
+	ASC	"end"
+tok19
+	ASC	"src "
+tok20
+	ASC	"fsp>"
+tok21
+	ASC	"(byte)"
+tok22
+tok23
+	ASC	"offset"
+tok24
+	ASC	")("
+tok25
+	ASC	"(<"
+tok26
+	ASC	"<("
+tok27
+	ASC	")>"
+tok28
+	ASC	"))"
+tok29
+	ASC	"> "
+tok30
+	ASC	" <"
+tok31
+	ASC	" ("
+tok32
+	ASC	" ..."
+tok33
+
+h_mem_coms
+	IFDEF	X_MEM
+H_MEM_MDIS	EQU	-1
+	ELSE
+	IFDEF	X_MDIS
+H_MEM_MDIS	EQU	-1
+	ELSE
+H_MEM_MDIS	EQU	0
+	FI
+	FI
+	IF	H_MEM_MDIS
+h_mem
+h_mdis
+	DB	&9D,&83,&9A,' ',&85,&9A
+	FI
+
+	IFDEF	X_MCOPY
+H_MCPY_MSWP	EQU	-1
+	ELSE
+	IFDEF	X_MSWAP
+H_MCPY_MSWP	EQU	-1
+	ELSE
+	IFDEF	X_MCMP
+H_MCPY_MSWP	EQU	-1
+	ELSE
+H_MCPY_MSWP	EQU	0
+	FI
+	FI
+	FI
+	IF	H_MCPY_MSWP
+h_mcopy
+h_mswap
+h_mcmp
+	DB	&9D,&83,' ','o','t',&9A,' ',&83
+	DB	' ',&84,'(',&9E,&8B,&9F,&8A,&86
+	DB	&9E,&84
+	FI
+
+	IFDEF	X_MFILL
+H_MFILL_MSRCH	EQU	-1
+	ELSE
+	IFDEF	X_MSEARCH
+H_MFILL_MSRCH	EQU	-1
+	ELSE
+H_MFILL_MSRCH	EQU	0
+	FI
+	FI
+	IF	H_MFILL_MSRCH
+h_mfill
+h_msearch
+	DB	')',&83,&9F,IFS,&A0,&A1,&9C,'"'
+	DB	&92,&91,' ',&8A,&86,&9E,&84
+	FI
+	IFDEF	X_MCRC
+h_mcrc
+	DB	&8A,&86,&9E,&84
+	FI
+
+h_disc_coms
+h_dedit
+h_idedit
+	IFDEF	X_FORMAT
+h_format
+	DB	')',&9D,&85,' ','d','i',&9A,&8F
+	DB	'(',&9E,'e','z','i','s',' ',&90
+	DB	'(',&8C,&88,&8E,&87,&8D,' ',&84
+	DB	' ',&82
+	FI
+
+	IFDEF	X_SECTLOAD
+H_SCTLDSV	EQU	-1
+	ELSE
+	IFDEF	X_SECTSAVE
+H_SCTLDSV	EQU	-1
+	ELSE
+H_SCTLDSV	EQU	0
+	FI
+	FI
+	IF	H_SCTLDSV
+h_sectload
+h_sectsave
+	DB	')',&82,'(',&8F,&9E,&90,' ',&9C
+	DB	'L',&99,'P',&9B,&8D,&9F,&85,'<'
+	FI
+	IFDEF	X_LOADIDS
+h_loadids
+	DB	')',&82,'(',&8F,&8D,&9F,&85,'<'
+	FI
+	IFDEF	X_PIDS
+h_pids
+	DB	')',&82,'(',&8F,&8D,'<'
+	FI
+	IFDEF	X_VERIFY
+h_verify
+	DB	')','E','(',&8C,&88,&8E,&87,&8D
+	DB	' ',&84,' ',&82
+	FI
+	IFDEF	X_DMAP
+h_dmap
+	DB	')',&82,'(',&8C,&88,&8E,&87,&8D
+	DB	' ',&84
+	FI
+	IFDEF	X_DFILL
+h_dfill
+	DB	')',&82,' ',IFS,&A0,&A1,&9C,'"'
+	DB	&92,&91,&8F,&9E,&90,&8D,'<'
+	FI
+	IFDEF	X_FBACKUP
+h_fbackup
+	DB	&82,' ',&82
+	FI
+	IFDEF	X_PENABLE
+h_penable
+	DB	&9C,'f','f','o',&99,'n','o',&9B
+	FI
+	IFDEF	X_GAPS
+h_gaps
+	DB	')',&82,'('
+	FI
+
+h_file_coms
+	IFDEF	X_DLOAD
+H_FSP	EQU	-1
+	ELSE
+	IFDEF	X_DRUN
+H_FSP	EQU	-1
+	ELSE
+	IFDEF	X_FDELETE
+H_FSP	EQU	-1
+	ELSE
+	IFDEF	X_FCRC
+H_FSP	EQU	-1
+	ELSE
+H_FSP	EQU	0
+	FI
+	FI
+	FI
+	FI
+	IF	H_FSP
+h_dload
+h_drun
+h_fdelete
+h_fcrc
+	DB	&81
+	FI
+	IFDEF	X_TOUCH
+h_touch
+	DB	&85,' ','c','e','x','e',&9F,&85
+	DB	' ','d','a','o','l',&9F,&81
+	FI
+	IFDEF	X_CONCAT
+h_concat
+	DB	&A1,&95,&94,&9F,&95,' ',&8B,'<'
+	FI
+	IFDEF	X_FCOPY
+h_fcopy
+	DB	')',&A1,&81,&A0,&82,' ',&82
+	FI
+	IFDEF	X_FDIS
+h_fdis
+	DB	')','>',&98,'<',&A0,&81
+	FI
+	IFDEF	X_SPOOLDIS
+h_spooldis
+	DB	&8A,&86,&9E,&84,' ',&81
+	FI
+	IFDEF	X_CLOSE
+h_close
+	DB	')','>'
+	ASC	'lennahc'
+	DB	&9A
+	FI
+	IFDEF	X_DES
+h_des
+	ASC	')>dwsp'
+	DB	&9A,' ',&9C,'C','B','C',&99,'B'
+	DB	'C','E',&9B,' ',&9C,'D',&99,'E'
+	DB	'(',&9F,&81
+	FI
+	IFDEF	X_FCMP
+h_fcmp
+	DB	&81,' ',&81
+	FI
+h_recover
+
+h_rom_coms
+h_rlist
+	IFDEF	X_RON
+H_RON_ROFF	EQU	-1
+	ELSE
+	IFDEF	X_ROFF
+H_RON_ROFF	EQU-1
+	ELSE
+H_RON_ROFF	EQU	0
+	FI
+	FI
+	IF	H_RON_ROFF
+h_ron
+h_roff
+	DB	&A1,&83,'<'
+	FI
+	IFDEF	X_RLOAD
+H_RLOAD_RSAVE	EQU	-1
+	ELSE
+	IFDEF	X_RSAVE
+H_RLOAD_RSAVE	EQU	-1
+	ELSE
+H_RLOAD_RSAVE	EQU	0
+	FI
+	FI
+	IF	H_RLOAD_RSAVE
+h_rload
+h_rsave
+	DB	&81,' ',&83,'<'
+	FI
+	IFDEF	X_RINFO
+h_rinfo
+	DB	')',&A1,&83,&9A
+	FI
+	IFDEF	X_SRLOAD
+h_srload
+	DB	')','Q',&A0,&83,&9F,&89,&9F,&81
+	FI
+	IFDEF	X_SRSAVE
+h_srsave
+	DB	')','Q',&A0,&83,&9F,&8A,&88,&94
+	DB	&9B,' ',&89,&9F,&81
+	FI
+	IFDEF	X_SRREAD
+h_srread
+	DB	&83,&9F,&85,&94,&9F,&8A,&88,&93
+	DB	' ',&8B,&9B,' ',&89,' ',&8B,'<'
+	FI
+	IFDEF	X_SRWRITE
+h_srwrite
+	DB	&83,&9F,&85,&94,&9F,&8A,&88,&93
+	DB	&94,&9B,' ',&89,&94,'<'
+	FI
+	IFDEF	X_RFSMAKE
+h_rfsmake
+	DB	&A1,&95,&94,&9F,&95,' ',&8B,'<'
+	FI
+	IFDEF	X_SEND
+h_send
+	DB	'>',&92,&9F,&83,'<'
+	FI
+h_gen_coms
+	IFDEF	X_PBUFF
+h_pbuff
+	DB	')',&A1,&83,&9A
+	FI
+h_lvec
+	IFDEF	X_KEYLIST
+h_keylist
+	DB	')',&A1
+	ASC	'>syek'
+	DB	&9A
+	FI
+	IFDEF	X_KEYSAVE
+H_KEYSVLD	EQU	-1
+	ELSE
+	IFDEF	X_KEYLOAD
+H_KEYSVLD	EQU	-1
+	ELSE
+H_KEYSVLD	EQU	0
+	FI
+	FI
+	IF	H_KEYSVLD
+h_keysave
+h_keyload
+	DB	&81
+	FI
+	IFDEF	X_BASE
+h_base
+	ASC	'>mun<'
+	FI
+h_break
+h_hbreak
+	IFDEF	X_ECHO
+h_echo
+	DB	&A1,&9D,'"',&92,'"','(',&96,&A0
+	DB	IFS,&A1,')',&92,&A0,IFS,&A1,&96
+	FI
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

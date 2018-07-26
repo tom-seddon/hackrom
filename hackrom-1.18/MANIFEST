@@ -1,0 +1,54 @@
+Binaries
+--------
+bin/HACK		*HACK - load at &1100, exec at &111E
+bin/HACKROM		Sideways RAM image of HACKROM
+bin/MAKE		*MAKE utility
+
+Documents
+---------
+
+doc/MakeDoc		Documents on *MAKE
+doc/Manual		Documents on HACKROM
+README			Read this first
+TODO			Things to do
+
+Make source
+-----------
+
+Make/S.MAKE		*MAKE source code
+Make/S.MAKELIB		Library routines for MAKE
+
+HackROM source
+--------------
+HackROM/MAKFILE		Makefile to be use with *MAKE
+HackROM/M.HACK		Generated from MAKFILE
+HackROM/M.HACKROM	Generated from MAKFILE
+HackROM/S.CHN		'CHAIN' file stub
+HackROM/S.CLOSE		*CLOSE
+HackROM/S.COMMON	General common code
+HackROM/S.DEDIT		*DEDIT
+HackROM/S.DEFINES	Misc defines - may need editing
+HackROM/S.DISCOM	Disc common code
+HackROM/S.DRUNLOD	*DRUN, *DLOAD
+HackROM/S.ECHO		*ECHO
+HackROM/S.ERRORS	Error handling
+HackROM/S.FORMAT	*FORMAY
+HackROM/S.HCKHEAD	*HACK header
+HackROM/S.IDS		*LOADIDS, *PIDS
+HackROM/S.KEYCOMS	*KEYLIST, *KEYSAVE, *KEYLOAD
+HackROM/S.LVECTOR	*LVECTOR
+HackROM/S.MEM		*MEM, *MDIS
+HackROM/S.MEMCODE	Data for MDIS
+HackROM/S.MEMCOM	mmove, mcopy (etc) code routines
+HackROM/S.MEMCOMS	*MCOPY, *MSWAP, *MCMP, *MSEARCH cli routines
+HackROM/S.PBUFF		*PBUFF
+HackROM/S.RECOVER	*RECOVER
+HackROM/S.RINFO		*RINFO
+HackROM/S.RLIST		*RLIST
+HackROM/S.ROMHEAD	ROM header
+HackROM/S.ROMROFF	*RON, *ROFF
+HackROM/S.RSAVLOD	*RSAVE, *RLOAD
+HackROM/S.SCTLDSV	*SECTLOAD, *SECTSAVE
+HackROM/S.SEND		*SEND
+HackROM/S.TOUCH		*TOUCH
+HackROM/S.VERIFY	*VERIFY

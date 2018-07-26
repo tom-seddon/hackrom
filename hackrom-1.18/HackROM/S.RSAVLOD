@@ -1,0 +1,123 @@
+rlsstart
+	JSR	rdnum
+	BEQ	rloadnoerror
+rloaderror
+	JMP	synerr
+rloadnoerror
+	TYA
+	PHA
+	LDA	clibuf
+	AND	#&0F
+	STA	romid
+	JSR	swapreloc
+; switch off rom
+	LDY	romid
+	LDA	#&00
+	STA	&2A1,Y
+; swap 8000+4000 3C00
+	JSR	swap3C00
+	PLA
+	TAY
+	JMP	keycom
+
+; dedicated to swap &4000 bytes
+; faster than using rdpos/wrpos
+oldorg2	EQU	*
+	ORG	&100
+swap3C00
+	SEI
+	LDA	romid
+	STA	&FE30
+	LDA	#&00
+	STA	poslo
+	STA	numlo
+	LDA	#&3C
+	STA	poshi
+	LDA	#&80
+	STA	numhi
+	LDY	#&00
+swap3C0
+	LDA	(poslo),Y
+	PHA
+	LDA	(numlo),Y
+	STA	(poslo),Y
+	PLA
+	STA	(numlo),Y
+	INY
+	BNE	swap3C0
+	INC	numhi
+	INC	poshi
+	LDA	poshi
+	CMP	#&7C
+	BNE	swap3C0
+	LDA	&F4
+	STA	&FE30
+	CLI
+	RTS
+swap3C2
+	ORG	oldorg2+swap3C2-swap3C00
+
+swapreloc
+	LDX	#swap3C2-swap3C00
+swapr0
+	LDA	oldorg2,X
+	STA	&100,X
+	DEX
+	BPL	swapr0
+	RTS
+
+; ******************************
+; Load a sideways ROM.
+; Version 1.2
+; Last update 18/04/91
+; by James 'Rince' Bonfield.
+; *****************************
+
+;*********************************
+; Args = sideways RAM bank no. and
+; the filename.
+; Usage = *RLOAD <bank> <filename>
+;*********************************
+rloadpa
+	JSR	rlsstart
+	LDA	#&3C
+	STA	osfileb+3
+	LDA	#&FF
+rlsend
+	JSR	doosfile
+; swap and init rom
+	LDA	&3C06
+	PHA
+	JSR	swap3C00
+	PLA
+	LDY	romid
+	STA	&2A1,Y
+	RTS
+
+; ******************************
+; Save a sideways ROM.
+; Version 1.2
+; Last update 18/04/91
+; by James 'Rince' Bonfield.
+; ******************************
+
+;*********************************
+; Args = sideways RAM bank no. and
+; the filename.
+; Usage = *RSAVE <bank> <filename>
+;*********************************
+rsavepa
+	JSR	rlsstart
+	LDA	#&80
+	LDX	#&3C
+; LEN will be worked out from somewhere
+	LDY	#&7C
+	JSR	break
+	JMP	rlsend
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

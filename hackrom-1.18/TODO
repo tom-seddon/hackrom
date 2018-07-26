@@ -1,0 +1,32 @@
+				     Todo
+				     ====
+
+*	Change printing of characters. We should use our own print routine
+	(rather than OSWRCH) that prints spaces (or maybe changes colour using
+	other VDU codes) when not in MODE 7.
+
+*	Should we change behaviour of MEM so that it only writes the modified
+	byte to memory upon movement or quitting (hence removing problems when
+	writing to memory mapped IO)? Comments please?
+
+*	Scrolling up in MDIS uses bizarre behaviour. Currently it scrolls up
+	by the same number of numbers needed to scroll down from that
+	position. Ideally we'd like to either always scroll up by one byte, or
+	by as few needed to produce a valid opcode (max 3).
+
+*	Decide correct behaviour for '+' in strings (see 'Current syntax
+	problems' below).
+
+*	Finish writing other numerous commands (obvious really)
+
+*	Possible speed improvements on MEM and MCOPY, MFILL, MSWAP, etc to do
+	with block IO from other banks.
+
+*	Write decent documentation
+
+*	Implement private rom-table for making sure that roms stay off after a
+	break if they have been *ROFF'ed. Also for use by commands which use
+	sideways ram for buffers, ie *FBACKUP and *PBUFF.
+
+*	Implement oswords and osbytes for various useful-subroutines.
+

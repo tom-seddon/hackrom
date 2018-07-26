@@ -1,0 +1,45 @@
+; -------------------------------------
+; Touch
+; 
+; -------------------------------------
+
+toucherr
+	JMP	synerr
+
+touchpa
+	JSR	rdstr
+	BNE	toucherr
+	JSR	doosfblk
+	LDY	newy
+	JSR	rdnum
+	BNE	toucherr
+	LDX	#&02
+	JSR	makeblk
+	JSR	rdnum
+	BNE	toucherr
+	LDX	#&06
+	JSR	makeblk
+	LDA	#&01
+	JSR	doosfile
+	BNE	touchdone
+	JSR	discerrmsg
+touchdone
+	RTS
+
+makeblk
+	LDA	clibuf
+	STA	osfileb,X
+	LDA	clibuf+1
+	STA	osfile+1,X
+	LDA	clibuf+2
+	STA	osfileb+2,X
+	LDA	clibuf+3
+	STA	osfileb+3,X
+	RTS
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

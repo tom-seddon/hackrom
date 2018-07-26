@@ -1,0 +1,152 @@
+kltmp	EQU	&70
+
+; ************************************
+; KEYLIST : lists function keys in
+; format acceptable for reuse. ie
+; SPOOLed and then reEXECed is pos.
+; ************************************
+
+keylistpa
+	JSR	rdnum
+	BNE	kdefaults
+keylp4
+	BCS	end
+	LDX	clibuf
+	TYA
+	PHA
+	JSR	listkey
+	PLA
+	TYA
+	JSR	rdnum
+	BNE	keylp4
+end
+	RTS
+kdefaults
+	LDX	#&00
+klloop2
+	JSR	listkey
+	INX
+	CPX	#16
+	BNE	klloop2
+	RTS
+
+; lists key held in X reg
+; A/Y corrupted, X preserved.
+listkey
+	TXA
+	PHA
+	JSR	pcprint
+	ASC	'*KEY |@'
+	PLA
+	PHA
+	TAX
+; have we a display A as decimal func ?
+	CMP	#10
+	BCC	klsingdigit
+	PHA
+	LDA	#'1'
+	JSR	&FFEE
+	PLA
+	SEC
+	SBC	#10
+klsingdigit
+	CLC
+	ADC	#&30
+	LDY	#&02
+klloop0
+	JSR	&FFEE
+	LDA	kltxt0-1,Y
+	DEY
+	BPL	klloop0
+; calc length of key in X reg.
+	STY	kltmp
+	LDY	#&10
+klloop
+	SEC
+	LDA	&B00,Y
+	SBC	&B00,X
+; assume only case B00,Y and BOO,X are
+; equal is when X = Y.
+	BEQ	kljmp1
+	BCC	kljmp1
+	CMP	kltmp
+	BCS	kljmp1
+	STA	kltmp
+kljmp1
+	DEY
+	BPL	klloop
+	INC	kltmp
+	BEQ	kljmp3
+	LDY	&B00,X
+klloop3
+	DEC	kltmp
+	BEQ	kljmp3
+; print it out in GSREAD style.
+	LDA	&B01,Y
+	BPL	klnothi
+	PHA
+	LDA	#'||'
+	JSR	&FFEE
+	LDA	#'!'
+	JSR	&FFEE
+	PLA
+	AND	#&7F
+klnothi
+	CMP	#' '
+	BCS	klnotcntrl
+	PHA
+	LDA	#'||'
+	JSR	&FFEE
+	PLA
+	ORA	#&40
+klnotcntrl
+; special case for quotes
+	CMP	#'"'
+	BNE	klnotquotes
+	JSR	&FFEE
+klnotquotes
+	JSR	&FFEE
+	INY
+	BNE	klloop3
+kljmp3
+	JSR	pcprint
+	ASC	'"|M|@'
+	PLA
+	TAX
+	RTS
+
+kltxt0
+	ASC	'" '
+
+; ************************************
+; KEYLOAD : Loads the function key
+; definitions directly to &B00
+; *LOAD <file> B00
+; ************************************
+keyloadpa
+; keycom is in S.RSavLod
+	JSR	keycom
+	LDA	#&0B
+	STA	osfileb+3
+	LDA	#&FF
+	JMP	doosfile
+
+; ************************************
+; KEYSAVE : Simply *SAVEs the function
+; key definitions.
+; *SAVE <file> B00+100 !-4 B00
+; ************************************
+keysavepa
+	JSR	keycom
+	LDA	#&0B
+	TAX
+	LDY	#&0C
+	JSR	break
+	JMP	doosfile
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

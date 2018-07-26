@@ -1,0 +1,198 @@
+;	ORG	&1100
+;	EXEC	mcopypa
+
+membuf	EQU	&74;75 76 77 78 79 7A 7B
+memsrc	EQU	membuf+0;1
+memlen	EQU	membuf+2;3
+memdest	EQU	membuf+4;5
+memsrom	EQU	membuf+6
+memdrom	EQU	membuf+7
+
+mrdnum
+	TXA
+	PHA
+	JSR	rdnum
+	BNE	memoryerr
+	PLA
+	TAX
+	LDA	clibuf
+	STA	membuf,X
+	LDA	clibuf+1
+	INX
+	STA	membuf,X
+	INX
+	RTS
+
+memoryerr
+	JMP	synerr
+
+rdoptrom
+	TXA
+	PHA
+	JSR	rdnum
+	BEQ	rdor0
+; use default of this rom
+	PLA
+	TAX
+	LDA	&F4
+	STA	membuf,X
+	INX
+; clear zero flag - already done.
+	RTS
+rdor0
+	PLA
+	TAX
+	LDA	clibuf
+	STA	membuf,X
+	INX
+; set zero flag
+	LDA	#&00
+	RTS
+
+memorycom
+	JSR	memorycom1
+memorycom2
+; parse <dest>
+	JSR	mrdnum
+; parse (<from rom>
+	JSR	rdoptrom
+; parse (<to rom>))
+rdoptrom2
+	BNE	rdor2
+	JSR	rdoptrom
+	BEQ	rdor3
+	DEX
+rdor2
+	LDA	membuf,X
+	STA	membuf+1,X
+rdor3
+	LDX	#&07
+memr
+	LDA	membuf,X
+	STA	block,X
+	DEX
+	BPL	memr
+	RTS
+
+memorycom1
+	LDX	#&00
+; parse <from>
+	JSR	mrdnum
+; parse <(to)(+len)>
+	JSR	mrdnum
+	SEC
+	LDA	mfto
+	SBC	mffrom
+	STA	mfto
+	LDA	mfto+1
+	SBC	mffrom+1
+	STA	mfto+1
+	RTS
+
+mfbuf	EQU	membuf
+mffrom	EQU	mfbuf+0;1
+mfto	EQU	mfbuf+2;3
+mfdata	EQU	mfbuf+4;5
+mfbank	EQU	mfbuf+6
+mflen	EQU	mfbuf+7
+
+; Code common to *MFILL and *MSEARCH
+memorycom3
+	JSR	memorycom1
+; parse "<(byte)("string")> ..."
+	JSR	fill
+	PHA
+	PHP
+	LDX	#mfbank-mfbuf
+; parse "(, <bank>)"
+	LDA	&F4
+	PLP
+	JSR	rdoptrom2
+	PLA
+	STA	mflen
+	LDA	&F2
+	STA	mfdata
+	LDA	&F3
+	STA	mfdata+1
+	JMP	rdor3
+
+; *************************************
+; MSEARCH <from> <(to)(+len)> <(byte)>
+; ("string")> ... (, <bank>)
+; Searches through memory for given
+; pattern. Uses common msearch routine
+; *************************************
+msearchpa
+	JSR	memorycom3
+msrchpal
+	JSR	msearch
+	BCC	msrchpae
+	SEC
+	LDA	mSms
+	SBC	#&01
+	STA	numlo
+	LDA	mSms+1
+	SBC	#&00
+	STA	numhi
+	JSR	ldigit
+	LDA	#' '
+	JSR	&FFEE
+	LDA	mSml+1
+	CMP	#&FF
+	BNE	msrchpal
+	LDA	mSml
+	CMP	#&FF
+	BNE	msrchpal
+msrchpae
+	JMP	&FFE7
+
+; *************************************
+; MFILL <from> <(to)(+len)> <(byte)
+; ("string")> ... (, <bank>)
+; Fills a block of memory with given
+; data. Uses common mfill routine.
+; *************************************
+mfillpa
+	JSR	memorycom3
+	JMP	mfill
+
+; ************************************
+; MCOPY <from> <(to)(+len)> <dest>
+; (<from rom> (<to rom>)
+; ************************************
+mcopypa
+	JSR	memorycom
+	JMP	mmove
+
+; ************************************
+; MSWAP <start1> <(to)(+len)> <start2>
+; (<rom1> (<rom2>)
+; ************************************
+mswappa
+	JSR	memorycom
+	JMP	mswap
+
+; ************************************
+; MCMP <start1> <(to)(+len)> <start2>
+; (<rom1> (<rom2>)
+; ************************************
+mcmppa
+	JSR	memorycom
+	JSR	mcmp
+	BCS	mcdiff
+	RTS
+mcdiff
+	JSR	pcprint
+	ASC	"Differ at |@"
+	LDA	mc1s+1
+	JSR	wdigit
+	LDA	mc1s
+	JSR	wdigit
+	JMP	&FFE7
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

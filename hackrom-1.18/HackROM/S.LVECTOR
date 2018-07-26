@@ -1,0 +1,149 @@
+lvectmp	EQU	&70
+
+vecnames
+	ASC	"USER"
+	ASC	"^BRK"
+	ASC	"^IRQ1"
+	ASC	"^IRQ2"
+	ASC	"^OSCLI"
+	ASC	"^OSBYTE"
+	ASC	"^OSWORD"
+	ASC	"^OSWRCH"
+	ASC	"^OSRDCH"
+	ASC	"^OSFILE"
+	ASC	"^OSARGS"
+	ASC	"^OSBGET"
+	ASC	"^OSBPUT"
+	ASC	"^OSGBPB"
+	ASC	"^OSFIND"
+	ASC	"^FSCV"
+	ASC	"^EVNTV"
+	ASC	"^UPTV"
+	ASC	"^NETV"
+	ASC	"^VDUV"
+	ASC	"^KEYV"
+	ASC	"^INSV"
+	ASC	"^REMV"
+	ASC	"^CNPV"
+	ASC	"^IND1V"
+	ASC	"^IND2V"
+	ASC	"^IND3V"
+	HEX	&80
+
+lvj0
+	RTS
+sppad
+	DEY
+	BEQ	lvj0
+	LDA	#' '
+	JSR	&FFEE
+	JMP	sppad
+
+lvectorspa
+	LDX	#&00
+	STX	lvectmp
+lvl1
+	LDA	#&86
+	JSR	&FFEE
+	LDY	#&06
+; Print the current vector name
+	LDA	vecnames,X
+lvl2
+	AND	#&7F
+	JSR	&FFEE
+	INX
+	LDA	vecnames,X
+; top bit set implies start of next.
+	BMI	lvj1
+	DEY
+	BNE	lvl2
+; pad out to next field.
+lvj1
+	TXA
+	PHA
+	JSR	sppad
+; print vector location
+	LDA	#&83
+	JSR	&FFEE
+	LDA	#'2'
+	JSR	&FFEE
+	LDA	lvectmp
+	JSR	wdigit
+; if extended vector then print the
+; extended vector location too.
+	LDX	lvectmp
+	LDA	&201,X
+	CMP	#&FF
+; not - skip code
+	BNE	lvj2
+	LDA	&200,X
+	CMP	#&52
+	BCS	lvj2
+	TAY
+; This is the extended vector no. 
+; multiplied by 3. No need to do any
+; division as the each entry in the
+; table is also 3 long. Not design -
+; fluke that (sizeof(addr)+sizeof(rom
+; num)) == sizeof(JSR opcode).
+	LDA	#&82
+	JSR	&FFEE
+	LDA	#'('
+	JSR	&FFEE
+	TYA
+	CLC
+	ADC	#&9F
+	PHA
+	LDA	#&00
+	ADC	#&0D
+	TAX
+	LDA	num,X
+	JSR	&FFEE
+	PLA
+	JSR	wdigit
+	LDA	#')'
+	JSR	&FFEE
+; where extended vector points to.
+	LDA	#&83
+	JSR	&FFEE
+	LDA	&DA0,Y
+	JSR	wdigit
+	LDA	&D9F,Y
+	JSR	wdigit
+	LDA	#&84
+	JSR	&FFEE
+	LDX	&DA1,Y
+	LDA	num,X
+	JSR	&FFEE
+	JMP	lvj3
+lvj2
+	LDA	#&85
+	JSR	&FFEE
+	LDY	#&07
+	JSR	sppad
+; where vector points to. Colour
+; depicts whether OS default or not.
+	LDX	lvectmp
+	LDA	&201,X
+	JSR	wdigit
+	LDA	&200,X
+	JSR	wdigit
+lvj3
+	JSR	&FFE7
+	PLA
+	TAX
+	LDA	lvectmp
+	CMP	#&34
+	BCS	lvl9
+	ADC	#&02
+	STA	lvectmp
+	JMP	lvl1
+lvl9
+	RTS
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

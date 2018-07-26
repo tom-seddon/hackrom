@@ -1,0 +1,426 @@
+
+; -----------------------------------
+; Printer Buffer (uses S-Ram)
+; 
+; Uses old printer buffer (&880-&8BF)
+; for workspace.
+;
+; *PBUFF with no args will use banks
+; which are off or have nothing in them
+; -----------------------------------
+
+pbufftab	EQU	&880
+numroms	EQU	&890
+extvec	EQU	&75
+pbuffpa
+	SEI
+	LDA	#&FF
+	STA	numroms
+	JSR	rdnum
+	BNE	pbnoargs
+	BEQ	pbargs
+pbargloop
+	JSR	rdnum
+	BNE	finargs0
+pbargs
+	LDA	clibuf
+	AND	#&0F
+	LDX	numroms
+	BMI	pbok
+pbloop0
+	CMP	pbufftab,X
+	BEQ	pbargloop
+	DEX
+	BPL	pbloop0
+pbok
+	INC	numroms
+	LDX	numroms
+	STA	pbufftab,X
+	JMP	pbargloop
+
+
+pbnoargs
+	LDX	#&FF
+	LDY	#&00
+pbloop4
+	INX
+	CPX	#&10
+	BEQ	finargs1
+	LDA	&2A1,X
+	BNE	pbloop4
+	TXA
+	STA	pbufftab,Y
+	INY
+	STY	numroms
+	JMP	pbloop4
+finargs0
+	INC	numroms
+finargs1
+	LDY	#&00
+	LDX	#&FF
+pbloop2
+	INX
+	CPX	numroms
+	BEQ	pbend
+	LDA	pbufftab,X
+	STX	pbtmpx
+	STY	pbtmpy
+	SEC
+	JSR	checkrom
+	LDY	pbtmpy
+	LDX	pbtmpx
+	AND	#&F0
+	CMP	#&80
+	BEQ	pbloop2
+	ORA	pbufftab,X
+	STA	pbufftab,Y
+	INY
+	CPX	#&0F
+	BNE	pbloop2
+	STY	numroms
+	JMP	pbloop2
+pbufferror
+	JSR	synerr
+	CLI
+	RTS
+pbend
+	STY	numroms
+	CPY	#&00
+	BNE	gopbuff
+	JSR	pcprint
+	ASC	'No usable ram for printer buffer'
+	DB	&0D
+	DB	0
+	CLI
+	RTS
+gopbuff
+	LDA	#&FF
+	STA	pbuffon
+	JSR	pcprint
+	DB	129
+	ASC	'Using banks'
+	DB	130
+	ASC	':'
+	DB	134,0
+	LDX	#&00
+pbloopa
+	LDA	pbufftab,X
+	AND	#&0F
+	TAY
+	LDA	num,Y
+	JSR	&FFEE
+	LDA	#' '
+	JSR	&FFEE
+	INX
+	CPX	numroms
+	BNE	pbloopa
+	JSR	&FFE7
+	JSR	rlcwrrm
+	LDX	#&05
+pbloop5
+	LDA	&22A,X
+	STA	tmpvec,X
+	LDA	rlcvecs,X
+	STA	&22A,X
+	DEX
+	BPL	pbloop5
+; initialise ext vecs
+	LDA	#&A8
+	LDX	#&00
+	LDY	#&FF
+	JSR	&FFF4
+	STX	extvec
+	STY	extvec+1
+	LDY	#&3F
+	LDX	#&00
+pbloop6
+	LDA	entries,X
+	STA	(extvec),Y
+	INX
+	INY
+	LDA	entries,X
+	STA	(extvec),Y
+	INX
+	INY
+	LDA	&F4
+	STA	(extvec),Y
+	INY
+	CPX	#&06
+	BNE	pbloop6
+	CLI
+	RTS
+
+insentry
+	PHA
+	PHP
+	CPX	#&03
+	BNE	wrngbuf1
+	PLP
+	JSR	storeip
+	JSR	incip
+	JSR	pbcomp
+	BEQ	insfail
+	LDY	iprom
+	LDA	pbufftab,Y
+	TAY
+	PLA
+	JSR	oswrrm
+	LDX	#&03
+	CLC
+	RTS
+insfail
+	JSR	rstip
+	LDX	#&03
+	PLA
+	SEC
+	RTS
+wrngbuf1
+	PLP
+	PLA
+	JMP	(instmpvec)
+
+rementry
+	PHP
+	CPX	#&03
+	BNE	wrngbuf2
+	PLP
+	BVS	examine
+remove
+	JSR	pbcomp
+	BEQ	empty
+	JSR	incop
+	LDA	opaddr
+	STA	&F6
+	LDA	opaddr+1
+	STA	&F7
+	LDY	oprom
+	LDA	pbufftab,Y
+	TAY
+	JSR	osrdrm
+	TAY
+	LDX	#&03
+	CLC
+	RTS
+empty
+	SEC
+	RTS
+examine
+	JSR	storeop
+	JSR	remove
+	JSR	rstop
+	LDX	#&03
+	TYA
+	RTS
+
+wrngbuf2
+	PLP
+	JMP	(tmpremvec)
+
+wrngbuf3
+	PLP
+	JMP	(tmpcnpvec)
+
+cnpentry
+	PHP
+	CPX	#&03
+	BNE	wrngbuf3
+	PLP
+	PHP
+	BVS	purge
+	BCC	len
+	JSR	storeip
+	LDA	#&00
+	STA	pbwrk0
+	STA	pbwrk1
+pbloop9
+	JSR	incip
+	JSR	pbcomp
+	BEQ	pbfin1
+	INC	pbwrk0
+	BNE	pbninc
+	INC	pbwrk1
+	BEQ	exitFFFF
+pbninc
+	JMP	pbloop9
+pbfin1
+	JSR	rstip
+	JMP	exitcount
+len
+	JSR	storeop
+	LDA	#&00
+	STA	pbwrk0
+	STA	pbwrk1
+pbloop8
+	JSR	pbcomp
+	BEQ	pbfin2
+	JSR	incop
+	INC	pbwrk0
+	BNE	pbninc2
+	INC	pbwrk1
+	BEQ	exitFFFF
+pbninc2
+	JMP	pbloop8
+pbfin2
+	JSR	rstop
+exitcount
+	LDX	pbwrk0
+	LDY	pbwrk1
+	PLP
+	RTS
+exitFFFF
+	LDX	#&FF
+	LDY	#&FF
+	PLP
+	RTS
+purge
+	LDA	#&80
+	STA	opaddr+1
+	STA	ipaddr+1
+	LDA	#&00
+	STA	opaddr
+	STA	ipaddr
+	STA	oprom
+	STA	iprom
+	PLP
+	RTS
+
+incip
+	LDX	#&00
+	BEQ	pbincp
+incop
+	LDX	#&09
+pbincp
+	INC	ipaddr,X
+	BNE	pbninc3
+	INC	ipaddr+1,X
+pbninc3
+	LDA	iprom,X
+	TAY
+	LDA	pbufftab,Y
+	AND	#&F0
+	CMP	ipaddr+1,X
+	BNE	pbninc4
+	LDA	#&80
+	STA	ipaddr+1,X
+	LDA	#&00
+	STA	ipaddr,X
+	INC	iprom,X
+	LDA	iprom,X
+	CMP	numroms
+	BNE	pbninc4
+	LDA	#&00
+	STA	iprom,X
+pbninc4
+	RTS
+
+storeip
+	LDX	#&00
+	JMP	pbstore
+storeop
+	LDX	#&09
+pbstore
+	LDA	ipaddr,X
+	STA	pbtmp
+	LDA	ipaddr+1,X
+	STA	pbtmp2
+	LDA	iprom,X
+	STA	pbtmp3
+	RTS
+
+rstip
+	LDX	#&00
+	JMP	rst
+rstop
+	LDX	#&09
+rst
+	LDA	pbtmp
+	STA	ipaddr,X
+	LDA	pbtmp2
+	STA	ipaddr+1,X
+	LDA	pbtmp3
+	STA	iprom,X
+	RTS
+
+pbcomp
+	LDA	opaddr
+	CMP	ipaddr
+	BNE	exitcmp
+	LDA	opaddr+1
+	CMP	ipaddr+1
+	BNE	exitcmp
+	LDA	oprom
+	CMP	iprom
+exitcmp
+	RTS
+
+; ------------------------------------
+; Relocate our oswrrm to printer buffer
+; ------------------------------------
+rlcwrrm
+	LDX	#wrrmend-oswrrm
+rlcwrrmlp
+	LDA	oswrrmx,X
+	STA	oswrrm,X
+	DEX
+	BPL	rlcwrrmlp
+	RTS
+
+oswrrmx
+wrrmoldorg	EQU	*
+	ORG	&891
+oswrrm
+	STY	&FE30
+ipx
+	STA	&8000
+ipaddr	EQU	ipx+1
+	LDX	&F4
+	STX	&FE30
+	RTS
+iprom
+	DB	&00
+opaddr
+	DW	&8000
+instmpvec
+tmpvec
+	DW	&0000
+tmpremvec
+	DW	&0000
+tmpcnpvec
+	DW	&0000
+oprom
+	DB	&00
+pbtmpy
+	DB	&00
+pbtmpx
+	DB	&00
+pbtmp
+	DB	&00
+pbtmp2
+	DB	&00
+pbtmp3
+	DB	&00
+pbwrk0
+	DB	&00
+pbwrk1
+	DB	&00
+wrrmend
+
+	ORG	wrrmoldorg-oswrrm+wrrmend
+
+rlcvecs
+	DB	&3F,&FF,&42,&FF,&45,&FF
+
+entries
+	DB	>insentry
+	DB	<insentry
+	DB	>rementry
+	DB	<rementry
+	DB	>cnpentry
+	DB	<cnpentry
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

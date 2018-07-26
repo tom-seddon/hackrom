@@ -1,0 +1,608 @@
+; ------------------------------------
+; Makefile for HackRom
+; ------------------------------------
+
+
+SCTLDSV (
+ORG	&1100
+	SECTLOAD
+	SECTSAVE
+)
+
+; -------------------------------------
+; Standard sources
+; -------------------------------------
+
+ALL_ROM (
+	ROM_HEADER
+	ALL
+ORG	&8000
+BINARY	HACKROM
+)
+
+ALL_HACK (
+	HACK_HEADER
+	ALL
+ORG	&1100
+BINARY	HACK
+)
+
+ALL (
+AFLAGS	-WB8
+	MEMORY
+	DISC
+	FILE
+	ROM
+	GENERAL
+)
+
+MEMORY (
+	MEM
+	MDIS
+	MCOPY
+	MSWAP
+	MCMP
+	MFILL
+	MSEARCH
+; 	MCRC
+)
+
+DISC (
+	DEDIT
+; 	IDEDIT
+	FORMAT
+; 	SECTLOAD
+; 	SECTSAVE
+	LOADIDS
+	PIDS
+	VERIFY
+; 	DMAP
+; 	DFILL
+; 	FBACKUP
+; 	PENABLE
+; 	GAPS
+)
+
+FILE (
+	DLOAD
+	DRUN
+; 	FDELETE
+; 	FCRC
+	TOUCH
+; 	CONCAT
+; 	FCOPY
+; 	FDIS
+; 	SPOOLDIS
+	CLOSE
+; 	DES
+; 	FCMP
+)
+
+ROM (
+	RLOAD
+	RSAVE
+	RINFO
+	RON
+	ROFF
+	RLIST
+; 	SRLOAD
+; 	SRSAVE
+; 	SRREAD
+; 	SRWRITE
+; 	RFSMAKE
+	SEND
+)
+
+GENERAL (
+	PBUFF
+	LVECTORS
+	KEYLIST
+	KEYSAVE
+	KEYLOAD
+; 	BASE
+; 	BREAK
+; 	HBREAK
+	RECOVER
+	ECHO
+)
+
+MEMROM (
+	ROM_HEADER
+	MEMORY
+BINARY	MEMROM
+)
+
+DISCROM (
+	ROM_HEADER
+	ROM
+BINARY	DISCROM
+)
+
+FILEROM (
+	ROM_HEADER
+	FILE
+BINARY	FILEROM
+)
+
+ROMROM (
+	ROM_HEADER
+	ROM
+BINARY	ROMROM
+)
+
+GENROM (
+	ROM_HEADER
+	GENERAL
+BINARY	GENROM
+)
+
+MEMHACK (
+	HACK_HEADER
+	MEMORY
+BINARY	HACK
+)
+
+DISCHACK (
+	HACK_HEADER
+	ROM
+BINARY	HACK
+)
+
+FILEHACK (
+	HACK_HEADER
+	FILE
+BINARY	HACK
+)
+
+ROMHACK (
+	HACK_HEADER
+	ROM
+BINARY	HACK
+)
+
+GEN (
+	HACK_HEADER
+	GENERAL
+BINARY	HACK
+)
+
+
+ROM_HEADER (
+TEXT	X_ROM_HEAD	EQU	-1
+	S.DEFINES
+	S.ROMHEAD
+	COMMON
+ORG	&8000
+)
+
+HACK_HEADER (
+TEXT	X_HACK_HEAD	EQU	-1
+EXEC	service
+	S.DEFINES
+	S.HCKHEAD
+	COMMON
+ORG	&1100
+)
+
+COMMON (
+	S.DEFINES
+	S.COMMON
+	S.ERRORS
+)
+
+; -------------------------------------
+; Memory Dependencies
+; -------------------------------------
+
+MEM (
+TEXT	X_MEM	EQU	-1
+	COMMON
+	S.MEM
+	S.MEMCODE
+EXEC	mempa
+)
+
+MDIS (
+TEXT	X_MDIS	EQU	-1
+	COMMON
+	S.MEM
+	S.MEMCODE
+EXEC	mdispa
+)
+
+MCOPY (
+TEXT	X_MCOPY	EQU	-1
+	COMMON
+	S.MEMCOMS
+	S.MEMCOM
+EXEC	mcopypa
+)
+
+MSWAP (
+TEXT	X_MSWAP	EQU	-1
+	COMMON
+	S.MEMCOMS
+	S.MEMCOM
+EXEC	mswappa
+)
+
+MCMP (
+TEXT	X_MCMP	EQU	-1
+	COMMON
+	S.MEMCOMS
+	S.MEMCOM
+EXEC	mcmppa
+)
+
+MFILL (
+TEXT	X_MFILL	EQU	-1
+	COMMON
+	S.MEMCOMS
+	S.MEMCOM
+EXEC	mfillpa
+)
+
+MSEARCH (
+TEXT	X_MSEARCH	EQU	-1
+	COMMON
+	S.MEMCOMS
+	S.MEMCOM
+EXEC	msearchpa
+)
+
+MCRC (
+TEXT	X_MCRC	EQU	-1
+	COMMON
+	S.MCRC
+EXEC	mcrcpa
+)
+
+; -------------------------------------
+; Disc dependencies
+; -------------------------------------
+
+DEDIT (
+TEXT	X_DEDIT	EQU	-1
+	DISCOM
+	S.DEDIT
+EXEC	deditpa
+)
+
+IDEDIT (
+TEXT	X_IDEDIT	EQU	-1
+	DISCOM
+	S.IDEDIT
+EXEC	ideditpa
+)
+
+FORMAT (
+TEXT	X_FORMAT	EQU	-1
+	DISCOM
+	S.FORMAT
+EXEC	formatpa
+)
+
+SECTLOAD (
+TEXT	X_SECTLOAD	EQU	-1
+	DISCOM
+	S.SCTLDSV
+EXEC	sectloadpa
+)
+
+SECTSAVE (
+TEXT	X_SECTSAVE	EQU	-1
+	DISCOM
+	S.SCTLDSV
+EXEC	sectsavepa
+)
+
+LOADIDS (
+TEXT	X_LOADIDS	EQU	-1
+	DISCOM
+	S.IDS
+EXEC	loadidspa
+)
+
+PIDS (
+TEXT	X_PIDS	EQU	-1
+	DISCOM
+	S.IDS
+EXEC	pidspa
+)
+
+VERIFY (
+TEXT	X_VERIFY	EQU	-1
+	DISCOM
+	S.VERIFY
+EXEC	verifypa
+)
+
+DMAP (
+TEXT	X_DMAP	EQU	-1
+	DISCOM
+	S.DMAP
+EXEC	dmappa
+)
+
+DFILL (
+TEXT	X_DFILL	EQU	-1
+	DISCOM
+	S.DFILL
+EXEC	dfillpa
+)
+
+FBACKUP (
+TEXT	X_FBACKUP	EQU	-1
+	DISCOM
+	S.FBACKUP
+EXEC	fbackuppa
+)
+
+PENABLE (
+TEXT	X_PENABLE	EQU	-1
+	DISCOM
+	S.GAPS
+EXEC	penablepa
+)
+
+GAPS (
+TEXT	X_GAPS	EQU	-1
+	DISCOM
+	S.GAPS
+EXEC	gapspa
+)
+
+DISCOM (
+	COMMON
+	S.DISCOM
+)
+
+; -------------------------------------
+; File dependencies
+; -------------------------------------
+
+DLOAD (
+TEXT	X_DLOAD	EQU	-1
+	COMMON
+	S.DRUNLOD
+EXEC	dloadpa
+)
+
+DRUN (
+TEXT	X_DRUN	EQU	-1
+	COMMON
+	S.DRUNLOD
+EXEC	drunpa
+)
+
+FDELETE (
+TEXT	X_FDELETE	EQU	-1
+	COMMON
+	S.FDELETE
+EXEC	fdeletepa
+)
+
+FCRC (
+TEXT	X_FCRC	EQU	-1
+	COMMON
+	S.FCRC
+EXEC	fcrcpa
+)
+
+TOUCH (
+TEXT	X_TOUCH	EQU	-1
+	COMMON
+	S.TOUCH
+EXEC	touchpa
+)
+
+CONCAT (
+TEXT	X_CONCAT	EQU	-1
+	COMMON
+	S.CONCAT
+EXEC	concatpa
+)
+
+FCOPY (
+TEXT	X_FCOPY	EQU	-1
+	COMMON
+	S.FCOPY
+EXEC	fcopypa
+)
+
+FDIS (
+TEXT	X_FDIS	EQU	-1
+	COMMON
+	S.FDIS
+EXEC	fdispa
+)
+
+SPOOLDIS (
+TEXT	X_SPOOLDIS	EQU	-1
+	COMMON
+	S.SPOLDIS
+EXEC	spooldispa
+)
+
+CLOSE (
+TEXT	X_CLOSE	EQU	-1
+	COMMON
+	S.CLOSE
+EXEC	closepa
+)
+
+DES (
+TEXT	X_DES	EQU	-1
+	COMMON
+	S.DES
+EXEC	despa
+)
+
+FCMP (
+TEXT	X_FCMP	EQU	-1
+	COMMON
+	S.FCMP
+EXEC	fcmppa
+)
+
+; -------------------------------------
+; Rom dependencies
+; -------------------------------------
+
+RLOAD (
+TEXT	X_RLOAD	EQU	-1
+	COMMON
+	S.RSAVLOD
+EXEC	rloadpa
+)
+
+RSAVE (
+TEXT	X_RSAVE	EQU	-1
+	COMMON
+	S.RSAVLOD
+EXEC	rsavepa
+)
+
+RINFO (
+TEXT	X_RINFO	EQU	-1
+	COMMON
+	S.RINFO
+EXEC	rinfopa
+)
+
+RON (
+TEXT	X_RON	EQU	-1
+	COMMON
+	S.RONROFF
+EXEC	ronpa
+)
+
+ROFF (
+TEXT	X_ROFF	EQU	-1
+	COMMON
+	S.RONROFF
+EXEC	roffpa
+)
+
+RLIST (
+TEXT	X_RLIST	EQU	-1
+	COMMON
+	S.RLIST
+EXEC	rlistpa
+)
+
+SRLOAD (
+TEXT	X_SRLOAD	EQU	-1
+	COMMON
+	S.SRCOMS
+EXEC	srloadpa
+)
+
+SRSAVE (
+TEXT	X_SRSAVE	EQU	-1
+	COMMON
+	S.SRCOMS
+EXEC	srsavepa
+)
+
+SRREAD (
+TEXT	X_SRREAD	EQU	-1
+	COMMON
+	S.SRCOMS
+EXEC	srreadpa
+)
+
+SRWRITE (
+TEXT	X_SRWRITE	EQU	-1
+	COMMON
+	S.SRCOMS
+EXEC	srwritepa
+)
+
+RFSMAKE (
+TEXT	X_RFSMAKE	EQU	-1
+	COMMON
+	S.RFSMAKE
+EXEC	rfsmakepa
+)
+
+SEND (
+TEXT	X_SEND	EQU	-1
+	COMMON
+	S.SEND
+EXEC	sendpa
+)
+
+; -------------------------------------
+; General dependencies
+; -------------------------------------
+
+PBUFF (
+TEXT	X_PBUFF	EQU	-1
+	COMMON
+	S.PBUFF
+EXEC	pbuffpa
+)
+
+LVECTORS (
+TEXT	X_LVECTORS	EQU	-1
+	COMMON
+	S.LVECTOR
+EXEC	lvectorspa
+)
+
+KEYLIST (
+TEXT	X_KEYLIST	EQU	-1
+	COMMON
+	S.KEYCOMS
+EXEC	keylistpa
+)
+
+KEYSAVE (
+TEXT	X_KEYSAVE	EQU	-1
+	COMMON
+	S.KEYCOMS
+EXEC	keysavepa
+)
+
+KEYLOAD (
+TEXT	X_KEYLOAD	EQU	-1
+	COMMON
+	S.KEYCOMS
+EXEC	keyloadpa
+)
+
+BASE (
+TEXT	X_BASE	EQU	-1
+	COMMON
+	S.BASE
+EXEC	basepa
+)
+
+BREAK (
+TEXT	X_BREAK	EQU	-1
+	S.COMMON
+	S.BREAK
+EXEC	breakpa
+)
+
+HBREAK (
+TEXT	X_HBREAK	EQU	-1
+	S.COMMON
+	S.BREAK
+EXEC	hbreakpa
+)
+
+RECOVER (
+TEXT	X_RECOVER	EQU	-1
+	S.COMMON
+	S.RECOVER
+EXEC	recoverpa
+)
+
+ECHO (
+TEXT	X_ECHO	EQU	-1
+	S.COMMON
+	S.ECHO
+EXEC	echopa
+)

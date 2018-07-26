@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# Script to convert tabs to character \335 as used by WordWise.
+#
+if [ $# -lt 1 ]
+then
+    echo "Usage: WWconv file ..." 2>&1
+    exit 1
+fi
+
+for f in ${@+"$@"}
+do
+    tr '\011' '\335' < $f > $f.new
+    mv $f $f.bak
+    mv $f.new $f
+done

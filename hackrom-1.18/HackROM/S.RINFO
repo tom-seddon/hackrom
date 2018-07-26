@@ -1,0 +1,308 @@
+
+; ******************************
+; Display info about a specific
+; ROM number
+; Version 1.2
+; Last update 18/04/91
+; by James 'Rince' Bonfield.
+; ******************************
+
+
+;*********************************
+; Args = A list of rom numbers to
+; display information about.
+; Usage = *RINFO <bank> ... <bank>
+;*********************************
+rinfopa
+	JSR	reloc
+	JSR	beginrom
+; Check to see if we have at least
+; one arg. If not then do *RINFO
+; for all ROM images.
+	JSR	rdnum
+	BEQ	atleast1
+rinfostr
+; Go through all ROM's
+	LDX	#0
+all
+	STX	clibuf
+	TXA
+	PHA
+	CLC
+	JSR	checkrom
+	BNE	rinfonext
+	JSR	doinfo
+rinfonext
+	PLA
+	TAX
+	INX
+	CPX	#&10
+	BNE	all
+	BEQ	rinfoend
+rinfoloop
+	JSR	rdnum
+	BNE	rinfoend
+atleast1
+	TYA
+	PHA
+	JSR	doinfo
+	PLA
+	TAY
+	JMP	rinfoloop
+rinfoend
+	RTS
+
+;*********************************
+; Dump out info about the ROM
+; clibuf should hold the ROM no.
+; we wish to do info for.
+;*********************************
+doinfo
+; First check we're looking at a
+; valid ROM
+	LDA	clibuf
+	JSR	checkrom
+	BEQ	romok
+	JSR	pcprint
+	DB	&81
+	ASC	"Not a ROM"
+	HEX	&0D00
+	RTS
+romok
+	JSR	beginrom
+; Print ROM number in hex
+	JSR	pcprint
+	DB	&82
+	ASC	"Bank number    :"
+	HEX	&8600
+	LDA	clibuf
+	AND	#&F
+	STA	romid
+	JSR	hex_asc
+	TYA
+	JSR	&FFEE
+	JSR	&FFE7
+; Print ROM title
+	JSR	pcprint
+	DB	&82
+	ASC	"ROM title      :"
+	HEX	&8600
+	LDY	#9
+titlerinfoloop
+	JSR	rdposx
+	CMP	#0
+	BEQ	rinfoendtl
+	AND	#&7F
+	CMP	#' '
+	BCC	tlj1
+	JSR	&FFEE
+tlj1
+	INY
+	BNE	titlerinfoloop
+rinfoendtl
+	JSR	&FFE7
+; Print version string
+	TYA
+	PHA
+	JSR	pcprint
+	DB	&82
+	ASC	"Version string :"
+	HEX	&8600
+	LDY	#7
+	JSR	rdposx
+	STA	tmpx
+	PLA
+	TAY
+	CPY	tmpx
+	BNE	vj1
+	JSR	pcprint
+	ASC	"None|@"
+	JMP	rinfoendvl
+vj1
+	INY
+versrinfoloop
+	JSR	rdposx
+	CMP	#0
+	BEQ	rinfoendvl
+	AND	#&7F
+	CMP	#' '
+	BCC	vlj1
+	JSR	&FFEE
+vlj1
+	INY
+	BNE	versrinfoloop
+rinfoendvl
+	JSR	&FFE7
+; Print version number (binary)
+	JSR	pcprint
+	DB	&82
+	ASC	"Binary version :"
+	HEX	&8600
+	LDY	#8
+	JSR	rdposx
+	JSR	bsdigit
+	JSR	&FFE7
+	JSR	pcprint
+	DB	&82
+	ASC	"Copyright      :"
+	HEX	&8600
+	LDY	#7
+	JSR	rdposx
+	TAY
+	INY
+copyl
+	JSR	rdposx
+	CMP	#0
+	BEQ	rinfoendcopy
+	AND	#&7F
+	CMP	#' '
+	BCC	clj1
+	JSR	&FFEE
+clj1
+	INY
+	BNE	copyl
+rinfoendcopy
+	JSR	&FFE7
+; Print type of code in ROM
+	JSR	pcprint
+	DB	&82
+	ASC	"ROM code       :"
+	HEX	&8600
+	LDY	#6
+	JSR	rdposx
+	PHA
+	AND	#&0F
+	ASL	A
+	TAX
+	LDA	typetab,X
+	STA	tmpx
+	LDA	typetab+1,X
+	STA	tmpy
+	JSR	locprint
+	JSR	&FFE7
+; Language entry (if it's a lang
+; ROM. Also, entry may not be
+; a JMP &xxxx (as in BASIC)
+	JSR	pcprint
+	DB	&82
+	ASC	"Language entry :"
+	HEX	&8600
+	PLA
+	PHA
+	AND	#&40
+	BNE	isalang
+	JSR	pcprint
+	ASC	"Not a language|@"
+	JMP	langdone
+isalang
+	LDY	#0
+	JSR	rdposx
+	CMP	#&4C
+	BEQ	langok
+	JSR	pcprint
+	ASC	"Unknown|@"
+	JMP	langdone
+langok
+	LDY	#2
+	JSR	rdposx
+	JSR	wdigit
+	DEY
+	JSR	rdposx
+	JSR	wdigit
+langdone
+	JSR	&FFE7
+; Print service entry if there
+	JSR	pcprint
+	DB	&82
+	ASC	"Service entry  :"
+	HEX	&8600
+	PLA
+	PHA
+	BMI	hasserv
+	JSR	pcprint
+	ASC	"None|@"
+	JMP	servdone
+hasserv
+	LDY	#5
+	JSR	rdposx
+	JSR	wdigit
+	DEY
+	JSR	rdposx
+	JSR	wdigit
+servdone
+	JSR	&FFE7
+; Finally Tube reloction address
+	JSR	pcprint
+	DB	&82
+	ASC	"Tube relocation:"
+	HEX	&8600
+	PLA
+	AND	#&20
+	BNE	istube
+	JSR	pcprint
+	ASC	"None|@"
+	JMP	tubedone
+istube
+	LDY	#7
+	JSR	rdposx
+	TAY
+	LDX	#2
+istl
+	JSR	rdposx
+	CMP	#0
+	BEQ	foundzero
+	INY
+	BNE	istl
+foundzero
+	INY
+	DEX
+	BNE	istl
+	INY
+	INY
+	INY
+	INY
+	LDX	#4
+istl2
+	DEY
+	JSR	rdposx
+	JSR	wdigit
+	DEX
+	BNE	istl2
+tubedone
+	JSR	&FFE7
+	JSR	&FFE7
+	RTS
+
+typetab
+	DW	c6502
+	DW	reserved
+	DW	c6502NB
+	DW	c6800
+	DW	cZ80
+	DW	c32016
+	DW	reserved
+	DW	c80186
+	DW	c80286
+	DW	reserved
+	DW	reserved
+	DW	reserved
+	DW	reserved 
+	DW	reserved
+	DW	reserved
+	DW	reserved
+
+c6502	ASC	"6502 BASIC|@"
+c6502NB	ASC	"6502 (NOT BASIC)|@"
+c6800	ASC	"6800 code|@"
+cZ80	ASC	"Z80 code|@"
+c32016	ASC	"32016 code|@"
+c80186	ASC	"80186 code|@"
+c80286	ASC	"80286 code|@"
+reserved	ASC	"reserved|@"
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

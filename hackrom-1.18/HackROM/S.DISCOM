@@ -1,0 +1,789 @@
+	IF	DFS
+drive_addr	EQU	&10C8
+	ELSE
+drive_addr	EQU	&1046
+	FI
+dtrk	EQU	&70
+dlsect	EQU	&71
+dpsect	EQU	&72
+type	EQU	&73
+dedpl	EQU	&7F
+formstart	EQU	&83
+finctrk	EQU	&80
+formidblk	EQU	buffer1
+totrk	EQU	&81
+fromtrk	EQU	&82
+
+
+msg_point
+	DW	e_not_found
+	DW	e_del_data
+	DW	clock_error+4
+	DW	sector_id_err+4
+	DW	data_crc_error+4
+	DW	drv_not_rdy+4
+	DW	write_protect+4
+	DW	trk0_not_fnd+4
+	DW	write_fault+4
+	DW	sctr_not_fnd+4
+
+msg_tab
+	DB	&00
+	DB	&20
+	DB	&08
+	DB	&0C
+	DB	&0E
+	DB	&10
+	DB	&12
+	DB	&14
+	DB	&16
+	DB	&18
+msg_tab_end
+
+num_msgs	EQU	msg_tab_end-msg_tab-1
+
+get_err_entry
+	LDY	#num_msgs
+demlp0
+	CMP	msg_tab,Y
+	BEQ	give_msg
+	DEY
+	BNE	demlp0
+give_msg
+	TYA
+	ASL	A
+	TAY
+	RTS
+
+msg
+e_not_found
+	ASC	"Not found"
+	DB	0
+e_del_data
+	ASC	"Deleted data"
+	DB	0
+
+discerrmsg
+	JSR	get_err_entry
+	LDA	msg_point,Y
+	TAX
+	LDA	msg_point+1,Y
+	TAY
+	JMP	xyprint
+
+sectsizes
+	HEX	'00800100'
+	HEX	'02000400'
+	HEX	'08001000'
+	HEX	'20004000'
+
+; --------------------------------
+; Do osword &7F
+; --------------------------------
+os7F
+	LDX	#>param
+	LDY	#<param
+	LDA	#&7F
+	JMP	&FFF1
+
+; --------------------------------
+; Seek to a track on the disc
+;
+; Entry : A=drive, X=track
+;
+; A,X,Y preserved
+; --------------------------------
+seek
+	STY	tmp2
+	STA	param
+	LDA	#1
+	STA	param+5
+	LDA	#&69
+	STA	param+6
+	STX	param+7
+	JSR	os7F
+	LDX	param+7
+	LDY	tmp2
+	LDA	param
+	RTS
+; --------------------------------
+; Write track register
+;
+; Entry : A=drive, X=track
+;
+; A,X,Y preserved
+; --------------------------------
+writetrack
+	PHA
+	LDA	#&7A
+
+trkregcom
+	STA	param+6
+	PLA
+	STY	tmp
+	STA	param
+	AND	#1
+	BEQ	drive0_2
+	LDA	#8
+drive0_2
+	CLC
+	ADC	#&12
+	STA	param+7
+	LDA	#&02
+	STA	param+5
+	STX	param+8
+	JSR	os7F
+	LDA	param
+	LDX	param+8
+	LDY	tmp
+	RTS
+
+; --------------------------------
+; Read track register
+;
+; Entry : A=drive, X=track to read
+;
+; A,Y preserved
+;
+; Exit : X=track register
+; --------------------------------
+readtrack
+	PHA
+	LDA	#&7D
+	JMP	trkregcom
+
+; --------------------------------
+; Sorts ids in buffer
+;
+; Entry : none
+;
+; X,Y preserved
+;
+; Exit : A=tmp=number of sectors,
+;        buffer3 contains sorted IDs
+; --------------------------------
+sort_ids
+	TXA
+	PHA
+	TYA
+	PHA
+	LDX	#0
+	STX	tmp4
+srtloop1
+	TXA
+	TAY
+	LDA	buffer1+2,X
+srtloop2
+	DEY
+	DEY
+	DEY
+	DEY
+	BMI	storeids
+	CMP	buffer1+2,Y
+	BNE	srtloop2
+	INX
+	INX
+	INX
+	INX
+	CPX	#&80
+	BNE	srtloop1
+exitsortids
+	LDA	tmp4
+	LSR	A
+	LSR	A
+	STA	tmp
+	PLA
+	TAY
+	PLA
+	TAX
+	LDA	tmp
+	RTS
+storeids
+	LDY	tmp4
+srtloop3
+	LDA	buffer1,X
+	STA	buffer3,Y
+	INX
+	INY
+	TXA
+	AND	#3
+	BNE	srtloop3
+	STY	tmp4
+	CPX	#&80
+	BNE	srtloop1
+	JMP	exitsortids
+; --------------------------------
+; Load IDs
+;
+; Entry : A=drive, X=track
+;         ptab = lo byte load addr
+;         ptab = hi byte load addr
+;
+; A,X,Y preserved
+;
+; Exit : IDs loaded at 'buffer1'
+; --------------------------------
+load_ids
+	STA	param
+	LDA	#&20
+	STA	param+9
+loadnumids
+	STY	tmp2
+	LDA	#&FF
+	STA	param+3
+	STA	param+4
+	LDA	#&03
+	STA	param+5
+	LDA	#&5B
+	STA	param+6
+	STX	param+7
+	LDA	#0
+	STA	param+8
+	STA	param+10
+	JSR	os7F
+	LDX	param+7
+	LDY	tmp2
+	LDA	param
+	RTS
+
+; --------------------------------
+; Format track
+;
+; Entry : A=drive, X=track,
+;         Y=sect size/num sects
+;         param+1 = lo byte sect table
+;         param+2 = hi byte sect table
+;
+; X,Y,P preserved
+;
+; Exit : A=Error (0 if none)
+; --------------------------------
+format
+	PHP
+	STA	param
+	STX	param+7
+	LDA	#&FF
+	STA	param+3
+	STA	param+4
+	LDA	#&05
+	STA	param+5
+	LDA	#&63
+	STA	param+6
+	TYA
+	AND	#&1F
+	TAX
+	LDA	gaps,X
+	STA	param+8
+	STY	param+9
+	LDA	#&00
+	STA	param+&A
+	LDA	#&10
+	STA	param+&B
+	JSR	os7F
+	LDA	param+&C
+	LDX	param+7
+	LDY	param+9
+	PLP
+	RTS
+gaps
+	HEX	'FFFFFFFF'
+	HEX	'FF48FF90'
+	HEX	'50301080'
+	HEX	'60302018'
+	HEX	'100C0B'
+
+; --------------------------------
+; Verify sector
+;
+; Entry : A=sector size/num sectors
+;         X=track, Y=sectors
+;         param=Drive
+;
+; X,Y preserved
+;
+; Exit : A=&18 if error occurs,
+;        A=0 otherwise
+; --------------------------------
+verify
+	STA	param+9
+	LDA	#3
+	STA	param+5
+	LDA	#&5F
+	STA	param+6
+	STX	param+7
+	STY	param+8
+	JSR	os7F
+	LDX	param+7
+	LDY	param+8
+	LDA	param+10
+	RTS
+
+; --------------------------------
+; Load sector for use with commands
+; other than those in which an
+; address can be specified for data
+; to be loaded at
+;
+; Entry : A=drive, X=track, Y=sector
+; --------------------------------
+tabP	EQU	ptab+2
+loadsector
+	PHA
+	LDA	#>buffer2
+	STA	tabP
+	LDA	#<buffer2
+	STA	tabP+1
+	STX	tabP+2
+	STY	tabP+3
+	LDX	#>tabP
+	LDY	#<tabP
+	PLA
+
+; --------------------------------
+; Load sector :-
+;
+;  will load *any* loadable sector
+;
+; Entry : A=drive, X,Y point to table
+;         1st 2 bytes table = load addr
+;         3rd byte = track
+;         4th byte = sector
+;                        
+;
+; Comment : If carry set then force a
+;           sector load of &100 byte
+;           size sector. If not &100
+;           bytes then return an error
+;           of &18.
+;
+; X,Y preserved
+;
+; Exit : A=error value
+; --------------------------------
+loadsect
+	PHP
+	STA	param
+	STX	ptab
+	STY	ptab+1
+	LDY	#0
+	LDA	(ptab),Y
+	STA	tmpbuf
+	INY
+	LDA	(ptab),Y
+	STA	tmpbuf+1
+	INY
+	LDA	(ptab),Y
+	INY
+	TAX
+	LDA	(ptab),Y
+	TAY
+	STX	tmp5
+	LDA	param
+	JSR	seek
+	LDA	param+8
+	BEQ	goids
+	CMP	#&18
+	BEQ	goids
+	PLP
+	JMP	iderror
+goids
+	LDA	#>buffer1
+	STA	param+1
+	LDA	#<buffer1
+	STA	param+2
+	LDA	param
+	JSR	load_ids
+	JSR	sort_ids
+	LDA	param+10
+	BEQ	goverify
+	PLP
+	JMP	iderror
+goverify
+	TYA
+	LDY	dedpl
+	BEQ	physical
+	LDX	#&7C
+searchsect
+	CMP	buffer1+2,X
+	BEQ	got
+	DEX
+	DEX
+	DEX
+	DEX
+	BPL	searchsect
+	LDA	#&18
+	PLP
+	JMP	iderror
+physical
+	CMP	tmp
+	BCC	oksect
+	LDA	#&18
+	PLP
+	JMP	iderror
+oksect
+	ASL	A
+	ASL	A
+	TAX
+got
+	LDA	buffer1,X
+	TAY
+	BNE	dowrite
+	LDA	param+7
+	BEQ	dowrite
+	LDA	#&18
+	PLP
+	JMP	iderror
+dowrite
+	TXA
+	PHA
+	TYA
+	TAX
+	LDA	param
+	JSR	writetrack
+	PLA
+	TAX
+	LDA	buffer1,X
+	STA	param+7
+	LDA	buffer1+2,X
+	TAY
+	LDA	buffer1+3,X
+	PLP
+	BCC	doload
+	CMP	#1
+	BEQ	doload
+	LDA	#&18
+	JMP	iderror
+doload
+	AND	#7
+	ASL	A
+	STA	tmp3
+	ASL	A
+	ASL	A
+	ASL	A
+	ASL	A
+	CLC
+	ADC	#1
+	LDX	param+7
+	JSR	verify
+	AND	#&1E
+	BNE	iderror
+	LDA	param+10
+	AND	#&20
+
+	BEQ	ndel
+	LDA	deleted
+	AND	#&0F
+	ORA	#&20
+	STA	deleted
+ndel
+
+	LDA	tmpbuf
+	STA	param+1
+	LDA	tmpbuf+1
+	STA	param+2
+	LDA	#&57
+	STA	param+6
+	JSR	os7F
+	CLC
+	LDA	#0
+	STA	error
+	JMP	finload
+iderror
+	STA	error
+	SEC
+finload
+	PHP
+	LDA	param+7
+	PHA
+	LDA	param+8
+	PHA
+	LDX	tmp5
+	LDA	param
+	JSR	writetrack
+	PLA
+	TAY
+	PLA
+	TAX
+	PLP
+	LDA	error
+	RTS
+
+; --------------------------------
+; Save Sector
+;
+; Comment : assumes IDs have been
+;           loaded to work out size for
+;           sector to be saved
+;
+; Entry : A=drive, X=Track, Y=Sector
+;         param+1 = lo byte data addr
+;         param+2 = hi byte data addr
+;
+; A preserved
+; 
+; Exit : X=Y=physical track sector 
+;        saved on (side effect)
+; --------------------------------
+savesect
+	STA	param
+	TXA
+	PHA
+	LDA	param
+	JSR	readtrack
+	STX	tmp
+	PLA
+	TAX
+	LDA	param
+	JSR	writetrack
+	LDA	#&FF
+	STA	param+3
+	STA	param+4
+	LDA	#3
+	STA	param+5
+	LDA	deleted
+	AND	#&20
+	BEQ	add
+	LDA	#&4
+add
+	CLC
+	ADC	#&4B
+	STA	param+6
+	STX	param+7
+	STY	param+8
+	LDA	buffer1+3
+	ASL	A
+	ASL	A
+	ASL	A
+	ASL	A
+	ASL	A
+	STA	param+9
+	INC	param+9
+	JSR	os7F
+	LDA	param+10
+	AND	#&1E
+	LSR	A
+	TAY
+	LDX	tmp
+	LDA	param
+	JSR	writetrack
+	TYA
+	TAX
+	LDA	param
+	RTS
+
+; --------------------------------
+; Checks if disc has 62 files (Watford)
+;
+; Entry : A=drive
+;
+; X,Y destroyed
+;
+; Exit : Carry set if disc has 62 files
+; --------------------------------
+check62files
+	LDX	#0
+	LDY	#2
+	SEC
+	JSR	loadsector
+	BCC	hokload
+	RTS
+hokload
+	LDX	#7
+	LDA	#&AA
+loop62
+	CMP	buffer2,X
+	BNE	not62
+	DEX
+	BPL	loop62
+	SEC
+not62
+	LDA	#0
+	RTS
+
+ptabcom
+	LDA	#>buffer1
+	STA	ptab
+	LDA	#<buffer1
+	STA	ptab+1
+	RTS
+
+; -------------------------------------
+; Finds next/previous logical sector
+;
+; Entry : A=drive
+;         X=trk
+;         Y=logical sector
+;
+; Exit : A=drive, X=track, Y=sector
+;        Carry set for error then
+;         A=error number
+; -------------------------------------
+nextlsect
+	STA	param
+	LDA	#0
+	STA	type
+	BEQ	nplsect
+prevlsect
+	STA	param
+	LDA	#&FF
+	STA	type
+nplsect
+	STY	dlsect
+	STX	dtrk
+	TXA
+	PHA
+	TYA
+	PHA
+nplloop0
+	LDA	type
+	BEQ	nls0
+	DEC	dlsect
+	LDA	dlsect
+	CMP	#&FF
+	BEQ	incdectrk
+	BNE	nplloop1
+nls0
+	INC	dlsect
+	BEQ	incdectrk
+nplloop1
+	LDA	dlsect
+	LDY	#&00
+nplloop2
+	CMP	buffer1+2,Y
+	BEQ	nplfnd
+	INY
+	INY
+	INY
+	INY
+	CPY	#&80
+	BNE	nplloop2
+	BEQ	nplloop0
+incdectrk
+	LDA	type
+	BEQ	nls1
+	DEC	dtrk
+	BMI	nplexit
+	BPL	nls2
+nls1
+	INC	dtrk
+nls2
+	JSR	ptabcom
+	LDA	param
+	LDX	dtrk
+	JSR	load_ids
+	LDA	param+10
+	AND	#&1F
+	BEQ	nplloop1
+	SEC
+	BCS	nplexit1
+nplexit
+	LDA	#&04
+	STA	param+10
+nplexit1
+	PLA
+	TAY
+	PLA
+	TAX
+	LDA	param+10
+	RTS
+nplfnd
+	PLA
+	PLA
+	LDA	param
+	LDX	dtrk
+	LDY	dlsect
+	CLC
+	RTS
+
+; -------------------------------------
+; Finds next/previous physical sector
+;
+; Entry : A=drive
+;         X=trk
+;         Y=physical sector
+;
+; Exit : A=drive, X=track, Y=sector
+;        Carry set for error then
+;         A=error number
+; -------------------------------------
+nextpsect
+	STA	param
+	LDA	#0
+	STA	type
+	BEQ	nppsect
+prevpsect
+	STA	param
+	LDA	#&FF
+	STA	type
+nppsect
+	STY	dpsect
+	STX	dtrk
+	TXA
+	PHA
+	TYA
+	PHA
+	JSR	sort_ids
+	LDX	dpsect
+	LDA	type
+	BEQ	nps0
+	DEX
+	BMI	idtrk
+	BPL	nps1
+nps0
+	INX
+npsloop0
+	CPX	tmp
+	BEQ	idtrk
+nps1
+	TXA
+	ASL	A
+	ASL	A
+	TAX
+	LDA	buffer3+2,X
+	TAY
+	PLA
+	PLA
+	LDA	param
+	LDX	dtrk
+	CLC
+	RTS
+idtrk
+	LDA	type
+	BEQ	nps2
+	DEC	dtrk
+	BMI	npsexit
+	BPL	nps3
+nps2
+	INC	dtrk
+nps3
+	LDX	dtrk
+	JSR	ptabcom
+	LDA	param
+	JSR	load_ids
+	LDA	param+10
+	AND	#&1F
+	BEQ	npsok
+	BNE	npsexit1
+npsexit
+	LDA	#&04
+	STA	param+10
+npsexit1
+	PLA
+	TAY
+	PLA
+	TAX
+	PLA
+	LDA	param+10
+	SEC
+	RTS
+npsok
+	JSR	sort_ids
+	LDX	#&00
+	BEQ	npsloop0
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

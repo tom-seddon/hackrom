@@ -1,0 +1,135 @@
+			Using the MAKE utility
+			======================
+
+
+Syntax
+------
+
+	MAKE <SRC> (-A<OBJECT>) (-D"FLAGS") (-F<MAKEFILE>) (-N) (-O<ADDR>)
+
+ -A<OBJECT>	will overide the executable filename in the Makfile
+
+ -D<"FLAGS">	will overide the flags set in the Makefile but if the quotes
+		are single (') the flags will be added to those in the
+		Makefile. Flags must be in quotes.
+
+
+ -F<MAKEFILE> 	will use the makefile specified rather than MAKFILE
+
+ -N		will instruct MAKE not to run the assembler
+
+ -O		will overide the execution address set in the Makefile using
+		ORG
+
+ -C		Create an intermediate file which chains all the files together
+
+ -I		Create an intermediate file which includes all the files
+
+
+Intermediate file
+-----------------
+
+MAKE builds a file which either includes all the necessary files or chains them
+together. If including files then includes cannot be made in the included
+files, as only one level is available. Chaining the files together will allow
+the operands CODE and INCLUDE to be made in any chained files. There is a
+requirement that at the end of each file there are two lines of chain-code:
+
+	ACC	ASET    @ACC+1
+        	CHN     @(FILE@ACC)
+
+When the last file is found the assembler will report an error because it
+cannot find the next file to be chained. One way around this is to make sure
+that the last file that MAKE will put in the intermediate file has no
+'chainer' at the end or you include a blank file in the dependencies.
+
+
+Makefile format
+---------------
+
+The format of the makefile is based on a tree with a 'source' name at each
+node and a set of files/source names/meta-instructions. The rule is, if MAKE
+can't find the source name given then it assumes it is a file and adds it to
+the list. For example:
+
+ALL (
+	DEPEND
+	S.SOURCE
+)
+
+DEPEND (
+	S.INCLUDE
+)
+
+There are 6 meta-instructions which can be used affect the assembly. These are
+TEXT, EXEC, BINARY, AFLAGS, SFLAGS and ORG.
+
+	TEXT	This is used to insert text into the intermediate file
+	EXEC	Set the exec address of the assembled code
+	BINARY	Set the name of the assembled file
+	AFLAGS	Add these flags to the ones already set
+	SFLAGS	Discard the current flags and set with new ones
+	ORG	Set the assembly address of the assembled code
+
+
+For example:
+
+ALL (
+ORG	&1100
+	DEPEND
+	S.SOURCE
+BINARY	SOURCE
+AFLAGS	-B8
+TEXT	label	EQU	&8000
+)
+
+DEPEND (
+ORG	&8000
+	S.INCLUDE
+SFLAGS	-WL3
+EXEC	start
+TEXT	; Insert a comment here
+)
+
+
+Using:
+
+	 *MAKE ALL -D"-L1" -I
+
+
+The following intermediate file will be created
+
+	ORG	&8000
+	EXEC	start
+	INCLUDE	S.INCLUDE
+; Insert a comment here
+	INCLUDE	S.SOURCE
+label	EQU	&8000
+
+
+And the assembler would be invoked:
+
+	*ASSEMBLE M.SOURCE A.SOURCE -WL3 -B8
+
+Notice the route that MAKE takes through the source and how the ORG &8000
+overrided the ORG &1100.
+
+If MAKE had been invoked with the -C option then the following intermediate
+file file would have been created:
+
+	ORG	&8000
+	EXEC	start
+FILE0	ASET	`S.INCLUDE`
+; Insert a comment here
+FILE1	ASET	`S.SOURCE`
+label	EQU	&8000
+
+ACC	ASET	0
+	CHN	@(FILE0)
+
+MAKE is supplied with the HACKROM release as defaulting to the chain option,
+hence there is an extra blank file specified to stop chain errors from
+appearing for the last file.
+
+Once the intermediate file has been created it can be used over and over to
+build the software that MAKE was used to originally build.

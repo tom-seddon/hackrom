@@ -1,0 +1,202 @@
+; ----------------------------------
+; *SECTLOAD
+; *SECTSAVE
+; ----------------------------------
+
+numsects	EQU	&7A
+sectstart	EQU	&7B
+load_addr	EQU	&7C
+
+; -------------------------------------
+; Sectload
+; -------------------------------------
+sectloadpa
+	JSR	sctldsvpa
+	LDA	load_addr+1
+	STA	tabP+1
+	LDA	load_addr
+	STA	tabP
+	JSR	ptabcom
+	LDA	param
+
+slsloop0
+	LDX	fromtrk
+	LDY	sectstart
+	STX	tabP+2
+	STY	tabP+3
+	LDA	param
+	LDX	#>tabP
+	LDY	#<tabP
+	JSR	loadsect
+	BCC	slsldok
+	JMP	error_die
+slsldok
+	LDA	dedpl
+	BNE	slsl
+	JSR	nextpsect
+	JMP	slslp
+slsl
+	JSR	nextlsect
+slslp
+	BCC	slsover
+	LDA	param+&0A
+	JMP	error_die
+slsover
+	STX	fromtrk
+	STY	sectstart
+	LDA	buffer1+3
+	ASL	A
+	TAY
+	CLC
+	LDA	load_addr
+	ADC	sectsizes+1,Y
+	STA	tabP
+	STA	load_addr
+	LDA	load_addr+1
+	ADC	sectsizes,Y
+	STA	load_addr+1
+	STA	tabP+1
+	LDX	fromtrk
+	LDY	sectstart
+	DEC	numsects
+	LDA	numsects
+	BNE	slsloop0
+	RTS
+
+
+; -------------------------------------
+; Sectsave
+; -------------------------------------
+sectsavepa
+	JSR	sctldsvpa
+	JSR	ptabcom
+	LDA	param
+	LDX	fromtrk
+	JSR	load_ids
+slsloop1
+	LDA	load_addr
+	STA	ptab
+	LDA	load_addr+1
+	STA	ptab+1
+	LDA	param
+	LDX	fromtrk
+	LDY	sectstart
+	JSR	savesect
+	LDA	param+&0A
+	AND	#&1E
+	BEQ	slssvok
+	JMP	error_die
+slssvok
+	LDA	buffer1+3
+	ASL	A
+	TAY
+	CLC
+	LDA	load_addr
+	ADC	sectsizes+1,Y
+	STA	load_addr
+	LDA	load_addr+1
+	ADC	sectsizes,Y
+	STA	load_addr+1
+	LDA	dedpl
+	BNE	slss
+	JSR	nextpsect
+	JMP	slsslp
+slss
+	JSR	nextlsect
+slsslp
+	BCC	slssover
+	LDA	param+&0A
+	JMP	error_die
+slssover
+	STY	sectstart
+	CPX	fromtrk
+	BEQ	slstrkeq
+	STX	fromtrk
+	JSR	ptabcom
+	LDA	param
+	JSR	load_ids
+	LDA	load_addr
+	STA	ptab
+	LDA	load_addr+1
+	STA	ptab+1
+slstrkeq
+	STX	fromtrk
+	DEC	numsects
+	LDA	numsects
+	BNE	slsloop1
+	RTS
+
+; -------------------------------------
+; Sectload & Sectsave cli parser
+; -------------------------------------
+sctldsvpa
+	JSR	rdnum
+	BNE	sctldsverr
+	LDA	clibuf
+	PHA
+	LDA	clibuf+1
+	PHA
+	JSR	rdnum
+	BNE	sctldsverr
+	LDA	clibuf
+	PHA
+	JSR	rdstr
+	BNE	sctldsverr
+	CPX	#&00
+	BEQ	sctldsverr
+	LDA	(&F2),Y
+	JSR	capitalise
+	CMP	#'P'
+	BNE	sldnot_phys
+	LDA	#&00
+	JMP	rest_sldpa
+sldnot_phys
+	CMP	#'L'
+	BNE	sctldsverr
+	LDA	#&FF
+rest_sldpa
+	PHA
+	LDY	newy
+	LDX	#&00
+	JSR	rdnum
+	BNE	sctldsverr
+	LDA	clibuf
+	PHA
+	JSR	rdnum
+	BNE	sctldsverr
+	LDA	clibuf
+	PHA
+	JSR	rdnum
+	BNE	sldsvno_drv
+	LDA	clibuf
+	PHA
+	JMP	exitsldsvpa
+sldsvno_drv
+	LDA	drive_addr
+	PHA
+exitsldsvpa
+	PLA
+	STA	param
+	PLA
+	STA	numsects
+	PLA
+	STA	sectstart
+	PLA
+	STA	dedpl
+	PLA
+	STA	fromtrk
+	PLA
+	STA	load_addr+1
+	PLA
+	STA	load_addr
+	RTS
+
+sctldsverr
+	JMP	synerr
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------
