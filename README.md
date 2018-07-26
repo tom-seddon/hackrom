@@ -15,6 +15,9 @@ To build, type `make`.
 
 The ROM is written to `.build/hackrom.rom`.
 
+You can check out the `original` branch to get code that builds a
+byte-for-byte identical copy of the original ROM.
+
 ## Licence
 
 From the original readme:
