@@ -5,337 +5,337 @@
 
 verify_cr = $8F
 
-vererr
-	JMP	synerr
+vererr:
+                JMP	synerr
 
-verifypa
-	LDX	#$02
-verloop0
-	TXA
-	PHA
-	JSR	rdnum
-	BNE	vererr
-	PLA
-	TAX
-	LDA	clibuf
-	PHA
-	DEX
-	BPL	verloop0
-	JSR	rdstr
-	BNE	dverify
-	LDA	($F2),Y
-	JSR	capitalise
-	CMP	#'E'
-	BNE	ver_not_e
-	JMP	everify
-ver_not_e
-	CMP	#'L'
-	BNE	vererr
-	JMP	nverify
-
-
-
-dverify
-	PLA
-	STA	totrk
-	PLA
-	STA	fromtrk
-	PLA
-	STA	param
-dverloop1
-	LDA	#$2A
-	LDY	#$00
-	LDX	param+7
-	JSR	verify
-	BNE	dvernotok
-	LDA	#134
-	JSR	$FFEE
-	LDA	fromtrk
-	JSR	wdigit
-	LDA	#$09
-	JSR	$FFEE
-dvnexttrk
-	INC	fromtrk
-	INC	param+7
-	LDA	totrk
-	CMP	fromtrk
-	BCS	dverloop1
-	JSR	$FFE7
-	RTS
-
-dvernotok
-
-	LDY	#$00
-dverloop2
-	TYA
-	PHA
-	LDA	#135
-	JSR	$FFEE
-	TAY
-	JSR	wdigit
-	JSR	pcprint
-	.fill	3,8
-	.byte	0
-	LDY	#$00
-	LDA	#$21
-	JSR	verify
-	AND	#$1E
-	BEQ	dverOK
-	PLA
-	JSR	pcprint
-	.byte	129,9,9,9,0
-	JMP	dvnexttrk
-dverOK
-	PLA
-	TAY
-	INY
-	CPY	#$0A
-	BNE	dverloop2
-	LDA	#134
-	JSR	$FFEE
-	LDA	fromtrk
-	JSR	wdigit
-	LDA	#$09
-	JSR	$FFEE
-	JMP	dvnexttrk
+verifypa:
+                LDX	#$02
+verloop0:
+                TXA
+                PHA
+                JSR	rdnum
+                BNE	vererr
+                PLA
+                TAX
+                LDA	clibuf
+                PHA
+                DEX
+                BPL	verloop0
+                JSR	rdstr
+                BNE	dverify
+                LDA	($F2),Y
+                JSR	capitalise
+                CMP	#'E'
+                BNE	ver_not_e
+                JMP	everify
+ver_not_e:
+                CMP	#'L'
+                BNE	vererr
+                JMP	nverify
 
 
 
-nverify
-	PLA
-	STA	totrk
-	PLA
-	STA	fromtrk
-	PLA
-	STA	param
-verloop1
-	JSR	ptabcom
-	LDA	param
-	LDX	fromtrk
-	JSR	load_ids
-	LDA	buffer1+3
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	STA	buffer1+3
-	INC	buffer1+3
-        JSR	sort_ids
-	STA@w	vnumsects
-	LDY	#$00
-verloop2
-	TYA
-	PHA
-	LDA	#135
-	JSR	$FFEE
-	TYA
-	JSR	wdigit
-	JSR	pcprint
-	.fill	3,8
-	.byte	0
-	PLA
-	PHA
-	TAY
-	ASL	A
-	ASL	A
-	TAX
-	TAY
-	LDA	buffer1,X
-	TAX
-	BNE	not_trk0
-	LDA	fromtrk
-	BNE	is_trk0
-not_trk0
-	TAX
-	LDA	param
-	JSR	writetrack
-	LDA	buffer1+2,Y
-	TAY
-	LDA	buffer1+3
-	JSR	verify
-is_trk0
-	AND	#$1E
-	PHP
-	LDA	param
-	LDX	fromtrk
-	JSR	writetrack
-	PLP  
-	BEQ	verOK
-	PLA
-	JSR	pcprint
-	.byte	129,9,9,9,0
-	JMP	vnexttrk
-verOK
-	PLA
-	TAY
-	INY
-	CPY@w	vnumsects
-	BNE	verloop2
-	LDA	#134
-	JSR	$FFEE
-	LDA	fromtrk
-	JSR	wdigit
-	LDA	#$09
-	JSR	$FFEE
-vnexttrk
-	INC	fromtrk
-	LDA	totrk
-	CMP	fromtrk
-	BCC	ver_exit
-	JMP	verloop1
-ver_exit
-	RTS
+dverify:
+                PLA
+                STA	totrk
+                PLA
+                STA	fromtrk
+                PLA
+                STA	param
+dverloop1:
+                LDA	#$2A
+                LDY	#$00
+                LDX	param+7
+                JSR	verify
+                BNE	dvernotok
+                LDA	#134
+                JSR	$FFEE
+                LDA	fromtrk
+                JSR	wdigit
+                LDA	#$09
+                JSR	$FFEE
+dvnexttrk:
+                INC	fromtrk
+                INC	param+7
+                LDA	totrk
+                CMP	fromtrk
+                BCS	dverloop1
+                JSR	$FFE7
+                RTS
+
+dvernotok:
+
+                LDY	#$00
+dverloop2:
+                TYA
+                PHA
+                LDA	#135
+                JSR	$FFEE
+                TAY
+                JSR	wdigit
+                JSR	pcprint
+                .fill	3,8
+                .byte	0
+                LDY	#$00
+                LDA	#$21
+                JSR	verify
+                AND	#$1E
+                BEQ	dverOK
+                PLA
+                JSR	pcprint
+                .byte	129,9,9,9,0
+                JMP	dvnexttrk
+dverOK:
+                PLA
+                TAY
+                INY
+                CPY	#$0A
+                BNE	dverloop2
+                LDA	#134
+                JSR	$FFEE
+                LDA	fromtrk
+                JSR	wdigit
+                LDA	#$09
+                JSR	$FFEE
+                JMP	dvnexttrk
+
+
+
+nverify:
+                PLA
+                STA	totrk
+                PLA
+                STA	fromtrk
+                PLA
+                STA	param
+verloop1:
+                JSR	ptabcom
+                LDA	param
+                LDX	fromtrk
+                JSR	load_ids
+                LDA	buffer1+3
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                STA	buffer1+3
+                INC	buffer1+3
+                JSR	sort_ids
+                STA@w	vnumsects
+                LDY	#$00
+verloop2:
+                TYA
+                PHA
+                LDA	#135
+                JSR	$FFEE
+                TYA
+                JSR	wdigit
+                JSR	pcprint
+                .fill	3,8
+                .byte	0
+                PLA
+                PHA
+                TAY
+                ASL	A
+                ASL	A
+                TAX
+                TAY
+                LDA	buffer1,X
+                TAX
+                BNE	not_trk0
+                LDA	fromtrk
+                BNE	is_trk0
+not_trk0:
+                TAX
+                LDA	param
+                JSR	writetrack
+                LDA	buffer1+2,Y
+                TAY
+                LDA	buffer1+3
+                JSR	verify
+is_trk0:
+                AND	#$1E
+                PHP
+                LDA	param
+                LDX	fromtrk
+                JSR	writetrack
+                PLP  
+                BEQ	verOK
+                PLA
+                JSR	pcprint
+                .byte	129,9,9,9,0
+                JMP	vnexttrk
+verOK:
+                PLA
+                TAY
+                INY
+                CPY@w	vnumsects
+                BNE	verloop2
+                LDA	#134
+                JSR	$FFEE
+                LDA	fromtrk
+                JSR	wdigit
+                LDA	#$09
+                JSR	$FFEE
+vnexttrk:
+                INC	fromtrk
+                LDA	totrk
+                CMP	fromtrk
+                BCC	ver_exit
+                JMP	verloop1
+ver_exit:
+                RTS
 
 
 
 
 vnumsects = $70
-everify
-	PLA
-	STA	totrk
-	PLA
-	STA	fromtrk
-	PLA
-	STA	param
+everify:
+                PLA
+                STA	totrk
+                PLA
+                STA	fromtrk
+                PLA
+                STA	param
 
 
-verloop3
-	LDA	#$FF
-	STA	verify_cr
-	JSR	pcprint
-	.byte	$0D
-	.text	'Track'
-	.byte	129,0
-	LDA	fromtrk
-	JSR	wdigit
-	JSR	pcprint
-	.byte	134
-	.text	':'
-	.byte	135,0
-	LDA	#<buffer1
-	STA	ptab
-	LDA	#>buffer1
-	STA	ptab+1
-	LDA	param
-	LDX	fromtrk
-	JSR	load_ids
-	LDA	param+$0A
-	BEQ	govsect
-	PHA
-	LDA	#$08
-	JSR	$FFEE
-	LDA	#133
-	JSR	$FFEE
-	PLA
-	JSR	discerrmsg
-	JMP	vnextrk2
-govsect
-	JSR	sort_ids
-	STA	vnumsects
-	LDA	buffer3+3
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	STA	tmp2
-	INC	tmp2
+verloop3:
+                LDA	#$FF
+                STA	verify_cr
+                JSR	pcprint
+                .byte	$0D
+                .text	'Track'
+                .byte	129,0
+                LDA	fromtrk
+                JSR	wdigit
+                JSR	pcprint
+                .byte	134
+                .text	':'
+                .byte	135,0
+                LDA	#<buffer1
+                STA	ptab
+                LDA	#>buffer1
+                STA	ptab+1
+                LDA	param
+                LDX	fromtrk
+                JSR	load_ids
+                LDA	param+$0A
+                BEQ	govsect
+                PHA
+                LDA	#$08
+                JSR	$FFEE
+                LDA	#133
+                JSR	$FFEE
+                PLA
+                JSR	discerrmsg
+                JMP	vnextrk2
+govsect:
+                JSR	sort_ids
+                STA	vnumsects
+                LDA	buffer3+3
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                STA	tmp2
+                INC	tmp2
 
-	LDY	#$00
-verloop4
-	TYA
-	PHA
-	ASL	A
-	ASL	A
-	TAX
-	TAY
-	LDA	buffer1,X
-	TAX
-	BNE	verover4
-	LDA	fromtrk
-	BEQ	verover4
-	LDA	#$18
-	JMP	verover5
-verover4
-	LDA	param
-	JSR	writetrack
-	LDA	buffer1+2,Y
-	TAY
-	LDA	tmp2
-	JSR	verify
-verover5
-	PHP
-	PHA
-	LDA	param
-	LDX	fromtrk
-	JSR	writetrack
-	PLA
-	PLP
-	BEQ	sectok
+                LDY	#$00
+verloop4:
+                TYA
+                PHA
+                ASL	A
+                ASL	A
+                TAX
+                TAY
+                LDA	buffer1,X
+                TAX
+                BNE	verover4
+                LDA	fromtrk
+                BEQ	verover4
+                LDA	#$18
+                JMP	verover5
+verover4:
+                LDA	param
+                JSR	writetrack
+                LDA	buffer1+2,Y
+                TAY
+                LDA	tmp2
+                JSR	verify
+verover5:
+                PHP
+                PHA
+                LDA	param
+                LDX	fromtrk
+                JSR	writetrack
+                PLA
+                PLP
+                BEQ	sectok
 
 
-	PHA
-	JSR	sectdisp
-	LDA	#130
-	JSR	$FFEE
-	PLA
-	JSR	discerrmsg
-	JSR	vtab
-	JMP	vnextsect
-sectok
+                PHA
+                JSR	sectdisp
+                LDA	#130
+                JSR	$FFEE
+                PLA
+                JSR	discerrmsg
+                JSR	vtab
+                JMP	vnextsect
+sectok:
 
-	INC	verify_cr
-	LDA	verify_cr
-	CMP	#$04
-	BNE	nohome
-	JSR	vtab
-nohome
-	PLA
-	PHA
-	TAY
-	JSR	sectdisp
+                INC	verify_cr
+                LDA	verify_cr
+                CMP	#$04
+                BNE	nohome
+                JSR	vtab
+nohome:
+                PLA
+                PHA
+                TAY
+                JSR	sectdisp
 
-vnextsect
-	PLA
-	TAY
-	INY
-	CPY	vnumsects
-	BNE	verloop4
-vnextrk2
-	JSR	$FFE7
-	INC	fromtrk
-	LDA	totrk
-	CMP	fromtrk
-	BCC	verover0
-	JMP	verloop3
-verover0
-	RTS
+vnextsect:
+                PLA
+                TAY
+                INY
+                CPY	vnumsects
+                BNE	verloop4
+vnextrk2:
+                JSR	$FFE7
+                INC	fromtrk
+                LDA	totrk
+                CMP	fromtrk
+                BCC	verover0
+                JMP	verloop3
+verover0:
+                RTS
 
-vtab
-	JSR	$FFE7
-	LDX	#$0A
-	LDA	#$09
-indloop
-	JSR	$FFEE
-	DEX
-	BPL	indloop
-	LDA	#$00
-	STA	verify_cr
-	RTS
+vtab:
+                JSR	$FFE7
+                LDX	#$0A
+                LDA	#$09
+indloop:
+                JSR	$FFEE
+                DEX
+                BPL	indloop
+                LDA	#$00
+                STA	verify_cr
+                RTS
 
-sectdisp
-	TYA
-	JSR	wdigit
-	LDA	#'('
-	JSR	$FFEE
-	TYA
-	ASL	A
-	ASL	A
-	TAX
-	LDA	buffer3+2,X
-	JSR	wdigit
-	JSR	pcprint
-	.text	') '
-	.byte	$00
-	RTS
+sectdisp:
+                TYA
+                JSR	wdigit
+                LDA	#'('
+                JSR	$FFEE
+                TYA
+                ASL	A
+                ASL	A
+                TAX
+                LDA	buffer3+2,X
+                JSR	wdigit
+                JSR	pcprint
+                .text	') '
+                .byte	$00
+                RTS

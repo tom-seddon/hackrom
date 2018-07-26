@@ -19,101 +19,101 @@ E_SYNERR = $01
 ;  A and dies on that error
 ; ----------------------------------
 
-error_die
-	LDX	#num_errors
-error_die_lp0
-	CMP	error_tab,X
-	BEQ	die_horribly
-	DEX
-	BNE	error_die_lp0
-die_horribly
-	ASL	A
-	TAX
-	LDA	error_pnt,X
-	STA	tmpx
-	LDA	error_pnt+1,X
-	STA	tmpy
-	JMP	(tmpx)
+error_die:
+                LDX	#num_errors
+error_die_lp0:
+                CMP	error_tab,X
+                BEQ	die_horribly
+                DEX
+                BNE	error_die_lp0
+die_horribly:
+                ASL	A
+                TAX
+                LDA	error_pnt,X
+                STA	tmpx
+                LDA	error_pnt+1,X
+                STA	tmpy
+                JMP	(tmpx)
 
-error_tab
-	.byte	E_UNKNOWN_ERR
-	.byte	E_CLOCK_ERR
-	.byte	E_SECTOR_ID_ERR
-	.byte	E_DATA_CRC_ERR
-	.byte	E_DRV_NOT_RDY
-	.byte	E_WRITE_PROTECT
-	.byte	E_WRITE_FAULT
-	.byte	E_SCTR_NOT_FND
-end_error_tab
+error_tab:
+                .byte	E_UNKNOWN_ERR
+                .byte	E_CLOCK_ERR
+                .byte	E_SECTOR_ID_ERR
+                .byte	E_DATA_CRC_ERR
+                .byte	E_DRV_NOT_RDY
+                .byte	E_WRITE_PROTECT
+                .byte	E_WRITE_FAULT
+                .byte	E_SCTR_NOT_FND
+end_error_tab:
 
 num_errors = end_error_tab-error_tab-1
 
-error_pnt
-	.word	unknown_error
-	.word	clock_error
-	.word	sector_id_err
-	.word	data_crc_error
-	.word	drv_not_rdy
-	.word	write_protect
-	.word	trk0_not_fnd
-	.word	write_fault
-	.word	sctr_not_fnd
+error_pnt:
+                .word	unknown_error
+                .word	clock_error
+                .word	sector_id_err
+                .word	data_crc_error
+                .word	drv_not_rdy
+                .word	write_protect
+                .word	trk0_not_fnd
+                .word	write_fault
+                .word	sctr_not_fnd
 
 
 
 
-errors
+errors:
 
-unknown_error
-	JSR	fatal_error
-	.byte	E_UNKNOWN_ERR
-	.text	"Unknown error"
-	.byte	$00
+unknown_error:
+                JSR	fatal_error
+                .byte	E_UNKNOWN_ERR
+                .text	"Unknown error"
+                .byte	$00
 
-clock_error
-	JSR	fatal_error
-	.byte	E_CLOCK_ERR
-	.text	"Clock error"
-	.byte	$00
+clock_error:
+                JSR	fatal_error
+                .byte	E_CLOCK_ERR
+                .text	"Clock error"
+                .byte	$00
 
-sector_id_err
-	JSR	fatal_error
-	.byte	E_SECTOR_ID_ERR
-	.text	"Sector Id CRC error"
-	.byte	$00
+sector_id_err:
+                JSR	fatal_error
+                .byte	E_SECTOR_ID_ERR
+                .text	"Sector Id CRC error"
+                .byte	$00
 
-data_crc_error
-	JSR	fatal_error
-	.byte	E_DATA_CRC_ERR
-	.text	"Data CRC Error"
-	.byte	$00
+data_crc_error:
+                JSR	fatal_error
+                .byte	E_DATA_CRC_ERR
+                .text	"Data CRC Error"
+                .byte	$00
 
-drv_not_rdy
-	JSR	fatal_error
-	.byte	E_DRV_NOT_RDY
-	.text	"Drive not ready"
-	.byte	$00
+drv_not_rdy:
+                JSR	fatal_error
+                .byte	E_DRV_NOT_RDY
+                .text	"Drive not ready"
+                .byte	$00
 
-write_protect
-	JSR	fatal_error
-	.byte	E_WRITE_PROTECT
-	.text	"Write protect"
-	.byte	$00
+write_protect:
+                JSR	fatal_error
+                .byte	E_WRITE_PROTECT
+                .text	"Write protect"
+                .byte	$00
 
-trk0_not_fnd
-	JSR	fatal_error
-	.byte	E_TRK0_NOT_FND
-	.text	"Track 0 not found"
-	.byte	$00
+trk0_not_fnd:
+                JSR	fatal_error
+                .byte	E_TRK0_NOT_FND
+                .text	"Track 0 not found"
+                .byte	$00
 
-write_fault
-	JSR	fatal_error
-	.byte	E_WRITE_FAULT
-	.text	"Write fault"
-	.byte	$00
+write_fault:
+                JSR	fatal_error
+                .byte	E_WRITE_FAULT
+                .text	"Write fault"
+                .byte	$00
 
-sctr_not_fnd
-	JSR	fatal_error
-	.byte	E_SCTR_NOT_FND
-	.text	"Sector not found"
-	.byte	$00
+sctr_not_fnd:
+                JSR	fatal_error
+                .byte	E_SCTR_NOT_FND
+                .text	"Sector not found"
+                .byte	$00

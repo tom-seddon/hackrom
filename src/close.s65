@@ -3,23 +3,23 @@
 ;
 ; -----------------------------------
 
-closepa
-	JSR	rdnum
-	BEQ	closego
-	LDA	#$00
-	TAY
-	JMP	$FFCE
-closeloop
-	JSR	rdnum
-	BNE	closequit
-closego
-	TYA
-	PHA
-	LDY	clibuf
-	LDA	#$00
-	JSR	$FFCE
-	PLA
-	TAY
-	JMP	closeloop
-closequit
-	RTS
+closepa:
+                JSR	rdnum
+                BEQ	closego
+                LDA	#$00
+                TAY
+                JMP	$FFCE
+closeloop:
+                JSR	rdnum
+                BNE	closequit
+closego:
+                TYA
+                PHA
+                LDY	clibuf
+                LDA	#$00
+                JSR	$FFCE
+                PLA
+                TAY
+                JMP	closeloop
+closequit:
+                RTS

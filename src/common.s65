@@ -57,19 +57,19 @@ tableptr = $78 ;$79
 rptr = $F6 ;$F7
 osrdrm = $FFB9
 
-num
-	.text	"0123456789ABCDEF"
-letter
-	.text	"................................ !"
-	.text	'"'
-	.text	"_$%&'()*+,-./0123456789:;<=>?"
-	.text	"@"
-	.text	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	.text	"[\]^`#"
-	.text	"abcdefghijklmnopqrstuvwxyz{|}~"
-	.byte	127
-cursor2
-	.word	$4BCF
+num:
+                .text	"0123456789ABCDEF"
+letter:
+                .text	"................................ !"
+                .text	'"'
+                .text	"_$%&'()*+,-./0123456789:;<=>?"
+                .text	"@"
+                .text	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                .text	"[\]^`#"
+                .text	"abcdefghijklmnopqrstuvwxyz{|}~"
+                .byte	127
+cursor2:
+                .word	$4BCF
 
 ; --------------------------------
 ; Capitalise
@@ -82,15 +82,15 @@ cursor2
 ;        returned as upper case. Other
 ;        chars left alone
 ; --------------------------------
-capitalise
-	AND	#$7F
-	CMP	#'z'+1
-	BCS	nochange
-	CMP	#'a'
-	BCC	nochange
-	SBC	#32
-nochange
-	RTS
+capitalise:
+                AND	#$7F
+                CMP	#'z'+1
+                BCS	nochange
+                CMP	#'a'
+                BCC	nochange
+                SBC	#32
+nochange:
+                RTS
 
 ; --------------------------------
 ; Pokes to the 6845 chip registers
@@ -99,10 +99,10 @@ nochange
 ;
 ; A,X,Y preserved
 ; --------------------------------
-poke6845
-	STA	$FE00
-	STX	$FE01
-	RTS
+poke6845:
+                STA	$FE00
+                STX	$FE01
+                RTS
 
 ; --------------------------------
 ; Hexadecimal to ascii converter
@@ -114,20 +114,20 @@ poke6845
 ; Exit : A=high nibble ascii value
 ;        Y=low nibble ascii value
 ; --------------------------------
-hex_asc
-	PHA
-	AND	#$F
-	TAX
-	LDA	num,X
-	TAY
-	PLA
-	LSR	A
-	LSR	A
-	LSR	A
-	LSR	A
-	TAX
-	LDA	num,X
-	RTS
+hex_asc:
+                PHA
+                AND	#$F
+                TAX
+                LDA	num,X
+                TAY
+                PLA
+                LSR	A
+                LSR	A
+                LSR	A
+                LSR	A
+                TAX
+                LDA	num,X
+                RTS
 
 ; --------------------------------
 ; Print a value to the screen
@@ -139,37 +139,37 @@ hex_asc
 ;
 ; Exit : value placed at (screenlo)
 ; --------------------------------
-printnumx
-	CLC
-printnum
-	PHP
-	STX	tmp
-	STY	tmp2
-	LDY	#$00
-	PHA
-	LSR	A
-	LSR	A
-	LSR	A
-	LSR	A
-	TAX
-	LDA	num,X
-	STA	(screenlo),Y
-	PLA
-	AND	#$0F
-	TAX
-	LDA	num,X
-	INY
-	STA	(screenlo),Y
-	LDA	screenlo
-	PLP
-	ADC	#2
-	STA	screenlo
-	BCC	pnj
-	INC	screenhi
-pnj
-	LDX	tmp
-	LDY	tmp2
-	RTS
+printnumx:
+                CLC
+printnum:
+                PHP
+                STX	tmp
+                STY	tmp2
+                LDY	#$00
+                PHA
+                LSR	A
+                LSR	A
+                LSR	A
+                LSR	A
+                TAX
+                LDA	num,X
+                STA	(screenlo),Y
+                PLA
+                AND	#$0F
+                TAX
+                LDA	num,X
+                INY
+                STA	(screenlo),Y
+                LDA	screenlo
+                PLP
+                ADC	#2
+                STA	screenlo
+                BCC	pnj
+                INC	screenhi
+pnj:
+                LDX	tmp
+                LDY	tmp2
+                RTS
 
 ; --------------------------------
 ; Two byte ascii to hex converter
@@ -181,18 +181,18 @@ pnj
 ;
 ; Exit : A=hex value
 ; --------------------------------
-asc_hex
-	TXA
-	JSR	convert
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	STA	tmp
-	TYA
-	JSR	convert
-	ORA	tmp
-	RTS
+asc_hex:
+                TXA
+                JSR	convert
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                STA	tmp
+                TYA
+                JSR	convert
+                ORA	tmp
+                RTS
 
 ; ------------------------------
 ; Read a single 'item' from the
@@ -216,263 +216,263 @@ gsread = $FFC5
 newy = $70
 endstr = $71
 ;
-rdquoted
-quote
-	INY
-	TYA
-	PHA
-	DEY
-	JSR	gsinit
-	STY	newy
-	STY	endstr
-quote1
-	JSR	gsread
-	BCS	quote2
-	STY	newy
-	LDY	endstr
-	STA	($F2),Y
-	INC	endstr
-	LDY	newy
-; BNE instead?
-	JMP	quote1
-quote2
-	INC	newy
-	PLA
-	TAY
-; zero flag already clear
-	EOR	#$FF
-	CLC
-	ADC	endstr
-	TAX
-	INX
-	SEC
-	LDA	#$00
-rdstrend
-	RTS
-;
-rdstr
-	JSR	nonspace
-	BEQ	rdstrfail
-	CMP	#'"'
-	BEQ	rdquoted
-; force quotes
-	DEY
-	TYA
-	PHA
-	LDA	#'"'
-rdq1
-	DEY
-	STA	($F2),Y
-	INY
-	INY
-	JSR	rdstrcom
-	BNE	rdq1
-	DEY
-	LDA	#'"'
-	STA	($F2),Y
-	PLA
-	TAY
-	DEY
-	BNE	rdquoted
-rdstrfail
-	LDX	#$00
-	INY
-	RTS
-nonspace
-	DEY
-nonspace0
-	INY
-	LDA	($F2),Y
-	CMP	#' '
-	BEQ	nonspace0
-	BNE	nonspace2
-;
-rdstrcom
-	LDA	($F2),Y
-	CMP	#' '
-	BEQ	nonspace1
-nonspace2
-	CMP	#IFS
-	BEQ	nonspace1
-	CMP	#'+'
-	BEQ	nonspace1
-	CMP	#$0D
-nonspace1
-	RTS
-; --- decimal ---
-decimal
-	JSR	sev
-	JSR	hexD
-	TYA
-	PHA
-	LDX	#<clibuf
-	LDY	#>clibuf
-	JSR	dec_hex
-	LDX	#3
-decloop0
-	LDA	clibuf+4,X
-	STA	clibuf,X
-	DEX
-	BPL	decloop0
-	PLA
-	TAY
-	LDX	#$00
-	CLC
-	RTS
+rdquoted:
+quote:
+                INY
+                TYA
+                PHA
+                DEY
+                JSR	gsinit
+                STY	newy
+                STY	endstr
+quote1:
+                JSR	gsread
+                BCS	quote2
+                STY	newy
+                LDY	endstr
+                STA	($F2),Y
+                INC	endstr
+                LDY	newy
+                ; BNE instead?
+                JMP	quote1
+quote2:
+                INC	newy
+                PLA
+                TAY
+                ; zero flag already clear
+                EOR	#$FF
+                CLC
+                ADC	endstr
+                TAX
+                INX
+                SEC
+                LDA	#$00
+rdstrend:
+                RTS
+                ;
+rdstr:
+                JSR	nonspace
+                BEQ	rdstrfail
+                CMP	#'"'
+                BEQ	rdquoted
+                ; force quotes
+                DEY
+                TYA
+                PHA
+                LDA	#'"'
+rdq1:
+                DEY
+                STA	($F2),Y
+                INY
+                INY
+                JSR	rdstrcom
+                BNE	rdq1
+                DEY
+                LDA	#'"'
+                STA	($F2),Y
+                PLA
+                TAY
+                DEY
+                BNE	rdquoted
+rdstrfail:
+                LDX	#$00
+                INY
+                RTS
+nonspace:
+                DEY
+nonspace0:
+                INY
+                LDA	($F2),Y
+                CMP	#' '
+                BEQ	nonspace0
+                BNE	nonspace2
+                ;
+rdstrcom:
+                LDA	($F2),Y
+                CMP	#' '
+                BEQ	nonspace1
+nonspace2:
+                CMP	#IFS
+                BEQ	nonspace1
+                CMP	#'+'
+                BEQ	nonspace1
+                CMP	#$0D
+nonspace1:
+                RTS
+                ; --- decimal ---
+decimal:
+                JSR	sev
+                JSR	hexD
+                TYA
+                PHA
+                LDX	#<clibuf
+                LDY	#>clibuf
+                JSR	dec_hex
+                LDX	#3
+decloop0:
+                LDA	clibuf+4,X
+                STA	clibuf,X
+                DEX
+                BPL	decloop0
+                PLA
+                TAY
+                LDX	#$00
+                CLC
+                RTS
 
-rdstrnum
-	JSR	nonspace
-	CMP	#'"'
-	BEQ	rdstr
-;
-rdnum
-	JSR	nonspace
-	CMP	#'+'
-	BEQ	plusnum
-	CMP	#IFS
-	BNE	rdnumx
-	BEQ	rdexitfail
-plusnum
-	INY
-	JSR	rdnumx
-	BEQ	swallow
-backone
-	DEY
-swallow
-	LDX	#$04
-	CLC
-rdadd
-	LDA	clibuf-1,X
-	ADC	oldclibuf-1,X
-	STA	clibuf-1,X
-	DEX
-	BNE	rdadd
-rdexitOK
-	CLC
-	RTS
+rdstrnum:
+                JSR	nonspace
+                CMP	#'"'
+                BEQ	rdstr
+                ;
+rdnum:
+                JSR	nonspace
+                CMP	#'+'
+                BEQ	plusnum
+                CMP	#IFS
+                BNE	rdnumx
+                BEQ	rdexitfail
+plusnum:
+                INY
+                JSR	rdnumx
+                BEQ	swallow
+backone:
+                DEY
+swallow:
+                LDX	#$04
+                CLC
+rdadd:
+                LDA	clibuf-1,X
+                ADC	oldclibuf-1,X
+                STA	clibuf-1,X
+                DEX
+                BNE	rdadd
+rdexitOK:
+                CLC
+                RTS
 
-rdexitfail
-	LDX	#$FF
-	INY
-	RTS
+rdexitfail:
+                LDX	#$FF
+                INY
+                RTS
 
-rdnumx
-	JSR	wipeclib
-; X now zero
-	JSR	nonspace
-	BEQ	rdexitfail
-	CMP	#'"'
-	BNE	rdn0
-	JSR	synerr
-	JMP	fatal
-rdn0
-	INY
-	CMP	#'@'
-	BEQ	var
-	CMP	#'#'
-	BEQ	decimal
-	CMP	#'%'
-	BEQ	binary
-	CMP	#'&'
-	BEQ	hex
-; defaults to hex
-	DEY
-hex
-	CLV
-hexD
-	JSR	rdstrcom
-	BEQ	rdexitOK
-	BVS	hexD2
-	JSR	ahex_A
-	BVC	hex3
-hexD2
-	JSR	adec_A
-hex3
-	LDX	#3
-hex2
-	ASL	clibuf
-	ROL	clibuf+1
-	ROL	clibuf+2
-	ROL	clibuf+3
-	DEX
-	BPL	hex2
-	ORA	clibuf
-	STA	clibuf
-	INY
-	BNE	hexD
-; --- Binary ---
-binary
-	LDA	($F2),Y
-	JSR	rdstrcom
-	BEQ	rdexitOK
-	JSR	abin_C
-	ROL	clibuf
-	ROL	clibuf+1
-	ROL	clibuf+2
-	ROL	clibuf+3
-	INY
-	BNE	binary
-; --- A BASIC or OS variable ---
-var
-	LDA	($F2),Y
-	ORA	#$20
-	CMP	#'p'	; PAGE
-	BNE	notpage
-	LDA	$18
-	STA	clibuf+1
-	JMP	var2
-notpage
-	CMP	#'t'	; TOP
-	BNE	nottop
-	LDX	#$12
-varz
-	LDA	0,X
-	STA	clibuf
-	LDA	1,X
-	STA	clibuf+1
-	JMP	var2
-nottop
-	CMP	#'l'	; LOMEM
-; X already zero here.
-	BEQ	varz
-notlomem
-	CMP	#'h'	; HIMEM
-	BNE	nothimem
-	LDX	#6
-	BNE	varz
-nothimem
-	CMP	#'o'	; OSHWM
-	BNE	notoshwm
-	LDA	$244
-	STA	clibuf+1
-	JMP	var2
-notoshwm
-	CMP	#'r'; ROM
-	BNE	notvar
-	LDA	#$80
-	STA	clibuf+1
-var2
-	INY
-	JSR	rdstrcom
-	BNE	var2
-	CLC
-rdexit2
-	RTS
-notvar
-	JSR	pcprint
-	.text	"Unknown variable",13,0
-	JMP	fatal
+rdnumx:
+                JSR	wipeclib
+                ; X now zero
+                JSR	nonspace
+                BEQ	rdexitfail
+                CMP	#'"'
+                BNE	rdn0
+                JSR	synerr
+                JMP	fatal
+rdn0:
+                INY
+                CMP	#'@'
+                BEQ	var
+                CMP	#'#'
+                BEQ	decimal
+                CMP	#'%'
+                BEQ	binary
+                CMP	#'&'
+                BEQ	hex
+                ; defaults to hex
+                DEY
+hex:
+                CLV
+hexD:
+                JSR	rdstrcom
+                BEQ	rdexitOK
+                BVS	hexD2
+                JSR	ahex_A
+                BVC	hex3
+hexD2:
+                JSR	adec_A
+hex3:
+                LDX	#3
+hex2:
+                ASL	clibuf
+                ROL	clibuf+1
+                ROL	clibuf+2
+                ROL	clibuf+3
+                DEX
+                BPL	hex2
+                ORA	clibuf
+                STA	clibuf
+                INY
+                BNE	hexD
+                ; --- Binary ---
+binary:
+                LDA	($F2),Y
+                JSR	rdstrcom
+                BEQ	rdexitOK
+                JSR	abin_C
+                ROL	clibuf
+                ROL	clibuf+1
+                ROL	clibuf+2
+                ROL	clibuf+3
+                INY
+                BNE	binary
+                ; --- A BASIC or OS variable ---
+var:
+                LDA	($F2),Y
+                ORA	#$20
+                CMP	#'p'	; PAGE
+                BNE	notpage
+                LDA	$18
+                STA	clibuf+1
+                JMP	var2
+notpage:
+                CMP	#'t'	; TOP
+                BNE	nottop
+                LDX	#$12
+varz:
+                LDA	0,X
+                STA	clibuf
+                LDA	1,X
+                STA	clibuf+1
+                JMP	var2
+nottop:
+                CMP	#'l'	; LOMEM
+                ; X already zero here.
+                BEQ	varz
+notlomem:
+                CMP	#'h'	; HIMEM
+                BNE	nothimem
+                LDX	#6
+                BNE	varz
+nothimem:
+                CMP	#'o'	; OSHWM
+                BNE	notoshwm
+                LDA	$244
+                STA	clibuf+1
+                JMP	var2
+notoshwm:
+                CMP	#'r'; ROM
+                BNE	notvar
+                LDA	#$80
+                STA	clibuf+1
+var2:
+                INY
+                JSR	rdstrcom
+                BNE	var2
+                CLC
+rdexit2:
+                RTS
+notvar:
+                JSR	pcprint
+                .text	"Unknown variable",13,0
+                JMP	fatal
 
-wipeclib
-	LDX	#$04
-clearclib
-	LDA	clibuf-1,X
-	STA	oldclibuf-1,X
-	LDA	#$00
-	STA	clibuf-1,X
-	DEX
-	BNE	clearclib
-	RTS
+wipeclib:
+                LDX	#$04
+clearclib:
+                LDA	clibuf-1,X
+                STA	oldclibuf-1,X
+                LDA	#$00
+                STA	clibuf-1,X
+                DEX
+                BNE	clearclib
+                RTS
 
 ; ----------------------------------
 ; Decimal to Hex base convert
@@ -482,96 +482,97 @@ clearclib
 ;
 ; A,X,Y destroyed
 ;
-; Exit : hexnum = second 4 bytes table  ; ----------------------------------
-dec_hex
-	STX	ptrDH
-	STY	ptrDH+1
-	LDA	#0
-	STA	dhbits
-	LDY	#7
-zerohexnum
-	STA	(ptrDH),Y
-	DEY
-	CPY	#3
-	BNE	zerohexnum
-zeroinc
-	STA	dhinc,Y
-	DEY
-	BPL	zeroinc
-	INC	dhinc
-	LDA	#0
-	BEQ	overDH1
-dhmloop
-	LDA	dhbits
-	AND	#3
-	BNE	overDH1
-	LDY	#3
-	LDX	#$FF
-	CLC
-loopDH5
-	INX
-	PLA
-	ADC	dhinc,X
-	STA	dhinc,X
-	DEY
-	BPL	loopDH5
-overDH1
-	CMP	#1
-	BNE	overDH4
-	LDX	#3
-loopDH4
-	LDA	dhinc,X
-	PHA
-	DEX
-	BPL	loopDH4
-overDH4
-	LDY	#3
-	CLC
-shiftloop
-	LDA	(ptrDH),Y
-	ROR	A
-	STA	(ptrDH),Y
-	DEY
-	BPL	shiftloop
-	BCC	overDH2
-	CLC
-	LDY	#4
-	LDX	#0
-	PHP
-loopDH2
-	PLP
-	LDA	(ptrDH),Y
-	ADC	dhinc,X
-	STA	(ptrDH),Y
-	PHP
-	INX
-	INY
-	CPX	#4
-	BNE	loopDH2
-	PLP
-overDH2
-	LDA	dhbits
-	AND	#3
-	CMP	#3
-	BEQ	overDH3
-	CLC
-	LDX	#0
-	LDY	#3
-loopDH3
-	ROL	dhinc,X
-	INX
-	DEY
-	BPL	loopDH3
-overDH3
-	INC	dhbits
-	LDA	dhbits
-	CMP	#32
-	BNE	dhmloop
-	PLA
-	PLA
-	PLA
-	PLA
-	RTS
+; Exit : hexnum = second 4 bytes table
+; ----------------------------------
+dec_hex:
+                STX	ptrDH
+                STY	ptrDH+1
+                LDA	#0
+                STA	dhbits
+                LDY	#7
+zerohexnum:
+                STA	(ptrDH),Y
+                DEY
+                CPY	#3
+                BNE	zerohexnum
+zeroinc:
+                STA	dhinc,Y
+                DEY
+                BPL	zeroinc
+                INC	dhinc
+                LDA	#0
+                BEQ	overDH1
+dhmloop:
+                LDA	dhbits
+                AND	#3
+                BNE	overDH1
+                LDY	#3
+                LDX	#$FF
+                CLC
+loopDH5:
+                INX
+                PLA
+                ADC	dhinc,X
+                STA	dhinc,X
+                DEY
+                BPL	loopDH5
+overDH1:
+                CMP	#1
+                BNE	overDH4
+                LDX	#3
+loopDH4:
+                LDA	dhinc,X
+                PHA
+                DEX
+                BPL	loopDH4
+overDH4:
+                LDY	#3
+                CLC
+shiftloop:
+                LDA	(ptrDH),Y
+                ROR	A
+                STA	(ptrDH),Y
+                DEY
+                BPL	shiftloop
+                BCC	overDH2
+                CLC
+                LDY	#4
+                LDX	#0
+                PHP
+loopDH2:
+                PLP
+                LDA	(ptrDH),Y
+                ADC	dhinc,X
+                STA	(ptrDH),Y
+                PHP
+                INX
+                INY
+                CPX	#4
+                BNE	loopDH2
+                PLP
+overDH2:
+                LDA	dhbits
+                AND	#3
+                CMP	#3
+                BEQ	overDH3
+                CLC
+                LDX	#0
+                LDY	#3
+loopDH3:
+                ROL	dhinc,X
+                INX
+                DEY
+                BPL	loopDH3
+overDH3:
+                INC	dhbits
+                LDA	dhbits
+                CMP	#32
+                BNE	dhmloop
+                PLA
+                PLA
+                PLA
+                PLA
+                RTS
 
 ; --------------------------------
 ; Hex to Decimal base converter
@@ -584,86 +585,86 @@ overDH3
 ; Exit : decnum = second 5 bytes table
 ; --------------------------------
 
-hex_dec
-	STX	ptrHD
-	STY	ptrHD+1
-	LDA	#32
-	STA	hdbits
-	LDY	#7
-	LDA	#0
-zerodecnum
-	STA	(ptrHD),Y
-	DEY
-	CPY	#3
-	BNE	zerodecnum
-zeroincHD
-	STA	hdinc,Y
-	DEY
-	BPL	zeroincHD
-	INC	hdinc
-HDmloop
-	LDY	#3
-	CLC
-hdshift
-	LDA	(ptrHD),Y
-	ROR	A
-	STA	(ptrHD),Y
-	DEY
-	BPL	hdshift
-	BCC	overHD2
-	CLC
-	LDY	#4
-	LDX	#0
-	PHP
-loopHD2
-	PLP
-	SED
-	LDA	(ptrHD),Y
-	ADC	hdinc,X
-	STA	(ptrHD),Y
-	PHP
-	CLD
-	INX
-	INY
-	CPX	#4
-	BNE	loopHD2
-	PLP
-overHD2
-	LDY	#3
-	CLC
-	LDX	#0
-loopHD1
-	SED
-	LDA	hdinc,X
-	ADC	hdinc,X
-	STA	hdinc,X
-	CLD
-	INX
-	DEY
-	BPL	loopHD1
-	DEC	hdbits
-	LDA	hdbits
-	BNE	HDmloop
-	RTS
+hex_dec:
+                STX	ptrHD
+                STY	ptrHD+1
+                LDA	#32
+                STA	hdbits
+                LDY	#7
+                LDA	#0
+zerodecnum:
+                STA	(ptrHD),Y
+                DEY
+                CPY	#3
+                BNE	zerodecnum
+zeroincHD:
+                STA	hdinc,Y
+                DEY
+                BPL	zeroincHD
+                INC	hdinc
+HDmloop:
+                LDY	#3
+                CLC
+hdshift:
+                LDA	(ptrHD),Y
+                ROR	A
+                STA	(ptrHD),Y
+                DEY
+                BPL	hdshift
+                BCC	overHD2
+                CLC
+                LDY	#4
+                LDX	#0
+                PHP
+loopHD2:
+                PLP
+                SED
+                LDA	(ptrHD),Y
+                ADC	hdinc,X
+                STA	(ptrHD),Y
+                PHP
+                CLD
+                INX
+                INY
+                CPX	#4
+                BNE	loopHD2
+                PLP
+overHD2:
+                LDY	#3
+                CLC
+                LDX	#0
+loopHD1:
+                SED
+                LDA	hdinc,X
+                ADC	hdinc,X
+                STA	hdinc,X
+                CLD
+                INX
+                DEY
+                BPL	loopHD1
+                DEC	hdbits
+                LDA	hdbits
+                BNE	HDmloop
+                RTS
 
 ; ------------------------------
 ; Displays "Not a number" error
 ; ------------------------------
-nan
-	JSR	pcprint
-	.text	"Not a number.",13,0
+nan:
+                JSR	pcprint
+                .text	"Not a number.",13,0
 
-	.if !X_ROM_HEAD
-	.if !X_HACK_HEAD
+                .if !X_ROM_HEAD
+                .if !X_HACK_HEAD
 ; -------------------------------
 ; Backup synerr if not using as a rom
 ; -------------------------------
-synerr
-	.byte	$00,$00
-	.text	"Syntax Error"
-	.byte	$00
-	.endif
-	.endif
+synerr:
+                .byte	$00,$00
+                .text	"Syntax Error"
+                .byte	$00
+                .endif
+                .endif
 
 ; ------------------------------------
 ; fatal error! Exit rom from any
@@ -671,16 +672,16 @@ synerr
 ; stack pointer back to a remembered
 ; one and RTSing
 ; ------------------------------------
-fatal
-	.if	X_ROM_HEAD
-	LDX	stacksave
-; include the RTS location
-	DEX
-	DEX
-; and quit
-	TXS
-	.endif
-	RTS
+fatal:
+                .if	X_ROM_HEAD
+                LDX	stacksave
+                ; include the RTS location
+                DEX
+                DEX
+                ; and quit
+                TXS
+                .endif
+                RTS
 
 ; -----------------------------
 ; fatal_error
@@ -691,138 +692,138 @@ fatal
 ; a message. Combination of pcprint and
 ; fatal
 ; ------------------------------
-fatal_error
-	PLA
-	STA	tmpx
-	PLA
-	STA	tmpy
-	LDY	#1
-fatal_err1
-	LDA	(tmpx),Y
-	STA	$0100,Y
-	BEQ	fatal_err2
-	INY
-	BNE	fatal_err1
-fatal_err2
-	LDA	#$00
-	STA	$100
-	.if	X_ROM_HEAD
-	LDX	stacksave
-	DEX
-	DEX
-	TXS
-	.endif
-	JMP	$100
+fatal_error:
+                PLA
+                STA	tmpx
+                PLA
+                STA	tmpy
+                LDY	#1
+fatal_err1:
+                LDA	(tmpx),Y
+                STA	$0100,Y
+                BEQ	fatal_err2
+                INY
+                BNE	fatal_err1
+fatal_err2:
+                LDA	#$00
+                STA	$100
+                .if	X_ROM_HEAD
+                LDX	stacksave
+                DEX
+                DEX
+                TXS
+                .endif
+                JMP	$100
 
 ; ------------------------------
 ; check_escape
 ; Checks if escape has been pressed
 ; Carry set if it has been
 ; -----------------------------
-check_escape
-	LDA	$FF
-	ASL	A
-	RTS
+check_escape:
+                LDA	$FF
+                ASL	A
+                RTS
 
 ; ------------------------------
 ; Convert ascii ("0" / "1") in
 ; A reg to binary number in Carry
 ; ------------------------------
-abin_C
-	CMP	#'0'
-	BMI	nan
-	CMP	#'2'
-	BCS	nan
-	CMP	#'1'
-	RTS
+abin_C:
+                CMP	#'0'
+                BMI	nan
+                CMP	#'2'
+                BCS	nan
+                CMP	#'1'
+                RTS
 
 ; ------------------------------
 ; Convert ascii hex ("0"-"9" /
 ; "A"-"F") in A reg to actual
 ; value in A register
 ; ------------------------------
-convert
-ahex_A
-	CMP	#'0'
-	BCC	nan
-	CMP	#':'
-	BCC	notA_F
-; Allow for $F and $f
-	ORA	#$20
-	CMP	#'a'
-	BCC	nan
-	CMP	#'g'
-	BCS	nan
-	SEC
-	SBC	#7
-notA_F
-	AND	#$0F
-	RTS
+convert:
+ahex_A:
+                CMP	#'0'
+                BCC	nan
+                CMP	#':'
+                BCC	notA_F
+                ; Allow for $F and $f
+                ORA	#$20
+                CMP	#'a'
+                BCC	nan
+                CMP	#'g'
+                BCS	nan
+                SEC
+                SBC	#7
+notA_F:
+                AND	#$0F
+                RTS
 
 ; ------------------------------
 ; Convert ascii dec. ("0"-"9") in
 ; A reg to actual val in A register
 ; ------------------------------
-adec_A
-	CMP	#'0'
-	BCC	nan
-	CMP	#':'
-	BCS	nan
-	AND	#$0F
-	RTS
+adec_A:
+                CMP	#'0'
+                BCC	nan
+                CMP	#':'
+                BCS	nan
+                AND	#$0F
+                RTS
 
 ; --------------------------------
 ; Set up cursor for DEDIT and MEM
 ; --------------------------------
-setcursor
-	STA	$248
-	STA	$FE20
-; *FX 12,1 and *FX11,30
-	LDA	#1
-	STA	$255
-	LDA	#30
-	STA	$254
-	LDA	#1
-	STA	$27D
-	LDA	#10
-	LDX	#$41
-	JSR	poke6845
-	LDA	#11
-	LDA	#$10
-	JMP	poke6845
+setcursor:
+                STA	$248
+                STA	$FE20
+                ; *FX 12,1 and *FX11,30
+                LDA	#1
+                STA	$255
+                LDA	#30
+                STA	$254
+                LDA	#1
+                STA	$27D
+                LDA	#10
+                LDX	#$41
+                JSR	poke6845
+                LDA	#11
+                LDA	#$10
+                JMP	poke6845
 
 ; --------------------------------
 ; Exit routine for DEDIT and MEM
 ;  - can only be JMPed to
 ; --------------------------------
-escape
-	PLA
-	PLA
-	PLA
-	STA	$248
-	STA	$FE20
-	PLA
-	STA	$255
-	PLA
-	STA	$254
-	PLA
-	STA	$27D
-	PLA
-	STA	romid
-	LDA	#11
-	LDX	#19
-	JSR	poke6845
-	LDA	#10
-	LDX	#$72
-	JSR	poke6845
-	LDA	#31
-	JSR	$FFEE
-	LDA	#0
-	JSR	$FFEE
-	LDA	#24
-	JSR	$FFEE
-	LDA	#$7E
-	JMP	$FFF4
+escape:
+                PLA
+                PLA
+                PLA
+                STA	$248
+                STA	$FE20
+                PLA
+                STA	$255
+                PLA
+                STA	$254
+                PLA
+                STA	$27D
+                PLA
+                STA	romid
+                LDA	#11
+                LDX	#19
+                JSR	poke6845
+                LDA	#10
+                LDX	#$72
+                JSR	poke6845
+                LDA	#31
+                JSR	$FFEE
+                LDA	#0
+                JSR	$FFEE
+                LDA	#24
+                JSR	$FFEE
+                LDA	#$7E
+                JMP	$FFF4
 
 ; --------------------------------
 ; Display A reg as binary number
@@ -834,110 +835,110 @@ escape
 ;
 ; Exit : oswrch of binary of A
 ; --------------------------------
-bsdigit
-	STA	numlo
-	LDX	#$80
-	TXA
-sbloop
-	TAX
-	BIT	numlo
-	BNE	sbone
-	LDA	#'0'
-	BNE	sbjmp
-sbone
-	LDA	#'1'
-sbjmp
-	JSR	$FFEE
-	TXA
-	LSR	A
-	BNE	sbloop
-	RTS
+bsdigit:
+                STA	numlo
+                LDX	#$80
+                TXA
+sbloop:
+                TAX
+                BIT	numlo
+                BNE	sbone
+                LDA	#'0'
+                BNE	sbjmp
+sbone:
+                LDA	#'1'
+sbjmp:
+                JSR	$FFEE
+                TXA
+                LSR	A
+                BNE	sbloop
+                RTS
 
 ; --------------------------------
 ; Same as ldigit but entry is in X,Y
 ; --------------------------------
-ldigitxy
-	STX	numlo
-	STY	numhi
+ldigitxy:
+                STX	numlo
+                STY	numhi
 ; --------------------------------
 ; Display num as 4 hex digits
 ; No. used is stored in numlo/hi
 ; --------------------------------
-ldigit
-	LDA	numhi
-	JSR	wdigit
-	LDA	numlo
+ldigit:
+                LDA	numhi
+                JSR	wdigit
+                LDA	numlo
 ; --------------------------------
 ; Display num in A reg as 2 hex
 ; digits
 ; --------------------------------
-wdigit
-	STA	tmp
-	TXA
-	PHA
-	TYA
-	PHA
-	LDA	tmp
-	JSR	hex_asc
-	JSR	$FFEE
-	TYA
-	JSR	$FFEE
-	PLA
-	TAY
-	PLA
-	TAX
-	RTS
+wdigit:
+                STA	tmp
+                TXA
+                PHA
+                TYA
+                PHA
+                LDA	tmp
+                JSR	hex_asc
+                JSR	$FFEE
+                TYA
+                JSR	$FFEE
+                PLA
+                TAY
+                PLA
+                TAX
+                RTS
 
 ; --------------------------------
 ; Print a string from mem loca
 ; just after program counter.
 ; --------------------------------
-pcprint
-	PLA
-	STA	tmpx
-	PLA
-	STA	tmpy
-	LDY	#1
-print1
-	LDA	(tmpx),Y
-	BEQ	print2
-	JSR	$FFE3
-	INY
-	BNE	print1
-print2
-	TYA
-	CLC
-	ADC	tmpx
-	TAX
-	LDA	tmpy
-	ADC	#0
-	PHA
-	TXA
-	PHA
-	RTS
+pcprint:
+                PLA
+                STA	tmpx
+                PLA
+                STA	tmpy
+                LDY	#1
+print1:
+                LDA	(tmpx),Y
+                BEQ	print2
+                JSR	$FFE3
+                INY
+                BNE	print1
+print2:
+                TYA
+                CLC
+                ADC	tmpx
+                TAX
+                LDA	tmpy
+                ADC	#0
+                PHA
+                TXA
+                PHA
+                RTS
 
 ;---------------------------------
 ; Print string contained in addr
 ; XY where X is the low byte and
 ; Y is the high byte
 ;---------------------------------
-xyprint
-	STX	tmpx
-	STY	tmpy
+xyprint:
+                STX	tmpx
+                STY	tmpy
 ;---------------------------------
 ; Print string contained in addr
 ; tmpx(lo) & tmpy(hi)
 ;---------------------------------
-locprint
-	LDY	#0
-loc1
-	LDA	(tmpx),Y
-	BEQ	loc2
-	JSR	$FFE3
-	INY
-	BNE	loc1
-loc2
-	RTS
+locprint:
+                LDY	#0
+loc1:
+                LDA	(tmpx),Y
+                BEQ	loc2
+                JSR	$FFE3
+                INY
+                BNE	loc1
+loc2:
+                RTS
 
 ;---------------------------------
 ; Returns -1 or 0 (sets Zero flag)
@@ -945,69 +946,69 @@ loc2
 ; legal ROM or not.
 ; FF=not ROM, 0=ROM
 ;---------------------------------
-checkrom
-	STA	romid
-	JSR	reloc
-	BCC	notrsize
-	LDA	#$8F
-	STA	poshi
-	LDA	#$FF
-	STA	poslo
-rtlooq
-	LDY	#$00
-	JSR	rdposx
-	STA	tmp
-	EOR	#$FF
-	JSR	wrposx
-	JSR	rdposx
-	CMP	tmp
-	BEQ	foundsize
-	LDA	tmp
-	JSR	wrposx
-	LDA	poshi
-	CLC
-	ADC	#$10
-	STA	poshi
-	CMP	#$CF
-	BNE	rtlooq
-foundsize
-	LDA	poshi
-	AND	#$F0
-	STA	tmp
-notrsize
-	LDA	#$07
-	STA	poslo
-	LDA	#$80
-	STA	poshi
-	LDY	#0
-	JSR	rdposx
-	STA	poslo
-	LDX	#2
-crl
-	INY
-	JSR	rdposx
-	CMP	copyright,X
-	BNE	crnot
-	DEX
-	BPL	crl
-	LDA	tmp
-	LDX	#$00
-	RTS
-crnot
-	LDA	tmp
-	LDX	#$FF
-	RTS
+checkrom:
+                STA	romid
+                JSR	reloc
+                BCC	notrsize
+                LDA	#$8F
+                STA	poshi
+                LDA	#$FF
+                STA	poslo
+rtlooq:
+                LDY	#$00
+                JSR	rdposx
+                STA	tmp
+                EOR	#$FF
+                JSR	wrposx
+                JSR	rdposx
+                CMP	tmp
+                BEQ	foundsize
+                LDA	tmp
+                JSR	wrposx
+                LDA	poshi
+                CLC
+                ADC	#$10
+                STA	poshi
+                CMP	#$CF
+                BNE	rtlooq
+foundsize:
+                LDA	poshi
+                AND	#$F0
+                STA	tmp
+notrsize:
+                LDA	#$07
+                STA	poslo
+                LDA	#$80
+                STA	poshi
+                LDY	#0
+                JSR	rdposx
+                STA	poslo
+                LDX	#2
+crl:
+                INY
+                JSR	rdposx
+                CMP	copyright,X
+                BNE	crnot
+                DEX
+                BPL	crl
+                LDA	tmp
+                LDX	#$00
+                RTS
+crnot:
+                LDA	tmp
+                LDX	#$FF
+                RTS
 
-;---------------------------------
+                ;---------------------------------
 
-; Not a rom? Then print this
-; Is it ever used??
+                ; Not a rom? Then print this
+                ; Is it ever used??
 narmsg	.text	"Unknown"
-	.byte	152
+                .byte	152
 
-; Copyright message is used to
-; check if a ROM is present in the
-; current bank.
+                ; Copyright message is used to
+                ; check if a ROM is present in the
+                ; current bank.
 copyright	.text	")C("
 
 ; Relocate to $100 - but assemble at
@@ -1016,7 +1017,7 @@ copyright	.text	")C("
 ; oldorg = *
 ; 	ORG	$100
 
-relocstart
+relocstart:
                 .logical $100
 ;---------------------------------
 ; Read a byte from memory. Takes
@@ -1026,43 +1027,43 @@ relocstart
 ; X and Y registers are preserved
 ;---------------------------------
 
-rdposx
-	STX	tmpx
-	LDA	romid
-	STA	$FE30
-	LDA	(poslo),Y
-rdrd
-	LDX	$F4
-	STX	$FE30
-	LDX	tmpx
-	RTS
+rdposx:
+                STX	tmpx
+                LDA	romid
+                STA	$FE30
+                LDA	(poslo),Y
+rdrd:
+                LDX	$F4
+                STX	$FE30
+                LDX	tmpx
+                RTS
 
-rdtmpposx
-	STX	tmpx
-	LDA	romid
-	STA	$FE30
-	LDA	(tmpposlo),Y
-	JMP	rdrd
+rdtmpposx:
+                STX	tmpx
+                LDA	romid
+                STA	$FE30
+                LDA	(tmpposlo),Y
+                JMP	rdrd
 
 ;---------------------------------
 ; Opposite of rdposx% - We write
 ; a byte to poslo%+Y
 ;---------------------------------
-wrposx
-	STX	tmpx
-	LDX	$F4
-	PHA
-	LDA	romid
-	STA	$F4
-	STA	$FE30
-	PLA
-	STA	(poslo),Y
-	STX	$F4
-	STX	$FE30
-	LDX	tmpx
-	RTS
+wrposx:
+                STX	tmpx
+                LDX	$F4
+                PHA
+                LDA	romid
+                STA	$F4
+                STA	$FE30
+                PLA
+                STA	(poslo),Y
+                STX	$F4
+                STX	$FE30
+                LDX	tmpx
+                RTS
                 .here
-relocend
+relocend:
 
                 
 ;---------------------------------
@@ -1070,40 +1071,40 @@ relocend
 ; routines over the stack so that
 ; we can read/write to other ROMs
 ;---------------------------------
-reloc
-	LDX	#relocend-relocstart
-copyrdwr
+reloc:
+                LDX	#relocend-relocstart
+copyrdwr:
 ;	LDA	rdposx,X
-	LDA	relocstart,X
-	STA	$100,X
-	DEX
-	BPL	copyrdwr
-	RTS
+                LDA	relocstart,X
+                STA	$100,X
+                DEX
+                BPL	copyrdwr
+                RTS
 
 ;---------------------------------
 ; There is no SEV instruction so
 ;  here it is
 ;---------------------------------
-sev
-	PHA
-	PHP
-	PLA
-	ORA	#$40
-	PHA
-	PLP
-	PLA
-	RTS
+sev:
+                PHA
+                PHP
+                PLA
+                ORA	#$40
+                PHA
+                PLP
+                PLA
+                RTS
 
 ;---------------------------------
 ; Sets poslo/poshi to point to
 ;  the beginning of paged rom
 ;---------------------------------
-beginrom
-	LDA	#$00
-	STA	poslo
-	LDA	#$80
-	STA	poshi
-	RTS
+beginrom:
+                LDA	#$00
+                STA	poslo
+                LDA	#$80
+                STA	poshi
+                RTS
 
 
 ;---------------------------------
@@ -1112,53 +1113,53 @@ beginrom
 osfile = $FFDD
 osfileb = $2EE
 
-doosfblk
-	TXA
-	PHA
-; create osfile param block
-; first blank it
-	LDX	#$11
-	LDA	#$00
-rlsblank0
-	STA	osfileb,X
-	DEX
-	BPL	rlsblank0
-	CLC
-	TYA
-	ADC	$F2
-	STA	osfileb
-	LDA	$F3
-	ADC	#$00
-	STA	osfileb+1
-	PLA
-	STA	endstr
-	TYA
-	CLC
-	ADC	endstr
-	TAY
-	LDA	#$0D
-	STA	($F2),Y
-	RTS
+doosfblk:
+                TXA
+                PHA
+                ; create osfile param block
+                ; first blank it
+                LDX	#$11
+                LDA	#$00
+rlsblank0:
+                STA	osfileb,X
+                DEX
+                BPL	rlsblank0
+                CLC
+                TYA
+                ADC	$F2
+                STA	osfileb
+                LDA	$F3
+                ADC	#$00
+                STA	osfileb+1
+                PLA
+                STA	endstr
+                TYA
+                CLC
+                ADC	endstr
+                TAY
+                LDA	#$0D
+                STA	($F2),Y
+                RTS
 
-doosfile
-	LDX	#<osfileb
-	LDY	#>osfileb
-	JMP	osfile
+doosfile:
+                LDX	#<osfileb
+                LDY	#>osfileb
+                JMP	osfile
 
-break
-	STA	osfileb+3
-	STX	osfileb+11
-	STY	osfileb+15
-	LDA	$FFFC
-	STA	osfileb+6
-	LDA	$FFFD
-	STA	osfileb+7
-	LDA	#$00
-	RTS
+break:
+                STA	osfileb+3
+                STX	osfileb+11
+                STY	osfileb+15
+                LDA	$FFFC
+                STA	osfileb+6
+                LDA	$FFFD
+                STA	osfileb+7
+                LDA	#$00
+                RTS
 
-keycom
+keycom:
 ; Parse string (GSREAD)
-	JSR	rdstr
-	BEQ	doosfblk
-	JMP	synerr
+                JSR	rdstr
+                BEQ	doosfblk
+                JMP	synerr
 

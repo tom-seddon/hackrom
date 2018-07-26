@@ -17,686 +17,686 @@ numzpage	=	$20
 ;*********************************
 ; The ROM header
 ;*********************************
-send_poke
-	STX	$FE30	;*SEND
-	JMP	service	; Service entry
-	.byte	$82	; ROM type
-	.byte	headcopy-$8000	; Copyright ptr
-	.byte	$01	; Version
-headtitle
-	.text	"Hackers ROM"
-	.byte	0	; Title
-	.text	VERSION	; Version string
-headcopy
-	.byte	0
-	.text	"(C) James Bonfield & Stephen Youell 1993"
-	.byte	0	; Copyright string
-	.word	0	; Tube address
-	.word	0
+send_poke:
+                STX	$FE30	;*SEND
+                JMP	service	; Service entry
+                .byte	$82	; ROM type
+                .byte	headcopy-$8000	; Copyright ptr
+                .byte	$01	; Version
+headtitle:
+                .text	"Hackers ROM"
+                .byte	0	; Title
+                .text	VERSION	; Version string
+headcopy:
+                .byte	0
+                .text	"(C) James Bonfield & Stephen Youell 1993"
+                .byte	0	; Copyright string
+                .word	0	; Tube address
+                .word	0
 
 ;*********************************
 ; Service entry point
 ;*********************************
-service
-	PHA
-	TXA
-	PHA
-	TYA
-	PHA
-	LDX	#numzpage-1
-heloop0
-	LDA	$70,X
-	PHA
-	DEX
-	BPL	heloop0
-	TSX
-	LDA	$103+numzpage,X
-	CMP	#$04
-	BNE	notcommand
-	JSR	command
-notcommand
-	CMP	#$09
-	BEQ	help
-	CMP	#$03
-	BNE	romquit
-; boot - print message on BREAK
-	LDA	#$00
-	STA	pbuffon
-	JSR	dispheadtitle
-	JSR	$FFE7
-romquit
-	LDX	#$00
-heloop1
-	PLA
-	STA	$70,X
-	INX
-	CPX	#numzpage
-	BCC	heloop1
-	PLA
-	TAY
-	PLA
-	TAX
-	PLA
-	RTS
+service:
+                PHA
+                TXA
+                PHA
+                TYA
+                PHA
+                LDX	#numzpage-1
+heloop0:
+                LDA	$70,X
+                PHA
+                DEX
+                BPL	heloop0
+                TSX
+                LDA	$103+numzpage,X
+                CMP	#$04
+                BNE	notcommand
+                JSR	command
+notcommand:
+                CMP	#$09
+                BEQ	help
+                CMP	#$03
+                BNE	romquit
+                ; boot - print message on BREAK
+                LDA	#$00
+                STA	pbuffon
+                JSR	dispheadtitle
+                JSR	$FFE7
+romquit:
+                LDX	#$00
+heloop1:
+                PLA
+                STA	$70,X
+                INX
+                CPX	#numzpage
+                BCC	heloop1
+                PLA
+                TAY
+                PLA
+                TAX
+                PLA
+                RTS
 
 ;*********************************
 ; *HELP request
 ;*********************************
 
 
-help
-	LDA	($F2),Y
-	CMP	#$0D
-	BNE	spechelp
-	JSR	$FFE7
-	JSR	dispheadtitle
-; Now print subtopics
-	LDX	#0
-topic2
-	JSR	indent2
-topic
-	LDA	subjects,X
-	BEQ	endtopic
-	JSR	$FFEE
-	INX
-	BNE	topic
-endtopic
-	JSR	$FFE7
-	INX
-	LDA	subjects,X
-	BPL	topic2
-; Respond to specific *HELP
-; eg *HELP MEM.
-spechelp
-	JSR	spechelp2
-	JMP	romquit
+help:
+                LDA	($F2),Y
+                CMP	#$0D
+                BNE	spechelp
+                JSR	$FFE7
+                JSR	dispheadtitle
+                ; Now print subtopics
+                LDX	#0
+topic2:
+                JSR	indent2
+topic:
+                LDA	subjects,X
+                BEQ	endtopic
+                JSR	$FFEE
+                INX
+                BNE	topic
+endtopic:
+                JSR	$FFE7
+                INX
+                LDA	subjects,X
+                BPL	topic2
+                ; Respond to specific *HELP
+                ; eg *HELP MEM.
+spechelp:
+                JSR	spechelp2
+                JMP	romquit
 
-spechelp2
-	LDA	#<subjects
-	STA	xtablo
-	LDA	#>subjects
-	STA	xtabhi
-	LDA	#$00
-	STA	cpflag
-	TYA
-	PHA
-	JSR	matchstr
-	BCC	gospechelp
-	PLA
-	TAY
-	JSR	mchcomm
-	BCC	sphelpok
-	RTS
-sphelpok
-	STX	comprint
-	LDA	#$FF
-	STA	cpflag
-	PHA
-	LDA	comprint
-	LDX	#$FF
-sphlp
-	INX
-	CMP	psyntab,X
-	BCC	goshelp
-	CPX	#$05
-	BNE	sphlp
-	INX
-goshelp
-	DEX
-gospechelp
-	PLA
-	TXA
-	PHA
-	JSR	$FFE7
-	JSR	dispheadtitle
-	JSR	$FFE7
-	PLA
-	ASL	A
-	TAX
-	LDA	subjtab,X
-	STA	helpind
-	LDA	subjtab+1,X
-	STA	helpind+1
-	LDA	syntab+1,X
-	STA	helpind2+1
-	LDA	syntab,X
-	STA	helpind2
-	TXA
-	LSR	A
-	TAX
-	LDA	psyntab,X
-	TAX
-	LDY	#$FF
-	JSR	indent2
-helploop
-nh
-	INY
-	LDA	cpflag
-	CLC
-	ADC	#$01
-	LDA	(helpind),Y
-	BPL	norq
-	RTS
-norq
-	BEQ	nh2
-	BCC	showcom
-	CPX	comprint
-	BNE	nh
-showcom
-	JSR	$FFEE
-	JMP	nh
-nh2
-	TYA
-	PHA
-	TXA
-	PHA
-	LDA	helptab,X
-	STA	xtmp
-	BEQ	nextcom
-	BPL	go
-	AND	#$7F
-	STA	xtmp
-	SEC
-	LDA	helpind2
-	SBC	xtmp
-	STA	helpind2
-	BCS	hover
-	DEC	helpind2+1
-hover
-	LDA	xtmp
-go
-	TAY
-	LDA	cpflag
-	BEQ	cpok
-	CPX	comprint
-	BNE	skipcom
-cpok
-	LDA	#' '
-	JSR	$FFEE
-again
-	DEY
-	LDA	(helpind2),Y
-	BPL	nh4
-	TAX
-	LDA	toktab-$80,X
-	STA	htmp
-	LDA	toktab-$81,X
-	TAX
-	JMP	nh5
-nh3
-	JSR	$FFEE
-nh5
-	LDA	tokens,X
-	INX
-	CPX	htmp
-	BNE	nh3
-nh4
-	JSR	$FFEE
-	CPY	#0
-	BNE	again
-skipcom
-	CLC
-	LDA	xtmp
-	ADC	helpind2
-	STA	helpind2
-	BCC	hover2
-	INC	helpind2+1
-hover2
-nextcom
-	PLA
-	TAX
-	PLA
-	TAY
-	LDA	cpflag
-	BEQ	docr
-	CPX	comprint
-	BNE	nocr
-docr
-	JSR	$FFE7
-	JSR	indent2
-nocr
-	INX
-	JMP	helploop
+spechelp2:
+                LDA	#<subjects
+                STA	xtablo
+                LDA	#>subjects
+                STA	xtabhi
+                LDA	#$00
+                STA	cpflag
+                TYA
+                PHA
+                JSR	matchstr
+                BCC	gospechelp
+                PLA
+                TAY
+                JSR	mchcomm
+                BCC	sphelpok
+                RTS
+sphelpok:
+                STX	comprint
+                LDA	#$FF
+                STA	cpflag
+                PHA
+                LDA	comprint
+                LDX	#$FF
+sphlp:
+                INX
+                CMP	psyntab,X
+                BCC	goshelp
+                CPX	#$05
+                BNE	sphlp
+                INX
+goshelp:
+                DEX
+gospechelp:
+                PLA
+                TXA
+                PHA
+                JSR	$FFE7
+                JSR	dispheadtitle
+                JSR	$FFE7
+                PLA
+                ASL	A
+                TAX
+                LDA	subjtab,X
+                STA	helpind
+                LDA	subjtab+1,X
+                STA	helpind+1
+                LDA	syntab+1,X
+                STA	helpind2+1
+                LDA	syntab,X
+                STA	helpind2
+                TXA
+                LSR	A
+                TAX
+                LDA	psyntab,X
+                TAX
+                LDY	#$FF
+                JSR	indent2
+helploop:
+nh:
+                INY
+                LDA	cpflag
+                CLC
+                ADC	#$01
+                LDA	(helpind),Y
+                BPL	norq
+                RTS
+norq:
+                BEQ	nh2
+                BCC	showcom
+                CPX	comprint
+                BNE	nh
+showcom:
+                JSR	$FFEE
+                JMP	nh
+nh2:
+                TYA
+                PHA
+                TXA
+                PHA
+                LDA	helptab,X
+                STA	xtmp
+                BEQ	nextcom
+                BPL	go
+                AND	#$7F
+                STA	xtmp
+                SEC
+                LDA	helpind2
+                SBC	xtmp
+                STA	helpind2
+                BCS	hover
+                DEC	helpind2+1
+hover:
+                LDA	xtmp
+go:
+                TAY
+                LDA	cpflag
+                BEQ	cpok
+                CPX	comprint
+                BNE	skipcom
+cpok:
+                LDA	#' '
+                JSR	$FFEE
+again:
+                DEY
+                LDA	(helpind2),Y
+                BPL	nh4
+                TAX
+                LDA	toktab-$80,X
+                STA	htmp
+                LDA	toktab-$81,X
+                TAX
+                JMP	nh5
+nh3:
+                JSR	$FFEE
+nh5:
+                LDA	tokens,X
+                INX
+                CPX	htmp
+                BNE	nh3
+nh4:
+                JSR	$FFEE
+                CPY	#0
+                BNE	again
+skipcom:
+                CLC
+                LDA	xtmp
+                ADC	helpind2
+                STA	helpind2
+                BCC	hover2
+                INC	helpind2+1
+hover2:
+nextcom:
+                PLA
+                TAX
+                PLA
+                TAY
+                LDA	cpflag
+                BEQ	docr
+                CPX	comprint
+                BNE	nocr
+docr:
+                JSR	$FFE7
+                JSR	indent2
+nocr:
+                INX
+                JMP	helploop
 
-synerr
-	LDA	$20E
-	PHA
-	LDA	$20F
-	PHA
-	LDA	#<oswrch_con
-	STA	$20E
-	LDA	#>oswrch_con
-	STA	$20F
-	LDA	#$00
-	STA	$0100
-	LDX	comnum
-	JSR	sphelpok
-	LDA	#$00
-	STA	$100
+synerr:
+                LDA	$20E
+                PHA
+                LDA	$20F
+                PHA
+                LDA	#<oswrch_con
+                STA	$20E
+                LDA	#>oswrch_con
+                STA	$20F
+                LDA	#$00
+                STA	$0100
+                LDX	comnum
+                JSR	sphelpok
+                LDA	#$00
+                STA	$100
 
-	LDA	#E_SYNERR
-	PLA
-	STA	$20F
-	PLA
-	STA	$20E
+                LDA	#E_SYNERR
+                PLA
+                STA	$20F
+                PLA
+                STA	$20E
 
-	LDX	#$00
-xheloop1
-	PLA
-	STA	$70,X
-	INX
-	CPX	#numzpage
-	BCC	xheloop1
-	PLA
-	PLA
-	PLA
+                LDX	#$00
+xheloop1:
+                PLA
+                STA	$70,X
+                INX
+                CPX	#numzpage
+                BCC	xheloop1
+                PLA
+                PLA
+                PLA
 
-	JMP	$100
+                JMP	$100
 
-oswrch_con
-	PHP
-	STY	$101
-	CMP	#$0D
-	BEQ	oswrch_con_ok
-	CMP	#$0A
-	BEQ	oswrch_con_ok
-	CMP	#30
-	BCC	oswrch_con_exit
-oswrch_con_ok
-	LDY	$100
-	STA	$102,Y
-	PHA
-	LDA	#$00
-	STA	$103,Y
-	PLA
-	INY
-	STY	$100
-oswrch_con_exit
-	LDY	$101
-	PLP
-	RTS
+oswrch_con:
+                PHP
+                STY	$101
+                CMP	#$0D
+                BEQ	oswrch_con_ok
+                CMP	#$0A
+                BEQ	oswrch_con_ok
+                CMP	#30
+                BCC	oswrch_con_exit
+oswrch_con_ok:
+                LDY	$100
+                STA	$102,Y
+                PHA
+                LDA	#$00
+                STA	$103,Y
+                PLA
+                INY
+                STY	$100
+oswrch_con_exit:
+                LDY	$101
+                PLP
+                RTS
 
-	.if	X_MEM
+                .if	X_MEM
 MEMORY_COMS = true
-	.else
-	.if	X_MDIS
+                .else
+                .if	X_MDIS
 MEMORY_COMS = true
-	.else
-	.if	X_MCOPY
+                .else
+                .if	X_MCOPY
 MEMORY_COMS = true
-	.else
-	.if	X_MSWAP
+                .else
+                .if	X_MSWAP
 MEMORY_COMS = true
-	.else
-	.if	X_MCMP
+                .else
+                .if	X_MCMP
 MEMORY_COMS = true
-	.else
-	.if	X_MFILL
+                .else
+                .if	X_MFILL
 MEMORY_COMS = true
-	.else
-	.if	X_MSEARCH
+                .else
+                .if	X_MSEARCH
 MEMORY_COMS = true
-	.else
-	.if	X_MCRC
+                .else
+                .if	X_MCRC
 MEMORY_COMS = true
-	.else
+                .else
 MEMORY_COMS = false
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
 
-	.if	X_DEDIT
+                .if	X_DEDIT
 DISC_COMS = true
-	.else
-	.if	X_IDEDIT
+                .else
+                .if	X_IDEDIT
 DISC_COMS = true
-	.else
-	.if	X_FORMAT
+                .else
+                .if	X_FORMAT
 DISC_COMS = true
-	.else
-	.if	X_SECTLOAD
+                .else
+                .if	X_SECTLOAD
 DISC_COMS = true
-	.else
-	.if	X_SECTSAVE
+                .else
+                .if	X_SECTSAVE
 DISC_COMS = true
-	.else
-	.if	X_LOADIDS
+                .else
+                .if	X_LOADIDS
 DISC_COMS = true
-	.else
-	.if	X_PIDS
+                .else
+                .if	X_PIDS
 DISC_COMS = true
-	.else
-	.if	X_VERIFY
+                .else
+                .if	X_VERIFY
 DISC_COMS = true
-	.else
-	.if	X_DMAP
+                .else
+                .if	X_DMAP
 DISC_COMS = true
-	.else
-	.if	X_DFILL
+                .else
+                .if	X_DFILL
 DISC_COMS = true
-	.else
-	.if	X_FBACKUP
+                .else
+                .if	X_FBACKUP
 DISC_COMS = true
-	.else
-	.if	X_PENABLE
+                .else
+                .if	X_PENABLE
 DISC_COMS = true
-	.else
-	.if	X_GAPS
+                .else
+                .if	X_GAPS
 DISC_COMS = true
-	.else
+                .else
 DISC_COMS = false
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
 
-	.if	X_DLOAD
+                .if	X_DLOAD
 FILE_COMS = true
-	.else
-	.if	X_DRUN
+                .else
+                .if	X_DRUN
 FILE_COMS = true
-	.else
-	.if	X_FDELETE
+                .else
+                .if	X_FDELETE
 FILE_COMS = true
-	.else
-	.if	X_FCRC
+                .else
+                .if	X_FCRC
 FILE_COMS = true
-	.else
-	.if	X_TOUCH
+                .else
+                .if	X_TOUCH
 FILE_COMS = true
-	.else
-	.if	X_CONCAT
+                .else
+                .if	X_CONCAT
 FILE_COMS = true
-	.else
-	.if	X_FCOPY
+                .else
+                .if	X_FCOPY
 FILE_COMS = true
-	.else
-	.if	X_FDIS
+                .else
+                .if	X_FDIS
 FILE_COMS = true
-	.else
-	.if	X_SPOOLDIS
+                .else
+                .if	X_SPOOLDIS
 FILE_COMS = true
-	.else
-	.if	X_CLOSE
+                .else
+                .if	X_CLOSE
 FILE_COMS = true
-	.else
-	.if	X_DES
+                .else
+                .if	X_DES
 FILE_COMS = true
-	.else
-	.if	X_FCMP
+                .else
+                .if	X_FCMP
 FILE_COMS = true
-	.else
+                .else
 FILE_COMS = false
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
 
-	.if	X_RLIST
+                .if	X_RLIST
 ROM_COMS = true
-	.else
-	.if	X_RON
+                .else
+                .if	X_RON
 ROM_COMS = true
-	.else
-	.if	X_ROFF
+                .else
+                .if	X_ROFF
 ROM_COMS = true
-	.else
-	.if	X_RLOAD
+                .else
+                .if	X_RLOAD
 ROM_COMS = true
-	.else
-	.if	X_RSAVE
+                .else
+                .if	X_RSAVE
 ROM_COMS = true
-	.else
-	.if	X_RINFO
+                .else
+                .if	X_RINFO
 ROM_COMS = true
-	.else
-	.if	X_SRLOAD
+                .else
+                .if	X_SRLOAD
 ROM_COMS = true
-	.else
-	.if	X_SRSAVE
+                .else
+                .if	X_SRSAVE
 ROM_COMS = true
-	.else
-	.if	X_SRREAD
+                .else
+                .if	X_SRREAD
 ROM_COMS = true
-	.else
-	.if	X_SRWRITE
+                .else
+                .if	X_SRWRITE
 ROM_COMS = true
-	.else
-	.if	X_RFSMAKE
+                .else
+                .if	X_RFSMAKE
 ROM_COMS = true
-	.else
-	.if	X_SEND
+                .else
+                .if	X_SEND
 ROM_COMS = true
-	.else
+                .else
 ROM_COMS = false
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
 
-	.if	X_PBUFF
+                .if	X_PBUFF
 GENERAL_COMS = true
-	.else
-	.if	X_LVECTORS
+                .else
+                .if	X_LVECTORS
 GENERAL_COMS = true
-	.else
-	.if	X_KEYLIST
+                .else
+                .if	X_KEYLIST
 GENERAL_COMS = true
-	.else
-	.if	X_KEYSAVE
+                .else
+                .if	X_KEYSAVE
 GENERAL_COMS = true
-	.else
-	.if	X_KEYLOAD
+                .else
+                .if	X_KEYLOAD
 GENERAL_COMS = true
-	.else
-	.if	X_BASE
+                .else
+                .if	X_BASE
 GENERAL_COMS = true
-	.else
-	.if	X_BREAK
+                .else
+                .if	X_BREAK
 GENERAL_COMS = true
-	.else
-	.if	X_HBREAK
+                .else
+                .if	X_HBREAK
 GENERAL_COMS = true
-	.else
-	.if	X_RECOVER
+                .else
+                .if	X_RECOVER
 GENERAL_COMS = true
-	.else
-	.if	X_ECHO
+                .else
+                .if	X_ECHO
 GENERAL_COMS = true
-	.else
+                .else
 GENERAL_COMS = false
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
+                .endif
 
 
-subjects
+subjects:
 
-	.if	MEMORY_COMS
-	.text	"MEMORY",0
-	.endif
+                .if	MEMORY_COMS
+                .text	"MEMORY",0
+                .endif
 
-	.if	DISC_COMS
-	.text	"DISC",0
-	.endif
+                .if	DISC_COMS
+                .text	"DISC",0
+                .endif
 
-	.if	FILE_COMS
-	.text	"FILE",0
-	.endif
+                .if	FILE_COMS
+                .text	"FILE",0
+                .endif
 
-	.if	ROM_COMS
-	.text	"ROM",0
-	.endif
+                .if	ROM_COMS
+                .text	"ROM",0
+                .endif
 
-	.if	GENERAL_COMS
-	.text	"GENERAL",0
-	.endif
+                .if	GENERAL_COMS
+                .text	"GENERAL",0
+                .endif
 
-	.byte	$FF
+                .byte	$FF
 
-subjtab
+subjtab:
 
-	.if	MEMORY_COMS
-	.word	memcomm
-	.endif
+                .if	MEMORY_COMS
+                .word	memcomm
+                .endif
 
-	.if	DISC_COMS
-	.word	disccomm
-	.endif
+                .if	DISC_COMS
+                .word	disccomm
+                .endif
 
-	.if	FILE_COMS
-	.word	filecomm
-	.endif
+                .if	FILE_COMS
+                .word	filecomm
+                .endif
 
-	.if	ROM_COMS
-	.word	romcomm
-	.endif
+                .if	ROM_COMS
+                .word	romcomm
+                .endif
 
-	.if	GENERAL_COMS
-	.word	gencomm
-	.endif
+                .if	GENERAL_COMS
+                .word	gencomm
+                .endif
 
-syntab
-	.if	MEMORY_COMS
-	.word	h_mem_coms
-	.endif
+syntab:
+                .if	MEMORY_COMS
+                .word	h_mem_coms
+                .endif
 
-	.if	DISC_COMS
-	.word	h_disc_coms
-	.endif
+                .if	DISC_COMS
+                .word	h_disc_coms
+                .endif
 
-	.if	FILE_COMS
-	.word	h_file_coms
-	.endif
+                .if	FILE_COMS
+                .word	h_file_coms
+                .endif
 
-	.if	ROM_COMS
-	.word	h_rom_coms
-	.endif
+                .if	ROM_COMS
+                .word	h_rom_coms
+                .endif
 
-	.if	GENERAL_COMS
-	.word	h_gen_coms
-	.endif
-
-
-psyntab
-	.if	MEMORY_COMS
-	.byte	memhelp-helptab
-	.endif
-
-	.if	DISC_COMS
-	.byte	dischelp-helptab
-	.endif
-
-	.if	FILE_COMS
-	.byte	filehelp-helptab
-	.endif
-
-	.if	ROM_COMS
-	.byte	romhelp-helptab
-	.endif
-
-	.if	GENERAL_COMS
-	.byte	genhelp-helptab
-	.endif
+                .if	GENERAL_COMS
+                .word	h_gen_coms
+                .endif
 
 
-indent2
-	LDA	#' '
-	JSR	$FFEE
-	JSR	$FFEE
-	RTS
+psyntab:
+                .if	MEMORY_COMS
+                .byte	memhelp-helptab
+                .endif
 
-dispheadtitle
+                .if	DISC_COMS
+                .byte	dischelp-helptab
+                .endif
+
+                .if	FILE_COMS
+                .byte	filehelp-helptab
+                .endif
+
+                .if	ROM_COMS
+                .byte	romhelp-helptab
+                .endif
+
+                .if	GENERAL_COMS
+                .byte	genhelp-helptab
+                .endif
+
+
+indent2:
+                LDA	#' '
+                JSR	$FFEE
+                JSR	$FFEE
+                RTS
+
+dispheadtitle:
 ; Print ROM headtitle $ version
-	LDY	#2
-	LDX	#0
-headloop0
-	LDA	headtitle,X
-	BEQ	hzero
-headloop1
-	JSR	$FFEE
-	INX
-	BNE	headloop0
-hzero
-	LDA	#$20
-	DEY
-	BNE	headloop1
-	JSR	$FFE7
-	RTS
+                LDY	#2
+                LDX	#0
+headloop0:
+                LDA	headtitle,X
+                BEQ	hzero
+headloop1:
+                JSR	$FFEE
+                INX
+                BNE	headloop0
+hzero:
+                LDA	#$20
+                DEY
+                BNE	headloop1
+                JSR	$FFE7
+                RTS
 
 ;*********************************
 ; Check for * commands
 ;*********************************
-mchcomm
-	LDA	#<comm
-	STA	xtablo
-	LDA	#>comm
-	STA	xtabhi
-	JMP	matchstr
+mchcomm:
+                LDA	#<comm
+                STA	xtablo
+                LDA	#>comm
+                STA	xtabhi
+                JMP	matchstr
 
 
-endcom
-	RTS
-command
-	JSR	mchcomm
-; fail
-	BCS	endcom
-; success
-	TXA
-	STA	comnum
-	ASL	A
-	TAX
-	LDA	comtab,X
-	STA	comrun
-	LDA	comtab+1,X
-	STA	comrun+1
-	TSX
-	STX	stacksave
-	JSR	runcom
-; claim *command
-	LDA	#$00
-	TSX
-	STA	$105+numzpage,X
-	RTS
-runcom
-	JMP	(comrun)
+endcom:
+                RTS
+command:
+                JSR	mchcomm
+                ; fail
+                BCS	endcom
+                ; success
+                TXA
+                STA	comnum
+                ASL	A
+                TAX
+                LDA	comtab,X
+                STA	comrun
+                LDA	comtab+1,X
+                STA	comrun+1
+                TSX
+                STX	stacksave
+                JSR	runcom
+                ; claim *command
+                LDA	#$00
+                TSX
+                STA	$105+numzpage,X
+                RTS
+runcom:
+                JMP	(comrun)
 
 ;*********************************
 ; Match cli string in $FF terminated
@@ -705,1068 +705,1068 @@ runcom
 ; and carry clear (success) or
 ; set (fail).
 ;*********************************
-matchstr
-	LDX	#$FF
-; We allow our commands to start with
-; an underscore, '_', and still be
-; recognised.
-	LDA	($F2),Y
-	CMP	#'_'
-	BNE	msloop2
-	INY
-msloop2
-	INX
-	TYA
-	PHA
-msloop
-	LDA	($F2),Y
-; uppercase it
-	JSR	capitalise
-	STY	mstmpy
-	LDY	#$00
-	CMP	(xtablo),Y
-	BNE	msnext
-	LDY	mstmpy
+matchstr:
+                LDX	#$FF
+                ; We allow our commands to start with
+                ; an underscore, '_', and still be
+                ; recognised.
+                LDA	($F2),Y
+                CMP	#'_'
+                BNE	msloop2
+                INY
+msloop2:
+                INX
+                TYA
+                PHA
+msloop:
+                LDA	($F2),Y
+                ; uppercase it
+                JSR	capitalise
+                STY	mstmpy
+                LDY	#$00
+                CMP	(xtablo),Y
+                BNE	msnext
+                LDY	mstmpy
 
-	INC	xtablo
-	BNE	msskip1
-	INC	xtabhi
-msskip1
-	INY
-	BNE	msloop
-msnext
-	CMP	#'.'
-	BNE	nosuccess
-	INC	mstmpy
-; Z always clear
-	BNE	mssuccess
-nosuccess
-	CMP	#$0D
-	BEQ	mschkz
-	CMP	#' '
-	BNE	msnfail
-mschkz
-	LDA	(xtablo),Y
-	BEQ	mssuccess
-; Scan for zero terminator
-msnfail
-	LDA	(xtablo),Y
-	BEQ	msnfail2
-	CMP	#$FF
-	BEQ	msfail
-	INY
-	BNE	msnfail
-; Move to start of next command
-msnfail2
-	INY
-	LDA	(xtablo),Y
-	BMI	msnfail
-	TYA
-	CLC
-	ADC	xtablo
-	STA	xtablo
-	BCC	msskip2
-	INC	xtabhi
-msskip2
-	PLA
-	TAY
-	JMP	msloop2
-msfail
-	PLA
-	SEC
-	RTS
-mssuccess
-	INC	xtablo
-	BCC	msskip3
-	INC	xtabhi
-msskip3
-	LDY	mstmpy
-	PLA
-	CLC
-	RTS
+                INC	xtablo
+                BNE	msskip1
+                INC	xtabhi
+msskip1:
+                INY
+                BNE	msloop
+msnext:
+                CMP	#'.'
+                BNE	nosuccess
+                INC	mstmpy
+                ; Z always clear
+                BNE	mssuccess
+nosuccess:
+                CMP	#$0D
+                BEQ	mschkz
+                CMP	#' '
+                BNE	msnfail
+mschkz:
+                LDA	(xtablo),Y
+                BEQ	mssuccess
+                ; Scan for zero terminator
+msnfail:
+                LDA	(xtablo),Y
+                BEQ	msnfail2
+                CMP	#$FF
+                BEQ	msfail
+                INY
+                BNE	msnfail
+                ; Move to start of next command
+msnfail2:
+                INY
+                LDA	(xtablo),Y
+                BMI	msnfail
+                TYA
+                CLC
+                ADC	xtablo
+                STA	xtablo
+                BCC	msskip2
+                INC	xtabhi
+msskip2:
+                PLA
+                TAY
+                JMP	msloop2
+msfail:
+                PLA
+                SEC
+                RTS
+mssuccess:
+                INC	xtablo
+                BCC	msskip3
+                INC	xtabhi
+msskip3:
+                LDY	mstmpy
+                PLA
+                CLC
+                RTS
 
 ;*********************************
 ; Table of *commands available
 ;*********************************
-comm
+comm:
 
-	.if	MEMORY_COMS
-memcomm
-	.if	X_MEM
-	.text	"MEM",0
-	.endif
-	.if	X_MDIS
-	.text	"MDIS",0
-	.endif
-	.if	X_MCOPY
-	.text	"MCOPY",0
-	.endif
-	.if	X_MSWAP
-	.text	"MSWAP",0
-	.endif
-	.if	X_MCMP
-	.text	"MCMP",0
-	.endif
-	.if	X_MFILL
-	.text	"MFILL",0
-	.endif
-	.if	X_MSEARCH
-	.text	"MSEARCH",0
-	.endif
-	.if	X_MCRC
-	.text	"MCRC",0
-	.endif
-	.byte	$80,$00
-	.endif
+                .if	MEMORY_COMS
+memcomm:
+                .if	X_MEM
+                .text	"MEM",0
+                .endif
+                .if	X_MDIS
+                .text	"MDIS",0
+                .endif
+                .if	X_MCOPY
+                .text	"MCOPY",0
+                .endif
+                .if	X_MSWAP
+                .text	"MSWAP",0
+                .endif
+                .if	X_MCMP
+                .text	"MCMP",0
+                .endif
+                .if	X_MFILL
+                .text	"MFILL",0
+                .endif
+                .if	X_MSEARCH
+                .text	"MSEARCH",0
+                .endif
+                .if	X_MCRC
+                .text	"MCRC",0
+                .endif
+                .byte	$80,$00
+                .endif
 
-	.if	DISC_COMS
-disccomm
-	.if	X_DEDIT
-	.text	"DEDIT",0
-	.endif
-	.if	X_EDITID
-	.text	"EDITID",0
-	.endif
-	.if	X_FORMAT
-	.text	"FORMAT",0
-	.endif
-	.if	X_SECTLOAD
-	.text	"SECTLOAD",0
-	.endif
-	.if	X_SECTSAVE
-	.text	"SECTSAVE",0
-	.endif
-	.if	X_LOADIDS
-	.text	"LOADIDS",0
-	.endif
-	.if	X_PIDS
-	.text	"PIDS",0
-	.endif
-	.if	X_VERIFY
-	.text	"VERIFY",0
-	.endif
-	.if	X_DMAP
-	.text	"DMAP",0
-	.endif
-	.if	X_DFILL
-	.text	"DFILL",0
-	.endif
-	.if	X_FBACKUP
-	.text	"FBACKUP",0
-	.endif
-	.if	X_PENABLE
-	.text	"PENABLE",0
-	.endif
-	.if	X_GAPS
-	.text	"GAPS",0
-	.endif
-	.byte	$80,$00
-	.endif
+                .if	DISC_COMS
+disccomm:
+                .if	X_DEDIT
+                .text	"DEDIT",0
+                .endif
+                .if	X_EDITID
+                .text	"EDITID",0
+                .endif
+                .if	X_FORMAT
+                .text	"FORMAT",0
+                .endif
+                .if	X_SECTLOAD
+                .text	"SECTLOAD",0
+                .endif
+                .if	X_SECTSAVE
+                .text	"SECTSAVE",0
+                .endif
+                .if	X_LOADIDS
+                .text	"LOADIDS",0
+                .endif
+                .if	X_PIDS
+                .text	"PIDS",0
+                .endif
+                .if	X_VERIFY
+                .text	"VERIFY",0
+                .endif
+                .if	X_DMAP
+                .text	"DMAP",0
+                .endif
+                .if	X_DFILL
+                .text	"DFILL",0
+                .endif
+                .if	X_FBACKUP
+                .text	"FBACKUP",0
+                .endif
+                .if	X_PENABLE
+                .text	"PENABLE",0
+                .endif
+                .if	X_GAPS
+                .text	"GAPS",0
+                .endif
+                .byte	$80,$00
+                .endif
 
-	.if	FILE_COMS
-filecomm
-	.if	X_DLOAD
-	.text	"DLOAD",0
-	.endif
-	.if	X_DRUN
-	.text	"DRUN",0
-	.endif
-	.if	X_FDELETE
-	.text	"FDELETE",0
-	.endif
-	.if	X_FCRC
-	.text	"FCRC",0
-	.endif
-	.if	X_TOUCH
-	.text	"TOUCH",0
-	.endif
-	.if	X_CONCAT
-	.text	"CONCAT",0
-	.endif
-	.if	X_FCOPY
-	.text	"FCOPY",0
-	.endif
-	.if	X_FDIS
-	.text	"FDIS",0
-	.endif
-	.if	X_SPOOLDIS
-	.text	"SPOOLDIS",0
-	.endif
-	.if	X_CLOSE
-	.text	"CLOSE",0
-	.endif
-	.if	X_DES
-	.text	"DES",0
-	.endif
-	.if	X_FCMP
-	.text	"FCMP",0
-	.endif
-	.byte	$80,$00
-	.endif
+                .if	FILE_COMS
+filecomm:
+                .if	X_DLOAD
+                .text	"DLOAD",0
+                .endif
+                .if	X_DRUN
+                .text	"DRUN",0
+                .endif
+                .if	X_FDELETE
+                .text	"FDELETE",0
+                .endif
+                .if	X_FCRC
+                .text	"FCRC",0
+                .endif
+                .if	X_TOUCH
+                .text	"TOUCH",0
+                .endif
+                .if	X_CONCAT
+                .text	"CONCAT",0
+                .endif
+                .if	X_FCOPY
+                .text	"FCOPY",0
+                .endif
+                .if	X_FDIS
+                .text	"FDIS",0
+                .endif
+                .if	X_SPOOLDIS
+                .text	"SPOOLDIS",0
+                .endif
+                .if	X_CLOSE
+                .text	"CLOSE",0
+                .endif
+                .if	X_DES
+                .text	"DES",0
+                .endif
+                .if	X_FCMP
+                .text	"FCMP",0
+                .endif
+                .byte	$80,$00
+                .endif
 
-	.if	ROM_COMS
-romcomm
-	.if	X_RLIST
-	.text	"RLIST",0
-	.endif
-	.if	X_RON
-	.text	"RON",0
-	.endif
-	.if	X_ROFF
-	.text	"ROFF",0
-	.endif
-	.if	X_RLOAD
-	.text	"RLOAD",0
-	.endif
-	.if	X_RSAVE
-	.text	"RSAVE",0
-	.endif
-	.if	X_RINFO
-	.text	"RINFO",0
-	.endif
-	.if	X_SRLOAD
-	.text	"SRLOAD",0
-	.endif
-	.if	X_SRSAVE
-	.text	"SRSAVE",0
-	.endif
-	.if	X_SRREAD
-	.text	"SRREAD",0
-	.endif
-	.if	X_SRWRITE
-	.text	"SRWRITE",0
-	.endif
-	.if	X_RFSMAKE
-	.text	"RFSMAKE",0
-	.endif
-	.if	X_SEND
-	.text	"SEND",0
-	.endif
-	.byte	$80,$00
-	.endif
+                .if	ROM_COMS
+romcomm:
+                .if	X_RLIST
+                .text	"RLIST",0
+                .endif
+                .if	X_RON
+                .text	"RON",0
+                .endif
+                .if	X_ROFF
+                .text	"ROFF",0
+                .endif
+                .if	X_RLOAD
+                .text	"RLOAD",0
+                .endif
+                .if	X_RSAVE
+                .text	"RSAVE",0
+                .endif
+                .if	X_RINFO
+                .text	"RINFO",0
+                .endif
+                .if	X_SRLOAD
+                .text	"SRLOAD",0
+                .endif
+                .if	X_SRSAVE
+                .text	"SRSAVE",0
+                .endif
+                .if	X_SRREAD
+                .text	"SRREAD",0
+                .endif
+                .if	X_SRWRITE
+                .text	"SRWRITE",0
+                .endif
+                .if	X_RFSMAKE
+                .text	"RFSMAKE",0
+                .endif
+                .if	X_SEND
+                .text	"SEND",0
+                .endif
+                .byte	$80,$00
+                .endif
 
-	.if	GENERAL_COMS
-gencomm
-	.if	X_PBUFF
-	.text	"PBUFF",0
-	.endif
-	.if	X_LVECTORS
-	.text	"LVECTORS",0
-	.endif
-	.if	X_KEYLIST
-	.text	"KEYLIST",0
-	.endif
-	.if	X_KEYSAVE
-	.text	"KEYSAVE",0
-	.endif
-	.if	X_KEYLOAD
-	.text	"KEYLOAD",0
-	.endif
-	.if	X_BASE
-	.text	"BASE",0
-	.endif
-	.if	X_BREAK
-	.text	"BREAK",0
-	.endif
-	.if	X_HBREAK
-	.text	"HBREAK",0
-	.endif
-	.if	X_RECOVER
-	.text	"RECOVER",0
-	.endif
-	.if	X_ECHO
-	.text	"ECHO",0
-	.endif
-	.endif
-	.byte	$FF
+                .if	GENERAL_COMS
+gencomm:
+                .if	X_PBUFF
+                .text	"PBUFF",0
+                .endif
+                .if	X_LVECTORS
+                .text	"LVECTORS",0
+                .endif
+                .if	X_KEYLIST
+                .text	"KEYLIST",0
+                .endif
+                .if	X_KEYSAVE
+                .text	"KEYSAVE",0
+                .endif
+                .if	X_KEYLOAD
+                .text	"KEYLOAD",0
+                .endif
+                .if	X_BASE
+                .text	"BASE",0
+                .endif
+                .if	X_BREAK
+                .text	"BREAK",0
+                .endif
+                .if	X_HBREAK
+                .text	"HBREAK",0
+                .endif
+                .if	X_RECOVER
+                .text	"RECOVER",0
+                .endif
+                .if	X_ECHO
+                .text	"ECHO",0
+                .endif
+                .endif
+                .byte	$FF
 
 
-comtab
-	.if	X_MEM
-	.word	mempa
-	.endif
-	.if	X_MDIS
-	.word	mdispa
-	.endif
-	.if	X_MCOPY
-	.word	mcopypa
-	.endif
-	.if	X_MSWAP
-	.word	mswappa
-	.endif
-	.if	X_MCMP
-	.word	mcmppa
-	.endif
-	.if	X_MFILL
-	.word	mfillpa
-	.endif
-	.if	X_MSEARCH
-	.word	msearchpa
-	.endif
-	.if	X_MCRC
-	.word	mcrcpa
-	.endif
-;disc
-	.if	X_DEDIT
-	.word	deditpa
-	.endif
-	.if	X_IDEDIT
-	.word	ideditpa
-	.endif
-	.if	X_FORMAT
-	.word	formatpa
-	.endif
-	.if	X_SECTLOAD
-	.word	sectloadpa
-	.endif
-	.if	X_SECTSAVE
-	.word	sectsavepa
-	.endif
-	.if	X_LOADIDS
-	.word	loadidspa
-	.endif
-	.if	X_PIDS
-	.word	pidspa
-	.endif
-	.if	X_VERIFY
-	.word	verifypa
-	.endif
-	.if	X_DMAP
-	.word	dmappa
-	.endif
-	.if	X_DFILL
-	.word	dfillpa
-	.endif
-	.if	X_FBACKUP
-	.word	fbackuppa
-	.endif
-	.if	X_PENABLE
-	.word	penablepa
-	.endif
-	.if	X_GAPS
-	.word	gapspa
-	.endif
-;file
-	.if	X_DLOAD
-	.word	dloadpa
-	.endif
-	.if	X_DRUN
-	.word	drunpa
-	.endif
-	.if	X_FDELETE
-	.word	fdeletepa
-	.endif
-	.if	X_FCRC
-	.word	fcrcpa
-	.endif
-	.if	X_TOUCH
-	.word	touchpa
-	.endif
-	.if	X_CONCAT
-	.word	concatpa
-	.endif
-	.if	X_FCOPY
-	.word	fcopypa
-	.endif
-	.if	X_FDIS
-	.word	fdispa
-	.endif
-	.if	X_SPOOLDIS
-	.word	spooldispa
-	.endif
-	.if	X_CLOSE
-	.word	closepa
-	.endif
-	.if	X_DES
-	.word	despa
-	.endif
-	.if	X_FCMP
-	.word	fcmppa
-	.endif
-;rom
-	.if	X_RLIST
-	.word	rlistpa
-	.endif
-	.if	X_RON
-	.word	ronpa
-	.endif
-	.if	X_ROFF
-	.word	roffpa
-	.endif
-	.if	X_RLOAD
-	.word	rloadpa
-	.endif
-	.if	X_RSAVE
-	.word	rsavepa
-	.endif
-	.if	X_RINFO
-	.word	rinfopa
-	.endif
-	.if	X_SRLOAD
-	.word	srloadpa
-	.endif
-	.if	X_SRSAVE
-	.word	srsavepa
-	.endif
-	.if	X_SRREAD
-	.word	sreadpa
-	.endif
-	.if	X_SRWRITE
-	.word	srwritepa
-	.endif
-	.if	X_RFSMAKE
-	.word	rfsmakepa
-	.endif
-	.if	X_SEND
-	.word	sendpa
-	.endif
-;gen
-	.if	X_PBUFF
-	.word	pbuffpa
-	.endif
-	.if	X_LVECTORS
-	.word	lvectorspa
-	.endif
-	.if	X_KEYLIST
-	.word	keylistpa
-	.endif
-	.if	X_KEYSAVE
-	.word	keysavepa
-	.endif
-	.if	X_KEYLOAD
-	.word	keyloadpa
-	.endif
-	.if	X_BASE
-	.word	basepa
-	.endif
-	.if	X_BREAK
-	.word	breakpa
-	.endif
-	.if	X_HBREAK
-	.word	hbreakpa
-	.endif
-	.if	X_RECOVER
-	.word	recoverpa
-	.endif
-	.if	X_ECHO
-	.word	echopa
-	.endif
+comtab:
+                .if	X_MEM
+                .word	mempa
+                .endif
+                .if	X_MDIS
+                .word	mdispa
+                .endif
+                .if	X_MCOPY
+                .word	mcopypa
+                .endif
+                .if	X_MSWAP
+                .word	mswappa
+                .endif
+                .if	X_MCMP
+                .word	mcmppa
+                .endif
+                .if	X_MFILL
+                .word	mfillpa
+                .endif
+                .if	X_MSEARCH
+                .word	msearchpa
+                .endif
+                .if	X_MCRC
+                .word	mcrcpa
+                .endif
+                ;disc
+                .if	X_DEDIT
+                .word	deditpa
+                .endif
+                .if	X_IDEDIT
+                .word	ideditpa
+                .endif
+                .if	X_FORMAT
+                .word	formatpa
+                .endif
+                .if	X_SECTLOAD
+                .word	sectloadpa
+                .endif
+                .if	X_SECTSAVE
+                .word	sectsavepa
+                .endif
+                .if	X_LOADIDS
+                .word	loadidspa
+                .endif
+                .if	X_PIDS
+                .word	pidspa
+                .endif
+                .if	X_VERIFY
+                .word	verifypa
+                .endif
+                .if	X_DMAP
+                .word	dmappa
+                .endif
+                .if	X_DFILL
+                .word	dfillpa
+                .endif
+                .if	X_FBACKUP
+                .word	fbackuppa
+                .endif
+                .if	X_PENABLE
+                .word	penablepa
+                .endif
+                .if	X_GAPS
+                .word	gapspa
+                .endif
+                ;file
+                .if	X_DLOAD
+                .word	dloadpa
+                .endif
+                .if	X_DRUN
+                .word	drunpa
+                .endif
+                .if	X_FDELETE
+                .word	fdeletepa
+                .endif
+                .if	X_FCRC
+                .word	fcrcpa
+                .endif
+                .if	X_TOUCH
+                .word	touchpa
+                .endif
+                .if	X_CONCAT
+                .word	concatpa
+                .endif
+                .if	X_FCOPY
+                .word	fcopypa
+                .endif
+                .if	X_FDIS
+                .word	fdispa
+                .endif
+                .if	X_SPOOLDIS
+                .word	spooldispa
+                .endif
+                .if	X_CLOSE
+                .word	closepa
+                .endif
+                .if	X_DES
+                .word	despa
+                .endif
+                .if	X_FCMP
+                .word	fcmppa
+                .endif
+                ;rom
+                .if	X_RLIST
+                .word	rlistpa
+                .endif
+                .if	X_RON
+                .word	ronpa
+                .endif
+                .if	X_ROFF
+                .word	roffpa
+                .endif
+                .if	X_RLOAD
+                .word	rloadpa
+                .endif
+                .if	X_RSAVE
+                .word	rsavepa
+                .endif
+                .if	X_RINFO
+                .word	rinfopa
+                .endif
+                .if	X_SRLOAD
+                .word	srloadpa
+                .endif
+                .if	X_SRSAVE
+                .word	srsavepa
+                .endif
+                .if	X_SRREAD
+                .word	sreadpa
+                .endif
+                .if	X_SRWRITE
+                .word	srwritepa
+                .endif
+                .if	X_RFSMAKE
+                .word	rfsmakepa
+                .endif
+                .if	X_SEND
+                .word	sendpa
+                .endif
+                ;gen
+                .if	X_PBUFF
+                .word	pbuffpa
+                .endif
+                .if	X_LVECTORS
+                .word	lvectorspa
+                .endif
+                .if	X_KEYLIST
+                .word	keylistpa
+                .endif
+                .if	X_KEYSAVE
+                .word	keysavepa
+                .endif
+                .if	X_KEYLOAD
+                .word	keyloadpa
+                .endif
+                .if	X_BASE
+                .word	basepa
+                .endif
+                .if	X_BREAK
+                .word	breakpa
+                .endif
+                .if	X_HBREAK
+                .word	hbreakpa
+                .endif
+                .if	X_RECOVER
+                .word	recoverpa
+                .endif
+                .if	X_ECHO
+                .word	echopa
+                .endif
 
-;*********************************
-; Help for each of the commands
-;*********************************
-helptab
-memhelp
-	.if	X_MEM
-	.byte	$06 ;mem
-	.if	X_MDIS
-	.byte	$86 ;mdis
-	.endif
-	.else
-	.if	X_MDIS
-	.byte	$06
-	.endif
-	.endif
-	.if	X_MCOPY
-	.byte	$12 ;mcopy
-	.if	X_MSWAP
-	.byte	$92 ;mswap
-	.endif
-	.if	X_MCMP
-	.byte	$92 ;mcmp
-	.endif
-	.else
-	.if	X_MSWAP
-	.byte	$12 ;mswap
-	.if	X_MCMP
-	.byte	$92 ;mcmp
-	.endif
-	.else
-	.if	X_MCMP
-	.byte	$12 ;mcmp
-	.endif
-	.endif
-	.endif
-	.if	X_MFILL
-	.byte	$0F ;mfill
-	.if	X_MSEARCH
-	.byte	$8F ;msearch
-	.endif
-	.else
-	.if	X_MSEARCH
-	.byte	$0F ;msearch
-	.endif
-	.endif
-	.if	X_MCRC
-	.byte	$04 ;mcrc
-	.endif
-dischelp
-	.if	X_DEDIT
-	.byte	$00 ;dedit
-	.endif
-	.if	X_IDEDIT
-	.byte	$00 ;idedit
-	.endif
-	.if	X_FORMAT
-	.byte	$1A ;format
-	.endif
-	.if	X_SECTLOAD
-	.byte	$10 ;sectload
-	.if	X_SECTSAVE
-	.byte	$90 ;sectsave
-	.endif
-	.else
-	.if	X_SECTSAVE
-	.byte	$10 ;sectsave
-	.endif
-	.endif
-	.if	X_LOADIDS
-	.byte	$08 ;loadids
-	.endif
-	.if	X_PIDS
-	.byte	$06 ;pids
-	.endif
-	.if	X_VERIFY
-	.byte	$0C ;verify
-	.endif
-	.if	X_DMAP
-	.byte	$0A ;dmap
-	.endif
-	.if	X_DFILL
-	.byte	$0F ;dfill
-	.endif
-	.if	X_FBACKUP
-	.byte	$03 ;fbackup
-	.endif
-	.if	X_PENABLE
-	.byte	$08 ;penable
-	.endif
-	.if	X_GAPS
-	.byte	$03 ;gaps
-	.endif
-filehelp
-	.if	X_DLOAD
-	.byte	$01 ;dload
-	.if	X_DRUN
-	.byte	$81 ;drun
-	.endif
-	.if	X_FDELETE
-	.byte	$81 ;fdelete
-	.endif
-	.if	X_FCRC
-	.byte	$81 ;fcrc
-	.endif
-	.else
-	.if	X_DRUN
-	.byte	$01 ;drun
-	.if	X_FDELETE
-	.byte	$81 ;fdelete
-	.endif
-	.if	X_FCRC
-	.byte	$81 ;fcrc
-	.endif
-	.else
-	.if	X_FDELETE
-	.byte	$01 ;fdelete
-	.if	X_FCRC
-	.byte	$81 ;fcrc
-	.endif
-	.else
-	.if	X_FCRC
-	.byte	$01 ;fcrc
-	.endif
-	.endif
-	.endif
-	.endif
-	.if	X_TOUCH
-	.byte	$0F ;touch
-	.endif
-	.if	X_CONCAT
-	.byte	$08 ;concat
-	.endif
-	.if	X_FCOPY
-	.byte	$07 ;fcopy
-	.endif
-	.if	X_FDIS
-	.byte	$06 ;fdis
-	.endif
-	.if	X_SPOOLDIS
-	.byte	$06 ;spooldis
-	.endif
-	.if	X_CLOSE
-	.byte	$0A ;close
-	.endif
-	.if	X_DES
-	.byte	$19 ;des
-	.endif
-	.if	X_FCMP
-	.byte	$03 ;fcmp
-	.endif
-romhelp
-	.if	X_RLIST
-	.byte	$00 ;rlist
-	.endif
-	.if	X_RON
-	.byte	$03 ;ron
-	.if	X_ROFF
-	.byte	$83 ;roff
-	.endif
-	.else
-	.if	X_ROFF
-	.byte	$03 ;roff
-	.endif
-	.endif
-	.if	X_RLOAD
-	.byte	$04 ;rload
-	.if	X_RSAVE
-	.byte	$84 ;rsave
-	.endif
-	.else
-	.if	X_RSAVE
-	.byte	$04 ;rsave
-	.endif
-	.endif
-	.if	X_RINFO
-	.byte	$04 ;rinfo
-	.endif
-	.if	X_SRLOAD
-	.byte	$08 ;srload
-	.endif
-	.if	X_SRSAVE
-	.byte	$0D ;srsave
-	.endif
-	.if	X_SRREAD
-	.byte	$10 ;srread
-	.endif
-	.if	X_SRWRITE
-	.byte	$0E ;srwrite
-	.endif
-	.if	X_RFSMAKE
-	.byte	$08 ;rfsmake
-	.endif
-	.if	X_SEND
-	.byte	$05 ;send
-	.endif
-genhelp
-	.if	X_PBUFF
-	.byte	$04 ;pbuff
-	.endif
-	.if	X_LVECTORS
-	.byte	$00 ;lvectors
-	.endif
-	.if	X_KEYLIST
-	.byte	$08 ;keylist
-	.endif
-	.if	X_KEYSAVE
-	.byte	$01 ;keysave
-	.if	X_KEYLOAD
-	.byte	$81 ;keyload
-	.endif
-	.else
-	.if	X_KEYLOAD
-	.byte	$01 ;keyload
-	.endif
-	.endif
-	.if	X_BASE
-	.byte	$05 ;base
-	.endif
-	.if	X_BREAK
-	.byte	$00 ;break
-	.endif
-	.if	X_HBREAK
-	.byte	$00 ;hbreak
-	.endif
-	.if	X_RECOVER
-	.byte	$00 ;recover
-	.endif
-	.if	X_ECHO
-	.byte	$10
-	.endif
+                ;*********************************
+                ; Help for each of the commands
+                ;*********************************
+helptab:
+memhelp:
+                .if	X_MEM
+                .byte	$06 ;mem
+                .if	X_MDIS
+                .byte	$86 ;mdis
+                .endif
+                .else
+                .if	X_MDIS
+                .byte	$06
+                .endif
+                .endif
+                .if	X_MCOPY
+                .byte	$12 ;mcopy
+                .if	X_MSWAP
+                .byte	$92 ;mswap
+                .endif
+                .if	X_MCMP
+                .byte	$92 ;mcmp
+                .endif
+                .else
+                .if	X_MSWAP
+                .byte	$12 ;mswap
+                .if	X_MCMP
+                .byte	$92 ;mcmp
+                .endif
+                .else
+                .if	X_MCMP
+                .byte	$12 ;mcmp
+                .endif
+                .endif
+                .endif
+                .if	X_MFILL
+                .byte	$0F ;mfill
+                .if	X_MSEARCH
+                .byte	$8F ;msearch
+                .endif
+                .else
+                .if	X_MSEARCH
+                .byte	$0F ;msearch
+                .endif
+                .endif
+                .if	X_MCRC
+                .byte	$04 ;mcrc
+                .endif
+dischelp:
+                .if	X_DEDIT
+                .byte	$00 ;dedit
+                .endif
+                .if	X_IDEDIT
+                .byte	$00 ;idedit
+                .endif
+                .if	X_FORMAT
+                .byte	$1A ;format
+                .endif
+                .if	X_SECTLOAD
+                .byte	$10 ;sectload
+                .if	X_SECTSAVE
+                .byte	$90 ;sectsave
+                .endif
+                .else
+                .if	X_SECTSAVE
+                .byte	$10 ;sectsave
+                .endif
+                .endif
+                .if	X_LOADIDS
+                .byte	$08 ;loadids
+                .endif
+                .if	X_PIDS
+                .byte	$06 ;pids
+                .endif
+                .if	X_VERIFY
+                .byte	$0C ;verify
+                .endif
+                .if	X_DMAP
+                .byte	$0A ;dmap
+                .endif
+                .if	X_DFILL
+                .byte	$0F ;dfill
+                .endif
+                .if	X_FBACKUP
+                .byte	$03 ;fbackup
+                .endif
+                .if	X_PENABLE
+                .byte	$08 ;penable
+                .endif
+                .if	X_GAPS
+                .byte	$03 ;gaps
+                .endif
+filehelp:
+                .if	X_DLOAD
+                .byte	$01 ;dload
+                .if	X_DRUN
+                .byte	$81 ;drun
+                .endif
+                .if	X_FDELETE
+                .byte	$81 ;fdelete
+                .endif
+                .if	X_FCRC
+                .byte	$81 ;fcrc
+                .endif
+                .else
+                .if	X_DRUN
+                .byte	$01 ;drun
+                .if	X_FDELETE
+                .byte	$81 ;fdelete
+                .endif
+                .if	X_FCRC
+                .byte	$81 ;fcrc
+                .endif
+                .else
+                .if	X_FDELETE
+                .byte	$01 ;fdelete
+                .if	X_FCRC
+                .byte	$81 ;fcrc
+                .endif
+                .else
+                .if	X_FCRC
+                .byte	$01 ;fcrc
+                .endif
+                .endif
+                .endif
+                .endif
+                .if	X_TOUCH
+                .byte	$0F ;touch
+                .endif
+                .if	X_CONCAT
+                .byte	$08 ;concat
+                .endif
+                .if	X_FCOPY
+                .byte	$07 ;fcopy
+                .endif
+                .if	X_FDIS
+                .byte	$06 ;fdis
+                .endif
+                .if	X_SPOOLDIS
+                .byte	$06 ;spooldis
+                .endif
+                .if	X_CLOSE
+                .byte	$0A ;close
+                .endif
+                .if	X_DES
+                .byte	$19 ;des
+                .endif
+                .if	X_FCMP
+                .byte	$03 ;fcmp
+                .endif
+romhelp:
+                .if	X_RLIST
+                .byte	$00 ;rlist
+                .endif
+                .if	X_RON
+                .byte	$03 ;ron
+                .if	X_ROFF
+                .byte	$83 ;roff
+                .endif
+                .else
+                .if	X_ROFF
+                .byte	$03 ;roff
+                .endif
+                .endif
+                .if	X_RLOAD
+                .byte	$04 ;rload
+                .if	X_RSAVE
+                .byte	$84 ;rsave
+                .endif
+                .else
+                .if	X_RSAVE
+                .byte	$04 ;rsave
+                .endif
+                .endif
+                .if	X_RINFO
+                .byte	$04 ;rinfo
+                .endif
+                .if	X_SRLOAD
+                .byte	$08 ;srload
+                .endif
+                .if	X_SRSAVE
+                .byte	$0D ;srsave
+                .endif
+                .if	X_SRREAD
+                .byte	$10 ;srread
+                .endif
+                .if	X_SRWRITE
+                .byte	$0E ;srwrite
+                .endif
+                .if	X_RFSMAKE
+                .byte	$08 ;rfsmake
+                .endif
+                .if	X_SEND
+                .byte	$05 ;send
+                .endif
+genhelp:
+                .if	X_PBUFF
+                .byte	$04 ;pbuff
+                .endif
+                .if	X_LVECTORS
+                .byte	$00 ;lvectors
+                .endif
+                .if	X_KEYLIST
+                .byte	$08 ;keylist
+                .endif
+                .if	X_KEYSAVE
+                .byte	$01 ;keysave
+                .if	X_KEYLOAD
+                .byte	$81 ;keyload
+                .endif
+                .else
+                .if	X_KEYLOAD
+                .byte	$01 ;keyload
+                .endif
+                .endif
+                .if	X_BASE
+                .byte	$05 ;base
+                .endif
+                .if	X_BREAK
+                .byte	$00 ;break
+                .endif
+                .if	X_HBREAK
+                .byte	$00 ;hbreak
+                .endif
+                .if	X_RECOVER
+                .byte	$00 ;recover
+                .endif
+                .if	X_ECHO
+                .byte	$10
+                .endif
 
-toktab
-	.byte	tok0-tokens
-	.byte	tok1-tokens
-	.byte	tok2-tokens
-	.byte	tok3-tokens
-	.byte	tok4-tokens
-	.byte	tok5-tokens
-	.byte	tok6-tokens
-	.byte	tok7-tokens
-	.byte	tok8-tokens
-	.byte	tok9-tokens
-	.byte	tok10-tokens
-	.byte	tok11-tokens
-	.byte	tok12-tokens
-	.byte	tok13-tokens
-	.byte	tok14-tokens
-	.byte	tok15-tokens
-	.byte	tok16-tokens
-	.byte	tok17-tokens
-	.byte	tok18-tokens
-	.byte	tok19-tokens
-	.byte	tok20-tokens
-	.byte	tok21-tokens
-	.byte	tok22-tokens
-	.byte	tok23-tokens
-	.byte	tok24-tokens
-	.byte	tok25-tokens
-	.byte	tok26-tokens
-	.byte	tok27-tokens
-	.byte	tok28-tokens
-	.byte	tok29-tokens
-	.byte	tok30-tokens
-	.byte	tok31-tokens
-	.byte	tok32-tokens
-	.byte	tok33-tokens
+toktab:
+                .byte	tok0-tokens
+                .byte	tok1-tokens
+                .byte	tok2-tokens
+                .byte	tok3-tokens
+                .byte	tok4-tokens
+                .byte	tok5-tokens
+                .byte	tok6-tokens
+                .byte	tok7-tokens
+                .byte	tok8-tokens
+                .byte	tok9-tokens
+                .byte	tok10-tokens
+                .byte	tok11-tokens
+                .byte	tok12-tokens
+                .byte	tok13-tokens
+                .byte	tok14-tokens
+                .byte	tok15-tokens
+                .byte	tok16-tokens
+                .byte	tok17-tokens
+                .byte	tok18-tokens
+                .byte	tok19-tokens
+                .byte	tok20-tokens
+                .byte	tok21-tokens
+                .byte	tok22-tokens
+                .byte	tok23-tokens
+                .byte	tok24-tokens
+                .byte	tok25-tokens
+                .byte	tok26-tokens
+                .byte	tok27-tokens
+                .byte	tok28-tokens
+                .byte	tok29-tokens
+                .byte	tok30-tokens
+                .byte	tok31-tokens
+                .byte	tok32-tokens
+                .byte	tok33-tokens
 
-tokens
-tok0
-	.text	"<fsp>"
-tok1
-	.text	"<drv>"
-tok2
-	.text	"bank>"
-tok3
-	.text	"<from"
-tok4
-	.text	"addr>"
-tok5
-	.text	"<(to)(+"
-tok6
-	.text	"<(to "
-tok7
-	.text	")(+"
-tok8
-	.text	"start>"
-tok9
-	.text	"len)>"
-tok10
-	.text	"dest"
-tok11
-	.text	"trks)> "
-tok12
-	.text	"trk> "
-tok13
-	.text	"trk"
-tok14
-	.text	"<no. sects> "
-tok15
-	.text	"<sect"
-tok16
-	.text	"<(byte)("""
-tok17
-	.text	"string"
-tok18
-	.text	"end"
-tok19
-	.text	"src "
-tok20
-	.text	"fsp>"
-tok21
-	.text	"(byte)"
-tok22
-tok23
-	.text	"offset"
-tok24
-	.text	")("
-tok25
-	.text	"(<"
-tok26
-	.text	"<("
-tok27
-	.text	")>"
-tok28
-	.text	"))"
-tok29
-	.text	"> "
-tok30
-	.text	" <"
-tok31
-	.text	" ("
-tok32
-	.text	" ..."
-tok33
+tokens:
+tok0:
+                .text	"<fsp>"
+tok1:
+                .text	"<drv>"
+tok2:
+                .text	"bank>"
+tok3:
+                .text	"<from"
+tok4:
+                .text	"addr>"
+tok5:
+                .text	"<(to)(+"
+tok6:
+                .text	"<(to "
+tok7:
+                .text	")(+"
+tok8:
+                .text	"start>"
+tok9:
+                .text	"len)>"
+tok10:
+                .text	"dest"
+tok11:
+                .text	"trks)> "
+tok12:
+                .text	"trk> "
+tok13:
+                .text	"trk"
+tok14:
+                .text	"<no. sects> "
+tok15:
+                .text	"<sect"
+tok16:
+                .text	"<(byte)("""
+tok17:
+                .text	"string"
+tok18:
+                .text	"end"
+tok19:
+                .text	"src "
+tok20:
+                .text	"fsp>"
+tok21:
+                .text	"(byte)"
+tok22:
+tok23:
+                .text	"offset"
+tok24:
+                .text	")("
+tok25:
+                .text	"(<"
+tok26:
+                .text	"<("
+tok27:
+                .text	")>"
+tok28:
+                .text	"))"
+tok29:
+                .text	"> "
+tok30:
+                .text	" <"
+tok31:
+                .text	" ("
+tok32:
+                .text	" ..."
+tok33:
 
-h_mem_coms
-	.if	X_MEM
+h_mem_coms:
+                .if	X_MEM
 H_MEM_MDIS = true
-	.else
-	.if	X_MDIS
+                .else
+                .if	X_MDIS
 H_MEM_MDIS = true
-	.else
+                .else
 H_MEM_MDIS = false
-	.endif
-	.endif
-	.if	H_MEM_MDIS
-h_mem
-h_mdis
-	.byte	$9D,$83,$9A,' ',$85,$9A
-	.endif
+                .endif
+                .endif
+                .if	H_MEM_MDIS
+h_mem:
+h_mdis:
+                .byte	$9D,$83,$9A,' ',$85,$9A
+                .endif
 
-	.if	X_MCOPY
+                .if	X_MCOPY
 H_MCPY_MSWP = true
-	.else
-	.if	X_MSWAP
+                .else
+                .if	X_MSWAP
 H_MCPY_MSWP = true
-	.else
-	.if	X_MCMP
+                .else
+                .if	X_MCMP
 H_MCPY_MSWP = true
-	.else
+                .else
 H_MCPY_MSWP = false
-	.endif
-	.endif
-	.endif
-	.if	H_MCPY_MSWP
-h_mcopy
-h_mswap
-h_mcmp
-	.byte	$9D,$83,' ','o','t',$9A,' ',$83
-	.byte	' ',$84,'(',$9E,$8B,$9F,$8A,$86
-	.byte	$9E,$84
-	.endif
+                .endif
+                .endif
+                .endif
+                .if	H_MCPY_MSWP
+h_mcopy:
+h_mswap:
+h_mcmp:
+                .byte	$9D,$83,' ','o','t',$9A,' ',$83
+                .byte	' ',$84,'(',$9E,$8B,$9F,$8A,$86
+                .byte	$9E,$84
+                .endif
 
-	.if	X_MFILL
+                .if	X_MFILL
 H_MFILL_MSRCH = true
-	.else
-	.if	X_MSEARCH
+                .else
+                .if	X_MSEARCH
 H_MFILL_MSRCH = true
-	.else
+                .else
 H_MFILL_MSRCH = false
-	.endif
-	.endif
-	.if	H_MFILL_MSRCH
-h_mfill
-h_msearch
-	.byte	')',$83,$9F,IFS,$A0,$A1,$9C,'"'
-	.byte	$92,$91,' ',$8A,$86,$9E,$84
-	.endif
-	.if	X_MCRC
-h_mcrc
-	.byte	$8A,$86,$9E,$84
-	.endif
+                .endif
+                .endif
+                .if	H_MFILL_MSRCH
+h_mfill:
+h_msearch:
+                .byte	')',$83,$9F,IFS,$A0,$A1,$9C,'"'
+                .byte	$92,$91,' ',$8A,$86,$9E,$84
+                .endif
+                .if	X_MCRC
+h_mcrc:
+                .byte	$8A,$86,$9E,$84
+                .endif
 
-h_disc_coms
-h_dedit
-h_idedit
-	.if	X_FORMAT
-h_format
-	.byte	')',$9D,$85,' ','d','i',$9A,$8F
-	.byte	'(',$9E,'e','z','i','s',' ',$90
-	.byte	'(',$8C,$88,$8E,$87,$8D,' ',$84
-	.byte	' ',$82
-	.endif
+h_disc_coms:
+h_dedit:
+h_idedit:
+                .if	X_FORMAT
+h_format:
+                .byte	')',$9D,$85,' ','d','i',$9A,$8F
+                .byte	'(',$9E,'e','z','i','s',' ',$90
+                .byte	'(',$8C,$88,$8E,$87,$8D,' ',$84
+                .byte	' ',$82
+                .endif
 
-	.if	X_SECTLOAD
+                .if	X_SECTLOAD
 H_SCTLDSV = true
-	.else
-	.if	X_SECTSAVE
+                .else
+                .if	X_SECTSAVE
 H_SCTLDSV = true
-	.else
+                .else
 H_SCTLDSV = false
-	.endif
-	.endif
-	.if	H_SCTLDSV
-h_sectload
-h_sectsave
-	.byte	')',$82,'(',$8F,$9E,$90,' ',$9C
-	.byte	'L',$99,'P',$9B,$8D,$9F,$85,'<'
-	.endif
-	.if	X_LOADIDS
-h_loadids
-	.byte	')',$82,'(',$8F,$8D,$9F,$85,'<'
-	.endif
-	.if	X_PIDS
-h_pids
-	.byte	')',$82,'(',$8F,$8D,'<'
-	.endif
-	.if	X_VERIFY
-h_verify
-	.byte	')','E','(',$8C,$88,$8E,$87,$8D
-	.byte	' ',$84,' ',$82
-	.endif
-	.if	X_DMAP
-h_dmap
-	.byte	')',$82,'(',$8C,$88,$8E,$87,$8D
-	.byte	' ',$84
-	.endif
-	.if	X_DFILL
-h_dfill
-	.byte	')',$82,' ',IFS,$A0,$A1,$9C,'"'
-	.byte	$92,$91,$8F,$9E,$90,$8D,'<'
-	.endif
-	.if	X_FBACKUP
-h_fbackup
-	.byte	$82,' ',$82
-	.endif
-	.if	X_PENABLE
-h_penable
-	.byte	$9C,'f','f','o',$99,'n','o',$9B
-	.endif
-	.if	X_GAPS
-h_gaps
-	.byte	')',$82,'('
-	.endif
+                .endif
+                .endif
+                .if	H_SCTLDSV
+h_sectload:
+h_sectsave:
+                .byte	')',$82,'(',$8F,$9E,$90,' ',$9C
+                .byte	'L',$99,'P',$9B,$8D,$9F,$85,'<'
+                .endif
+                .if	X_LOADIDS
+h_loadids:
+                .byte	')',$82,'(',$8F,$8D,$9F,$85,'<'
+                .endif
+                .if	X_PIDS
+h_pids:
+                .byte	')',$82,'(',$8F,$8D,'<'
+                .endif
+                .if	X_VERIFY
+h_verify:
+                .byte	')','E','(',$8C,$88,$8E,$87,$8D
+                .byte	' ',$84,' ',$82
+                .endif
+                .if	X_DMAP
+h_dmap:
+                .byte	')',$82,'(',$8C,$88,$8E,$87,$8D
+                .byte	' ',$84
+                .endif
+                .if	X_DFILL
+h_dfill:
+                .byte	')',$82,' ',IFS,$A0,$A1,$9C,'"'
+                .byte	$92,$91,$8F,$9E,$90,$8D,'<'
+                .endif
+                .if	X_FBACKUP
+h_fbackup:
+                .byte	$82,' ',$82
+                .endif
+                .if	X_PENABLE
+h_penable:
+                .byte	$9C,'f','f','o',$99,'n','o',$9B
+                .endif
+                .if	X_GAPS
+h_gaps:
+                .byte	')',$82,'('
+                .endif
 
-h_file_coms
-	.if	X_DLOAD
+h_file_coms:
+                .if	X_DLOAD
 H_FSP = true
-	.else
-	.if	X_DRUN
+                .else
+                .if	X_DRUN
 H_FSP = true
-	.else
-	.if	X_FDELETE
+                .else
+                .if	X_FDELETE
 H_FSP = true
-	.else
-	.if	X_FCRC
+                .else
+                .if	X_FCRC
 H_FSP = true
-	.else
+                .else
 H_FSP = false
-	.endif
-	.endif
-	.endif
-	.endif
-	.if	H_FSP
-h_dload
-h_drun
-h_fdelete
-h_fcrc
-	.byte	$81
-	.endif
-	.if	X_TOUCH
-h_touch
-	.byte	$85,' ','c','e','x','e',$9F,$85
-	.byte	' ','d','a','o','l',$9F,$81
-	.endif
-	.if	X_CONCAT
-h_concat
-	.byte	$A1,$95,$94,$9F,$95,' ',$8B,'<'
-	.endif
-	.if	X_FCOPY
-h_fcopy
-	.byte	')',$A1,$81,$A0,$82,' ',$82
-	.endif
-	.if	X_FDIS
-h_fdis
-	.byte	')','>',$98,'<',$A0,$81
-	.endif
-	.if	X_SPOOLDIS
-h_spooldis
-	.byte	$8A,$86,$9E,$84,' ',$81
-	.endif
-	.if	X_CLOSE
-h_close
-	.byte	')','>'
-	.text	'lennahc'
-	.byte	$9A
-	.endif
-	.if	X_DES
-h_des
-	.text	')>dwsp'
-	.byte	$9A,' ',$9C,'C','B','C',$99,'B'
-	.byte	'C','E',$9B,' ',$9C,'D',$99,'E'
-	.byte	'(',$9F,$81
-	.endif
-	.if	X_FCMP
-h_fcmp
-	.byte	$81,' ',$81
-	.endif
-h_recover
+                .endif
+                .endif
+                .endif
+                .endif
+                .if	H_FSP
+h_dload:
+h_drun:
+h_fdelete:
+h_fcrc:
+                .byte	$81
+                .endif
+                .if	X_TOUCH
+h_touch:
+                .byte	$85,' ','c','e','x','e',$9F,$85
+                .byte	' ','d','a','o','l',$9F,$81
+                .endif
+                .if	X_CONCAT
+h_concat:
+                .byte	$A1,$95,$94,$9F,$95,' ',$8B,'<'
+                .endif
+                .if	X_FCOPY
+h_fcopy:
+                .byte	')',$A1,$81,$A0,$82,' ',$82
+                .endif
+                .if	X_FDIS
+h_fdis:
+                .byte	')','>',$98,'<',$A0,$81
+                .endif
+                .if	X_SPOOLDIS
+h_spooldis:
+                .byte	$8A,$86,$9E,$84,' ',$81
+                .endif
+                .if	X_CLOSE
+h_close:
+                .byte	')','>'
+                .text	'lennahc'
+                .byte	$9A
+                .endif
+                .if	X_DES
+h_des:
+                .text	')>dwsp'
+                .byte	$9A,' ',$9C,'C','B','C',$99,'B'
+                .byte	'C','E',$9B,' ',$9C,'D',$99,'E'
+                .byte	'(',$9F,$81
+                .endif
+                .if	X_FCMP
+h_fcmp:
+                .byte	$81,' ',$81
+                .endif
+h_recover:
 
-h_rom_coms
-h_rlist
-	.if	X_RON
+h_rom_coms:
+h_rlist:
+                .if	X_RON
 H_RON_ROFF = true
-	.else
-	.if	X_ROFF
+                .else
+                .if	X_ROFF
 H_RON_ROFF	=-1
-	.else
+                .else
 H_RON_ROFF = false
-	.endif
-	.endif
-	.if	H_RON_ROFF
-h_ron
-h_roff
-	.byte	$A1,$83,'<'
-	.endif
-	.if	X_RLOAD
+                .endif
+                .endif
+                .if	H_RON_ROFF
+h_ron:
+h_roff:
+                .byte	$A1,$83,'<'
+                .endif
+                .if	X_RLOAD
 H_RLOAD_RSAVE = true
-	.else
-	.if	X_RSAVE
+                .else
+                .if	X_RSAVE
 H_RLOAD_RSAVE = true
-	.else
+                .else
 H_RLOAD_RSAVE = false
-	.endif
-	.endif
-	.if	H_RLOAD_RSAVE
-h_rload
-h_rsave
-	.byte	$81,' ',$83,'<'
-	.endif
-	.if	X_RINFO
-h_rinfo
-	.byte	')',$A1,$83,$9A
-	.endif
-	.if	X_SRLOAD
-h_srload
-	.byte	')','Q',$A0,$83,$9F,$89,$9F,$81
-	.endif
-	.if	X_SRSAVE
-h_srsave
-	.byte	')','Q',$A0,$83,$9F,$8A,$88,$94
-	.byte	$9B,' ',$89,$9F,$81
-	.endif
-	.if	X_SRREAD
-h_srread
-	.byte	$83,$9F,$85,$94,$9F,$8A,$88,$93
-	.byte	' ',$8B,$9B,' ',$89,' ',$8B,'<'
-	.endif
-	.if	X_SRWRITE
-h_srwrite
-	.byte	$83,$9F,$85,$94,$9F,$8A,$88,$93
-	.byte	$94,$9B,' ',$89,$94,'<'
-	.endif
-	.if	X_RFSMAKE
-h_rfsmake
-	.byte	$A1,$95,$94,$9F,$95,' ',$8B,'<'
-	.endif
-	.if	X_SEND
-h_send
-	.byte	'>',$92,$9F,$83,'<'
-	.endif
-h_gen_coms
-	.if	X_PBUFF
-h_pbuff
-	.byte	')',$A1,$83,$9A
-	.endif
-h_lvec
-	.if	X_KEYLIST
-h_keylist
-	.byte	')',$A1
-	.text	'>syek'
-	.byte	$9A
-	.endif
-	.if	X_KEYSAVE
+                .endif
+                .endif
+                .if	H_RLOAD_RSAVE
+h_rload:
+h_rsave:
+                .byte	$81,' ',$83,'<'
+                .endif
+                .if	X_RINFO
+h_rinfo:
+                .byte	')',$A1,$83,$9A
+                .endif
+                .if	X_SRLOAD
+h_srload:
+                .byte	')','Q',$A0,$83,$9F,$89,$9F,$81
+                .endif
+                .if	X_SRSAVE
+h_srsave:
+                .byte	')','Q',$A0,$83,$9F,$8A,$88,$94
+                .byte	$9B,' ',$89,$9F,$81
+                .endif
+                .if	X_SRREAD
+h_srread:
+                .byte	$83,$9F,$85,$94,$9F,$8A,$88,$93
+                .byte	' ',$8B,$9B,' ',$89,' ',$8B,'<'
+                .endif
+                .if	X_SRWRITE
+h_srwrite:
+                .byte	$83,$9F,$85,$94,$9F,$8A,$88,$93
+                .byte	$94,$9B,' ',$89,$94,'<'
+                .endif
+                .if	X_RFSMAKE
+h_rfsmake:
+                .byte	$A1,$95,$94,$9F,$95,' ',$8B,'<'
+                .endif
+                .if	X_SEND
+h_send:
+                .byte	'>',$92,$9F,$83,'<'
+                .endif
+h_gen_coms:
+                .if	X_PBUFF
+h_pbuff:
+                .byte	')',$A1,$83,$9A
+                .endif
+h_lvec:
+                .if	X_KEYLIST
+h_keylist:
+                .byte	')',$A1
+                .text	'>syek'
+                .byte	$9A
+                .endif
+                .if	X_KEYSAVE
 H_KEYSVLD = true
-	.else
-	.if	X_KEYLOAD
+                .else
+                .if	X_KEYLOAD
 H_KEYSVLD = true
-	.else
+                .else
 H_KEYSVLD = false
-	.endif
-	.endif
-	.if	H_KEYSVLD
-h_keysave
-h_keyload
-	.byte	$81
-	.endif
-	.if	X_BASE
-h_base
-	.text	'>mun<'
-	.endif
-h_break
-h_hbreak
-	.if	X_ECHO
-h_echo
-	.byte	$A1,$9D,'"',$92,'"','(',$96,$A0
-	.byte	IFS,$A1,')',$92,$A0,IFS,$A1,$96
-	.endif
+                .endif
+                .endif
+                .if	H_KEYSVLD
+h_keysave:
+h_keyload:
+                .byte	$81
+                .endif
+                .if	X_BASE
+h_base:
+                .text	'>mun<'
+                .endif
+h_break:
+h_hbreak:
+                .if	X_ECHO
+h_echo:
+                .byte	$A1,$9D,'"',$92,'"','(',$96,$A0
+                .byte	IFS,$A1,')',$92,$A0,IFS,$A1,$96
+                .endif

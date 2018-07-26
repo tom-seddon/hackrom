@@ -15,7 +15,7 @@ mmsl = block+2
 mmds = block+4
 mmsr = block+6
 mmdr = block+7
-mmove
+mmove:
 ; check zero length / dec length by 1
 ;	LDA	mmsl
 ;	BNE	mmnz
@@ -23,113 +23,113 @@ mmove
 ;	BEQ	mmend
 ;mmnz
 ;	LDX	#mmsl-block
-	JSR	mmcom5
-	LDA	mmds+1
-	CMP	mmss+1
-	BCC	mmfor
-	LDA	mmds
-	CMP	mmss
-	BCC	mmfor
-; backwards
-mmback
+                JSR	mmcom5
+                LDA	mmds+1
+                CMP	mmss+1
+                BCC	mmfor
+                LDA	mmds
+                CMP	mmss
+                BCC	mmfor
+                ; backwards
+mmback:
 ; calc src end and dest end.
-	LDX	#mmss-block
-	JSR	mmcom
-	LDX	#mmds-block
-	JSR	mmcom
-	JSR	mmcom3
-mmback0
-	JSR	mmcom2
-	LDX	#mmds-block
-	JSR	mmcom4
-	LDX	#mmss-block
-	JSR	mmcom4
-	JMP	mmback0
-; forwards
-mmfor
-	JSR	mmcom3
-mmfor0
-	JSR	mmcom2
-	INY
-	BNE	mmfor0
-	INC	mmss+1
-	INC	mmds+1
-	JMP	mmfor0
-mmcom
-	CLC
-	LDA	block,X
-	ADC	mmsl
-	STA	block,X
-	LDA	block+1,X
-	ADC	mmsl+1
-	STA	block+1,X
-	RTS
-mmcom2
-	LDA	mmsl+1
-	BNE	mmfb2
-	LDA	mmsl
-	BEQ	mmend
-mmfb2
-	JSR	rdwr1s
-	JSR	rdposx
-	STA	mmtmp
-;	LDA	(mmss),Y
-mscom
-	JSR	rdwr2s
-	LDA	mmtmp
-mfcom
-	JSR	wrposx
-;	STA	(mmds),Y
-	INC	mmsl
-	BNE	mmfb3
-	INC	mmsl+1
-mmfb3
-	RTS
-mmend
-	PLA
-	PLA
-	RTS
-mmcom3
-	LDY	#$00
-	LDA	mmsl
-	EOR	#$FF
-	STA	mmsl
-	LDA	mmsl+1
-	EOR	#$FF
-	STA	mmsl+1
-	RTS
-mmcom5
-	LDX	#mclen-block
-	JSR	mmcom4
-	JMP	reloc
-mmcom4
-	SEC
-	LDA	block,X
-	SBC	#$01
-	STA	block,X
-	BCS	mmcom41
-	DEC	block+1,X
-mmcom41
-	RTS
-rdwr1s
-	LDA	mmss	; block+0/1
-	STA	poslo
-	LDA	mmss+1
-	STA	poshi
-	LDA	mmsr; block+6
-	STA	romid
-	RTS
-rdwr2s
-	LDA@w	ms2s; block+4/5
-	STA	poslo
-	LDA@w	ms2s+1
-	STA	poshi
-	LDA@w	ms2r; block+7
-	STA	romid
-; zero flag (handily) clear or set here
-; correctly when jumped to from mcmp
-msend
-	RTS
+                LDX	#mmss-block
+                JSR	mmcom
+                LDX	#mmds-block
+                JSR	mmcom
+                JSR	mmcom3
+mmback0:
+                JSR	mmcom2
+                LDX	#mmds-block
+                JSR	mmcom4
+                LDX	#mmss-block
+                JSR	mmcom4
+                JMP	mmback0
+                ; forwards
+mmfor:
+                JSR	mmcom3
+mmfor0:
+                JSR	mmcom2
+                INY
+                BNE	mmfor0
+                INC	mmss+1
+                INC	mmds+1
+                JMP	mmfor0
+mmcom:
+                CLC
+                LDA	block,X
+                ADC	mmsl
+                STA	block,X
+                LDA	block+1,X
+                ADC	mmsl+1
+                STA	block+1,X
+                RTS
+mmcom2:
+                LDA	mmsl+1
+                BNE	mmfb2
+                LDA	mmsl
+                BEQ	mmend
+mmfb2:
+                JSR	rdwr1s
+                JSR	rdposx
+                STA	mmtmp
+                ;	LDA	(mmss),Y
+mscom:
+                JSR	rdwr2s
+                LDA	mmtmp
+mfcom:
+                JSR	wrposx
+                ;	STA	(mmds),Y
+                INC	mmsl
+                BNE	mmfb3
+                INC	mmsl+1
+mmfb3:
+                RTS
+mmend:
+                PLA
+                PLA
+                RTS
+mmcom3:
+                LDY	#$00
+                LDA	mmsl
+                EOR	#$FF
+                STA	mmsl
+                LDA	mmsl+1
+                EOR	#$FF
+                STA	mmsl+1
+                RTS
+mmcom5:
+                LDX	#mclen-block
+                JSR	mmcom4
+                JMP	reloc
+mmcom4:
+                SEC
+                LDA	block,X
+                SBC	#$01
+                STA	block,X
+                BCS	mmcom41
+                DEC	block+1,X
+mmcom41:
+                RTS
+rdwr1s:
+                LDA	mmss	; block+0/1
+                STA	poslo
+                LDA	mmss+1
+                STA	poshi
+                LDA	mmsr; block+6
+                STA	romid
+                RTS
+rdwr2s:
+                LDA@w	ms2s; block+4/5
+                STA	poslo
+                LDA@w	ms2s+1
+                STA	poshi
+                LDA@w	ms2r; block+7
+                STA	romid
+                ; zero flag (handily) clear or set here
+                ; correctly when jumped to from mcmp
+msend:
+                RTS
 
 ; ------------------------------------
 ; compares two blocks of memory.
@@ -149,46 +149,46 @@ mclen = block+2
 mc2s = block+4
 mc1r = block+6
 mc2r = block+7
-mcmp
-	JSR	reloc
-	LDY	#$00
-mc1
-	LDA	mclen+1
-	BNE	mc2
-	LDA	mclen
-	BEQ	mcend2
-mc2
-	JSR	rdwr1s
-	JSR	rdposx
-	STA	mmtmp
-	JSR	rdwr2s
-	JSR	rdposx
-	CMP	mmtmp
-	BNE	mcend
-	INY
-	BEQ	mcj1
-	CPY	mclen
-	BNE	mc1
-	LDA	mclen+1
-	BNE	mc1
-mcend2
-	CLC
-	RTS
-mcj1
-	INC	mc1s+1
-	INC	mc2s+1
-	DEC	mclen+1
-	JMP	mc1
-mcend
-	TYA
-	CLC
-	ADC	mc1s
-	STA	mc1s
-	BCC	mcend3
-	INC	mc1s+1
-mcend3
-	SEC
-	RTS
+mcmp:
+                JSR	reloc
+                LDY	#$00
+mc1:
+                LDA	mclen+1
+                BNE	mc2
+                LDA	mclen
+                BEQ	mcend2
+mc2:
+                JSR	rdwr1s
+                JSR	rdposx
+                STA	mmtmp
+                JSR	rdwr2s
+                JSR	rdposx
+                CMP	mmtmp
+                BNE	mcend
+                INY
+                BEQ	mcj1
+                CPY	mclen
+                BNE	mc1
+                LDA	mclen+1
+                BNE	mc1
+mcend2:
+                CLC
+                RTS
+mcj1:
+                INC	mc1s+1
+                INC	mc2s+1
+                DEC	mclen+1
+                JMP	mc1
+mcend:
+                TYA
+                CLC
+                ADC	mc1s
+                STA	mc1s
+                BCC	mcend3
+                INC	mc1s+1
+mcend3:
+                SEC
+                RTS
 
 ; ------------------------------------
 ; swaps two blocks of memory over.
@@ -203,7 +203,7 @@ mslen = block+2
 ms2s = block+4
 ms1r = block+6
 ms2r = block+7
-mswap
+mswap:
 ; check zero length / dec length by 1
 ;	LDA	msl
 ;	BNE	msnz
@@ -211,33 +211,33 @@ mswap
 ;	BEQ	msend
 ;msnz
 ;	LDX	#mslen-block
-	JSR	mmcom5
-; negate length
-	JSR	mmcom3
-ms1
-	LDA	mslen+1
-	BNE	ms2
-	LDA	mslen
-	BEQ	msend
-ms2
-	JSR	rdwr1s
-	JSR	rdposx
-;	LDA	(ms1s),Y
-	STA	mmtmp
-	JSR	rdwr2s
-	JSR	rdposx
-	PHA
-;	LDA	(ms2s),Y
-	JSR	rdwr1s
-	PLA
-	JSR	wrposx
-;	STA	(ms1s),Y
-	JSR	mscom
-	INY
-	BNE	ms1
-	INC	ms1s+1
-	INC	ms2s+1
-	JMP	ms1
+                JSR	mmcom5
+                ; negate length
+                JSR	mmcom3
+ms1:
+                LDA	mslen+1
+                BNE	ms2
+                LDA	mslen
+                BEQ	msend
+ms2:
+                JSR	rdwr1s
+                JSR	rdposx
+                ;	LDA	(ms1s),Y
+                STA	mmtmp
+                JSR	rdwr2s
+                JSR	rdposx
+                PHA
+                ;	LDA	(ms2s),Y
+                JSR	rdwr1s
+                PLA
+                JSR	wrposx
+                ;	STA	(ms1s),Y
+                JSR	mscom
+                INY
+                BNE	ms1
+                INC	ms1s+1
+                INC	ms2s+1
+                JMP	ms1
 
 ; ------------------------------------
 ; fills a block of memory with defined
@@ -254,43 +254,43 @@ mfml = block+2;3
 mfd = block+4;5
 mfmr = block+6
 mfdl = block+7
-mfill
+mfill:
 ; as mfill/mswap - dec len and EOF #$FF
 ;	LDX	#mfml-block
-	JSR	mmcom5
-	JSR	mmcom3
-	LDX	#$00
-mfill0
+                JSR	mmcom5
+                JSR	mmcom3
+                LDX	#$00
+mfill0:
 ; check len != 0
-	LDA	mfml
-	BNE	mfill1
-	LDA	mfml+1
-	BEQ	mfillend
-mfill1
-	STY	mmtmp
-	JSR	rdwr1s
-	TXA
-	TAY
-	LDA	(mfd),Y
-	LDY	mmtmp
-	JSR	mfcom
-; mfcom - part of mscom
-; 	INC	mfml
-; 	BNE	mfx
-; 	INC	mfl+1
-; mfx
-; 	RTS
-	INX
-	CPX	mfdl
-	BNE	mfill2
-	LDX	#$00
-mfill2
-	INY
-	BNE	mfill0
-	INC	mfms+1
-	JMP	mfill0
-mfillend
-	RTS
+                LDA	mfml
+                BNE	mfill1
+                LDA	mfml+1
+                BEQ	mfillend
+mfill1:
+                STY	mmtmp
+                JSR	rdwr1s
+                TXA
+                TAY
+                LDA	(mfd),Y
+                LDY	mmtmp
+                JSR	mfcom
+                ; mfcom - part of mscom
+                ; 	INC	mfml
+                ; 	BNE	mfx
+                ; 	INC	mfl+1
+                ; mfx
+                ; 	RTS
+                INX
+                CPX	mfdl
+                BNE	mfill2
+                LDX	#$00
+mfill2:
+                INY
+                BNE	mfill0
+                INC	mfms+1
+                JMP	mfill0
+mfillend:
+                RTS
 
 ; ------------------------------------
 ; searches through a block of memory
@@ -306,59 +306,59 @@ mSml = block+2;3
 mSd = block+4;5
 mSmr = block+6
 mSdl = block+7
-msearch
-	JSR	mmcom5
-	JSR	mmcom3
-msearch3
-	LDX	#$00
-msearch0
+msearch:
+                JSR	mmcom5
+                JSR	mmcom3
+msearch3:
+                LDX	#$00
+msearch0:
 ; check len != 0
-	LDA	mSml
-	BNE	msearch1
-	LDA	mSml+1
-	CLC
-	BEQ	msearchend
-msearch1
-	JSR	rdwr1s
-	LDY	#$00
-	JSR	rdposx
-	INC	mSms
-	BNE	msearch9
-	INC	mSms+1
-msearch9
-	INC	mSml
-	BNE	msearch2
-	INC	mSml+1
-msearch2
-	PHA
-	TXA
-	TAY
-	PLA
-	CMP	(mSd),Y
-	BNE	msearch3
-	INX
-	CPX	mSdl
-	BNE	msearch0
-mem_dolen
-	JSR	mmcom3
-	CLC
-	LDA	mSdl
-	STA	tmp
-	ADC	mSml
-	STA	mSml
-	BCC	nearly_done
-	INC	mSml+1
-nearly_done
-	DEC	tmp
-	SEC
-	LDA	mSms
-	SBC	tmp
-	STA	mSms
-	BCS	msearchend
-	DEC	mSdl+1
-	SEC
-msearchend
-	RTS
+                LDA	mSml
+                BNE	msearch1
+                LDA	mSml+1
+                CLC
+                BEQ	msearchend
+msearch1:
+                JSR	rdwr1s
+                LDY	#$00
+                JSR	rdposx
+                INC	mSms
+                BNE	msearch9
+                INC	mSms+1
+msearch9:
+                INC	mSml
+                BNE	msearch2
+                INC	mSml+1
+msearch2:
+                PHA
+                TXA
+                TAY
+                PLA
+                CMP	(mSd),Y
+                BNE	msearch3
+                INX
+                CPX	mSdl
+                BNE	msearch0
+mem_dolen:
+                JSR	mmcom3
+                CLC
+                LDA	mSdl
+                STA	tmp
+                ADC	mSml
+                STA	mSml
+                BCC	nearly_done
+                INC	mSml+1
+nearly_done:
+                DEC	tmp
+                SEC
+                LDA	mSms
+                SBC	tmp
+                STA	mSms
+                BCS	msearchend
+                DEC	mSdl+1
+                SEC
+msearchend:
+                RTS
 
 ; *************************************
 ; Fill routine: Reads in arguments up
@@ -372,57 +372,57 @@ msearchend
 filltmpy1 = $7B
 filltmpy2 = $7C
 
-fillend
-	DEY
-	LDA	($F2),Y
-	INY
-	CMP	#IFS
-	PHP
-	STY	filltmpy1
-	LDA	filltmpy2
-	PLP
-	RTS
-fill
-	LDA	#$00
-	STA	filltmpy2
-fillx
-	JSR	rdstrnum
-	BNE	fillend
-	BCC	fillnum
-fill0
-	LDA	($F2),Y
-	INY
-	STY	filltmpy1
-	LDY	filltmpy2
-	STA	($F2),Y
-	INY
-	STY	filltmpy2
-	LDY	filltmpy1
-	CPY	endstr
-	BCC	fill0
-	LDY	newy
-; BNE fill ?
-	JMP	fillx
-fillnum
-	TYA
-	PHA
-	LDY	filltmpy2
-	LDX	#$03
-fillnum0
-	LDA	clibuf,X
-	BNE	fillnum1
-	DEX
-	BNE	fillnum0
-; when here we've consumed leading
-; zeros to max of 3. ie
-; 00000000 = 00    00123456 = 123456
-fillnum1
-	LDA	clibuf,X
-	STA	($F2),Y
-	INY
-	DEX
-	BPL	fillnum1
-	STY	filltmpy2
-	PLA
-	TAY
-	JMP	fillx
+fillend:
+                DEY
+                LDA	($F2),Y
+                INY
+                CMP	#IFS
+                PHP
+                STY	filltmpy1
+                LDA	filltmpy2
+                PLP
+                RTS
+fill:
+                LDA	#$00
+                STA	filltmpy2
+fillx:
+                JSR	rdstrnum
+                BNE	fillend
+                BCC	fillnum
+fill0:
+                LDA	($F2),Y
+                INY
+                STY	filltmpy1
+                LDY	filltmpy2
+                STA	($F2),Y
+                INY
+                STY	filltmpy2
+                LDY	filltmpy1
+                CPY	endstr
+                BCC	fill0
+                LDY	newy
+                ; BNE fill ?
+                JMP	fillx
+fillnum:
+                TYA
+                PHA
+                LDY	filltmpy2
+                LDX	#$03
+fillnum0:
+                LDA	clibuf,X
+                BNE	fillnum1
+                DEX
+                BNE	fillnum0
+                ; when here we've consumed leading
+                ; zeros to max of 3. ie
+                ; 00000000 = 00    00123456 = 123456
+fillnum1:
+                LDA	clibuf,X
+                STA	($F2),Y
+                INY
+                DEX
+                BPL	fillnum1
+                STY	filltmpy2
+                PLA
+                TAY
+                JMP	fillx

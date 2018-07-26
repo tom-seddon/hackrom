@@ -55,7 +55,7 @@ cc = (\1)[2] & $1f
 ; Compressed using the CRUNCH macro as
 ; defined above
 ;*********************************
-opcodes
+opcodes:
                 crunch "ADC"
                 crunch "AND"
                 crunch "ASL"
@@ -128,274 +128,274 @@ opcodes
 ; Lengths of an instruction using
 ; a specific addressing mode.
 ;*********************************
-length
-	.byte	$01,$02,$02,$02,$03,$03,$03,$02
-	.byte	$02,$01,$02,$03,$02,$02,$02,$03
-	.byte	$03,$03,$03,$03,$03,$03,$03,$03
-	.byte	$03
+length:
+                .byte	$01,$02,$02,$02,$03,$03,$03,$02
+                .byte	$02,$01,$02,$03,$02,$02,$02,$03
+                .byte	$03,$03,$03,$03,$03,$03,$03,$03
+                .byte	$03
 
 ;*********************************
 ; Convert X reg to mnemonic number
 ; ,addressing mode and length
 ;*********************************
-calc
+calc:
 ; Opcode = bits 0-6 of op(X)
-	TAX
-	LDA	op,X
-	STA	tmp
-	AND	#$7F
-	STA	tmpop
-	CLC
-	TXA
-	ROR	A
-	TAX
-; bit 0 of mode = bit 7 of op(X)
-; bits 1-4 of mode = bits 0-3 or
-; bits 4-7 of mode(X/2)
-	LDA	mode,X
-	BCC	clcjmp
-	LSR	A
-	LSR	A
-	LSR	A
-	LSR	A
-clcjmp
-	AND	#$F
-	PHA
-	LDA	tmp
-	ROL	A
-	PLA
-	ROL	A
-	STA	tmpam
-; Length = length(mode)
-	TAX
-	LDA	length,X
-	STA	tmplen
-	RTS
+                TAX
+                LDA	op,X
+                STA	tmp
+                AND	#$7F
+                STA	tmpop
+                CLC
+                TXA
+                ROR	A
+                TAX
+                ; bit 0 of mode = bit 7 of op(X)
+                ; bits 1-4 of mode = bits 0-3 or
+                ; bits 4-7 of mode(X/2)
+                LDA	mode,X
+                BCC	clcjmp
+                LSR	A
+                LSR	A
+                LSR	A
+                LSR	A
+clcjmp:
+                AND	#$F
+                PHA
+                LDA	tmp
+                ROL	A
+                PLA
+                ROL	A
+                STA	tmpam
+                ; Length = length(mode)
+                TAX
+                LDA	length,X
+                STA	tmplen
+                RTS
 
 ;*********************************
 ; Print a single mnemonic.
 ;*********************************
-printop
-	LDA	tmpop
-	ASL	A
-	TAX
-	LDY	#0
-; 1st = least 5 bits of opcodes(X)
-	LDA	opcodes,X
-	PHA
-	AND	#$1F
-	ORA #$40
-	STA	(screenlo),Y
-; Bits 0-1 of 2nd char = least 2
-; bits of opcodes(X+1). Bits 2-3
-; come from bits 5-7 of opcodes(X)
-	PLA
-	AND	#$E0
-	LSR	A
-	LSR	A
-	LSR	A
-	STA	tmp
-	INX
-	INY
-	LDA	opcodes,X
-	PHA
-	AND	#$3
-	ADC	tmp
-	ORA #$40
-	STA	(screenlo),Y
-	INY
-	PLA
-; 3rd = bits 2-6 of opcodes(X+1)
-	AND	#$7C
-	LSR	A
-	LSR	A
-	ORA #$40
-	STA	(screenlo),Y
-	LDA	screenlo
-	CLC
-	ADC	#4
-	STA	screenlo
-	BCC	poj
-	INC	screenhi
-poj
-	RTS
+printop:
+                LDA	tmpop
+                ASL	A
+                TAX
+                LDY	#0
+                ; 1st = least 5 bits of opcodes(X)
+                LDA	opcodes,X
+                PHA
+                AND	#$1F
+                ORA #$40
+                STA	(screenlo),Y
+                ; Bits 0-1 of 2nd char = least 2
+                ; bits of opcodes(X+1). Bits 2-3
+                ; come from bits 5-7 of opcodes(X)
+                PLA
+                AND	#$E0
+                LSR	A
+                LSR	A
+                LSR	A
+                STA	tmp
+                INX
+                INY
+                LDA	opcodes,X
+                PHA
+                AND	#$3
+                ADC	tmp
+                ORA #$40
+                STA	(screenlo),Y
+                INY
+                PLA
+                ; 3rd = bits 2-6 of opcodes(X+1)
+                AND	#$7C
+                LSR	A
+                LSR	A
+                ORA #$40
+                STA	(screenlo),Y
+                LDA	screenlo
+                CLC
+                ADC	#4
+                STA	screenlo
+                BCC	poj
+                INC	screenhi
+poj:
+                RTS
 
-;*********************************
-; Display an entire screen of
-; disassembled data.
-;*********************************
-disscreen
-	LDA	#2
-;Quick *FX19
-dsloop0
-	BIT	$FE4D
-	BNE	dsloop0
-	LDA	#$79
-	STA	screenlo
-	LDA	#$7C
-	STA	screenhi
-	LDY	#0
-	LDA	poslo
-	STA	tmpposlo
-	LDA	poshi
-	STA	tmpposhi
-sloop
-	LDA	screenlo
-	STA	tmpscrlo
-	LDA	screenhi
-	STA	tmpscrhi
-	TYA
-	PHA
-; Print current address
-	LDA	tmpposhi
-	JSR	printnumx
-	LDA	tmpposlo
-	SEC
-	JSR	printnum
-	LDY	#0
-	JSR	rdtmpposx
-	JSR	calc
-; Print opcode (and args) as hex
-	TAX
-	LDY	#0
-sloop1
-	JSR	rdtmpposx
-	SEC
-	JSR	printnum
-	INY
-	DEX
-	BNE	sloop1
-; Clear a bit of space
-	LDY	#27
-	LDA	#32
-sloop0
-	STA	(screenlo),Y
-	DEY
-	BPL	sloop0
-	LDA	tmpscrlo
-	CLC
-	ADC	#16
-	STA	screenlo
-	LDA	tmpscrhi
-	ADC	#0
-	STA	screenhi
-; Print opcode as ASCII
-	LDX	tmplen
-	LDY	#0
-sloop2
-	JSR	rdtmpposx
-	AND	#$7F
-	CMP	#$20
-	BCS	sjmp6
-	LDA	#'.'
-sjmp6
-	STA	(screenlo),Y
-	INY
-	DEX
-	BNE	sloop2
-	LDA	tmpscrlo
-	CLC
-	ADC	#22
-	STA	screenlo
-	LDA	tmpscrhi
-	ADC	#0
-	STA	screenhi
-; Print opcode as mnemonic
-	JSR	printop
-	JSR	amprint
-	LDA	tmpposlo
-	CLC
-	ADC	tmplen
-	STA	tmpposlo
-	BCC	sjmp1
-	INC	tmpposhi
-sjmp1
+                ;*********************************
+                ; Display an entire screen of
+                ; disassembled data.
+                ;*********************************
+disscreen:
+                LDA	#2
+                ;Quick *FX19
+dsloop0:
+                BIT	$FE4D
+                BNE	dsloop0
+                LDA	#$79
+                STA	screenlo
+                LDA	#$7C
+                STA	screenhi
+                LDY	#0
+                LDA	poslo
+                STA	tmpposlo
+                LDA	poshi
+                STA	tmpposhi
+sloop:
+                LDA	screenlo
+                STA	tmpscrlo
+                LDA	screenhi
+                STA	tmpscrhi
+                TYA
+                PHA
+                ; Print current address
+                LDA	tmpposhi
+                JSR	printnumx
+                LDA	tmpposlo
+                SEC
+                JSR	printnum
+                LDY	#0
+                JSR	rdtmpposx
+                JSR	calc
+                ; Print opcode (and args) as hex
+                TAX
+                LDY	#0
+sloop1:
+                JSR	rdtmpposx
+                SEC
+                JSR	printnum
+                INY
+                DEX
+                BNE	sloop1
+                ; Clear a bit of space
+                LDY	#27
+                LDA	#32
+sloop0:
+                STA	(screenlo),Y
+                DEY
+                BPL	sloop0
+                LDA	tmpscrlo
+                CLC
+                ADC	#16
+                STA	screenlo
+                LDA	tmpscrhi
+                ADC	#0
+                STA	screenhi
+                ; Print opcode as ASCII
+                LDX	tmplen
+                LDY	#0
+sloop2:
+                JSR	rdtmpposx
+                AND	#$7F
+                CMP	#$20
+                BCS	sjmp6
+                LDA	#'.'
+sjmp6:
+                STA	(screenlo),Y
+                INY
+                DEX
+                BNE	sloop2
+                LDA	tmpscrlo
+                CLC
+                ADC	#22
+                STA	screenlo
+                LDA	tmpscrhi
+                ADC	#0
+                STA	screenhi
+                ; Print opcode as mnemonic
+                JSR	printop
+                JSR	amprint
+                LDA	tmpposlo
+                CLC
+                ADC	tmplen
+                STA	tmpposlo
+                BCC	sjmp1
+                INC	tmpposhi
+sjmp1:
 ; Now go onto next screen line
-	LDA	tmpscrlo
-	CLC
-	ADC	#$28
-	STA	screenlo
-	LDA	tmpscrhi
-	ADC	#0
-	STA	screenhi
-	PLA
-	TAY
-	INY
-; Finished all 22 lines yet?
-	CPY	#22
-	BCS	send
-	JMP	sloop
-send
-	RTS
+                LDA	tmpscrlo
+                CLC
+                ADC	#$28
+                STA	screenlo
+                LDA	tmpscrhi
+                ADC	#0
+                STA	screenhi
+                PLA
+                TAY
+                INY
+                ; Finished all 22 lines yet?
+                CPY	#22
+                BCS	send
+                JMP	sloop
+send:
+                RTS
 
 ;*********************************
 ; Print addressing mode details.
 ;*********************************
-amprint
+amprint:
 ;Find addressing mode data
-	LDX	tmpam
-	LDA	amoffset,X
-	TAX
-amloop
-	LDA	amtab,X
-; If $FF then end
-	BMI	amend
-; If $03 then relative address
-	CMP	#3
-	BEQ	relative
-; If >$03 then display as text
-	BCS	amtext
-; otherwise print as hex number
-	TAY
-	JSR	rdtmpposx
-	JSR	printnumx
-	INX
-	JMP	amloop
-amtext
-	LDY	#0
-	STA	(screenlo),Y
-	INX
-	INC	screenlo
-	BNE	amj1
-	INC	screenhi
-amj1
-	JMP	amloop
-amend
-	RTS
-relative
+                LDX	tmpam
+                LDA	amoffset,X
+                TAX
+amloop:
+                LDA	amtab,X
+                ; If $FF then end
+                BMI	amend
+                ; If $03 then relative address
+                CMP	#3
+                BEQ	relative
+                ; If >$03 then display as text
+                BCS	amtext
+                ; otherwise print as hex number
+                TAY
+                JSR	rdtmpposx
+                JSR	printnumx
+                INX
+                JMP	amloop
+amtext:
+                LDY	#0
+                STA	(screenlo),Y
+                INX
+                INC	screenlo
+                BNE	amj1
+                INC	screenhi
+amj1:
+                JMP	amloop
+amend:
+                RTS
+relative:
 ; Compute address as offset from
 ; current position.
 ;
 ; For both BBS/BBR & branches the
 ; relative portion is the last byte.
-	LDY	tmplen
-	DEY
-	LDA	tmpposlo
-	CLC
-; BBS/BBR are 3 bytes, Branches are 2
-	ADC	tmplen
-	STA	tmp
-	LDA	tmpposhi
-	ADC	#0
-	STA	tmp+1
-	JSR	rdtmpposx
-	CMP	#$80
-	BCC	r1
-	LDX	#$FF
-	BMI	r2
-r1
-	LDX	#$00
-r2
-	CLC
-	ADC	tmp
-	PHA
-	TXA
-	ADC	tmp+1
-; And print it.
-	JSR	printnumx
-	PLA
-	JSR	printnumx
-	RTS
+                LDY	tmplen
+                DEY
+                LDA	tmpposlo
+                CLC
+                ; BBS/BBR are 3 bytes, Branches are 2
+                ADC	tmplen
+                STA	tmp
+                LDA	tmpposhi
+                ADC	#0
+                STA	tmp+1
+                JSR	rdtmpposx
+                CMP	#$80
+                BCC	r1
+                LDX	#$FF
+                BMI	r2
+r1:
+                LDX	#$00
+r2:
+                CLC
+                ADC	tmp
+                PHA
+                TXA
+                ADC	tmp+1
+                ; And print it.
+                JSR	printnumx
+                PLA
+                JSR	printnumx
+                RTS
 
 ;*********************************
 ; Table of data detailing how each
@@ -406,7 +406,7 @@ r2
 ; $FF = End of this entry
 ; Anything else >$1F is text
 ;*********************************
-amtab
+amtab:
 am00	.byte	$FF
 am01	.byte	$5F,$26,$01,$FF
 am02	.byte	$26,$01,$FF
@@ -438,477 +438,477 @@ am24	.byte	$28,$26,$02,$01,$2C,$58,$29,$FF
 ; entry in above table from the
 ; first entry.
 ;*********************************
-amoffset
-	.byte	am00-amtab
-	.byte	am01-amtab
-	.byte	am02-amtab
-	.byte	am03-amtab
-	.byte	am04-amtab
-	.byte	am05-amtab
-	.byte	am06-amtab
-	.byte	am07-amtab
-	.byte	am08-amtab
-	.byte	am09-amtab
-	.byte	am10-amtab
-	.byte	am11-amtab
-	.byte	am12-amtab
-	.byte	am13-amtab
-	.byte	am14-amtab
-	.byte	am15-amtab
-	.byte	am16-amtab
-	.byte	am17-amtab
-	.byte	am18-amtab
-	.byte	am19-amtab
-	.byte	am20-amtab
-	.byte	am21-amtab
-	.byte	am22-amtab
-	.byte	am23-amtab
-	.byte	am24-amtab
+amoffset:
+                .byte	am00-amtab
+                .byte	am01-amtab
+                .byte	am02-amtab
+                .byte	am03-amtab
+                .byte	am04-amtab
+                .byte	am05-amtab
+                .byte	am06-amtab
+                .byte	am07-amtab
+                .byte	am08-amtab
+                .byte	am09-amtab
+                .byte	am10-amtab
+                .byte	am11-amtab
+                .byte	am12-amtab
+                .byte	am13-amtab
+                .byte	am14-amtab
+                .byte	am15-amtab
+                .byte	am16-amtab
+                .byte	am17-amtab
+                .byte	am18-amtab
+                .byte	am19-amtab
+                .byte	am20-amtab
+                .byte	am21-amtab
+                .byte	am22-amtab
+                .byte	am23-amtab
+                .byte	am24-amtab
 
 ;*********************************
 ; Displays an entire screen of hex
 ; and ascii data.
 ;*********************************
-hexscreen
+hexscreen:
 ; Move cursor to correct place.
-	LDA	#14
-	LDX	#$2A
-	JSR	poke6845
-	LDX	xpos
-	LDA	hmode
-	BNE	ascii
-	LDA	hhex,X
-	JMP	hjmp0
-ascii
-	LDA	hascii,X
-hjmp0
-	TAX
-	LDA	#15
-	JSR	poke6845
-	LDA	#$79
-	STA	screenlo
-	LDA	#$7C
-	STA	screenhi
-	LDY	#0
-	LDA	poslo
-	STA	tmpscrlo
-	LDA	poshi
-	STA	tmpscrhi
-; Quick *FX19. gR of system VIA
-	LDA	#2
-hsloop0
-	BIT	$FE4D
-	BNE	hsloop0
-hsloop2
+                LDA	#14
+                LDX	#$2A
+                JSR	poke6845
+                LDX	xpos
+                LDA	hmode
+                BNE	ascii
+                LDA	hhex,X
+                JMP	hjmp0
+ascii:
+                LDA	hascii,X
+hjmp0:
+                TAX
+                LDA	#15
+                JSR	poke6845
+                LDA	#$79
+                STA	screenlo
+                LDA	#$7C
+                STA	screenhi
+                LDY	#0
+                LDA	poslo
+                STA	tmpscrlo
+                LDA	poshi
+                STA	tmpscrhi
+                ; Quick *FX19. gR of system VIA
+                LDA	#2
+hsloop0:
+                BIT	$FE4D
+                BNE	hsloop0
+hsloop2:
 ; Print current address
-	LDA	tmpscrhi
-	JSR	printnumx
-	LDA	tmpscrlo
-	JSR	printnumx
-	LDA	screenlo
-	ADC	#2
-	STA	screenlo
-; BCC hsjmp3%
-; INC screenhi%
-; .hsjmp3%
-; Print 8 bytes as numbers
-	LDX	#7
-hsloop1
-	JSR	rdposx
-	STA	tmpblock,X
-	SEC
-	JSR	printnum
-	INY
-	DEX
-	BPL	hsloop1
-; Print 8 bytes as ascii
-	LDX	#7
-	TYA
-	PHA
-	LDY	#1
-hsloop3
-	TXA
-	PHA
-	LDA	tmpblock,X
-	AND	#$7F
-	TAX
-	LDA	letter,X
-	STA	(screenlo),Y
-	PLA
-	TAX
-	INY
-	DEX
-	BPL	hsloop3
-	PLA
-	TAY
-; Go onto next display line
-	LDA	screenlo
-	CLC
-	ADC	#10
-	STA	screenlo
-	BCC	hsjmp1
-	INC	screenhi
-hsjmp1
-	LDA	tmpscrlo
-	CLC
-	ADC	#8
-	STA	tmpscrlo
-	BCC	hsjmp4
-	INC	tmpscrhi
-hsjmp4
-	CPY	#$B0
-	BNE	hsloop2
-	RTS
+                LDA	tmpscrhi
+                JSR	printnumx
+                LDA	tmpscrlo
+                JSR	printnumx
+                LDA	screenlo
+                ADC	#2
+                STA	screenlo
+                ; BCC hsjmp3%
+                ; INC screenhi%
+                ; .hsjmp3%
+                ; Print 8 bytes as numbers
+                LDX	#7
+hsloop1:
+                JSR	rdposx
+                STA	tmpblock,X
+                SEC
+                JSR	printnum
+                INY
+                DEX
+                BPL	hsloop1
+                ; Print 8 bytes as ascii
+                LDX	#7
+                TYA
+                PHA
+                LDY	#1
+hsloop3:
+                TXA
+                PHA
+                LDA	tmpblock,X
+                AND	#$7F
+                TAX
+                LDA	letter,X
+                STA	(screenlo),Y
+                PLA
+                TAX
+                INY
+                DEX
+                BPL	hsloop3
+                PLA
+                TAY
+                ; Go onto next display line
+                LDA	screenlo
+                CLC
+                ADC	#10
+                STA	screenlo
+                BCC	hsjmp1
+                INC	screenhi
+hsjmp1:
+                LDA	tmpscrlo
+                CLC
+                ADC	#8
+                STA	tmpscrlo
+                BCC	hsjmp4
+                INC	tmpscrhi
+hsjmp4:
+                CPY	#$B0
+                BNE	hsloop2
+                RTS
 
-; Draw highlighted band for use in the
-; mem edit mode (display == 0)
-drawband
-	LDA	#130
-	STA	$7E0D
-	LDA	#129
-	STA	$7E26
-	RTS
+                ; Draw highlighted band for use in the
+                ; mem edit mode (display == 0)
+drawband:
+                LDA	#130
+                STA	$7E0D
+                LDA	#129
+                STA	$7E26
+                RTS
 
-;*********************************
-; A few initialisations and then
-; the main loop checking for all
-; the keypresses.
-;*********************************
-start
-	JSR	reloc
-; Remember current settings of
-; various system variables
-	LDA	$F4
-	PHA
-	LDA	$27D
-	PHA
-	LDA	$254
-	PHA
-	LDA	$255
-	PHA
-; Initialise screen display
-	JSR	pcprint
-; Banner at top of screen
-titmsg
-	.word	$0716 ;MODE 7
-	.byte	129
-	.text	"Memory Bank"
-	.byte	134
-	.text	"  X :"
-	.byte	$0D
-	.byte	129
-	.text	"Display Mode"
-	.byte	134
-	.byte	0
-	LDA	$248
-	PHA
-	LDA	tmp
-	STA	romid
-	JSR	romtitle
-	LDA	#$00
-	STA	toggle
-	STA	hmode
-	LDA	#$CF
-	JSR	setcursor
-	BIT	display
-	BMI	mdis1
-	JSR	sub50
-mdis1
-	JSR	tabstart
+                ;*********************************
+                ; A few initialisations and then
+                ; the main loop checking for all
+                ; the keypresses.
+                ;*********************************
+start:
+                JSR	reloc
+                ; Remember current settings of
+                ; various system variables
+                LDA	$F4
+                PHA
+                LDA	$27D
+                PHA
+                LDA	$254
+                PHA
+                LDA	$255
+                PHA
+                ; Initialise screen display
+                JSR	pcprint
+                ; Banner at top of screen
+titmsg:
+                .word	$0716 ;MODE 7
+                .byte	129
+                .text	"Memory Bank"
+                .byte	134
+                .text	"  X :"
+                .byte	$0D
+                .byte	129
+                .text	"Display Mode"
+                .byte	134
+                .byte	0
+                LDA	$248
+                PHA
+                LDA	tmp
+                STA	romid
+                JSR	romtitle
+                LDA	#$00
+                STA	toggle
+                STA	hmode
+                LDA	#$CF
+                JSR	setcursor
+                BIT	display
+                BMI	mdis1
+                JSR	sub50
+mdis1:
+                JSR	tabstart
 
-; Main loop - due to this being
-; jumped back to from lots of
-; places the address is stored on
-; the stack so RTS takes us here.
-mloop
-	LDA	#>(mloop-1)
-	PHA
-	LDA	#<(mloop-1)
-	PHA
-mloopx
+                ; Main loop - due to this being
+                ; jumped back to from lots of
+                ; places the address is stored on
+                ; the stack so RTS takes us here.
+mloop:
+                LDA	#>(mloop-1)
+                PHA
+                LDA	#<(mloop-1)
+                PHA
+mloopx:
 ; Display appropriate screen
-	BIT	display
-	BPL	mjmp3
-	JSR	disscreen
-	LDY	#0
-	JSR	rdposx
-	JSR	calc
-	STA	tmpscrlo
-	JMP	mjmp4
-mjmp3
-	JSR	hexscreen 
-	LDA	#$8
-	STA	tmpscrlo
-mjmp4
+                BIT	display
+                BPL	mjmp3
+                JSR	disscreen
+                LDY	#0
+                JSR	rdposx
+                JSR	calc
+                STA	tmpscrlo
+                JMP	mjmp4
+mjmp3:
+                JSR	hexscreen 
+                LDA	#$8
+                STA	tmpscrlo
+mjmp4:
 ; Check for SHIFT and CONTROL keys
-	LDY	#$FF
-	LDX	#$FF
-	LDA	#$81
-	JSR	$FFF4
-	STX	shift
-	LDY	#$FF
-	LDX	#$FE
-	JSR	$FFF4
-	STX	control
-; Read other keys
-	LDX	#0
-	LDY	#0
-	JSR	$FFF4
-; If none pressed then check again
-; (and update screen if Hex mode)
-	CPY	#$FF
-	BNE	mjmp5
-	BIT	display
-	BPL	mloopx
-	BMI	mjmp4
-mjmp5
+                LDY	#$FF
+                LDX	#$FF
+                LDA	#$81
+                JSR	$FFF4
+                STX	shift
+                LDY	#$FF
+                LDX	#$FE
+                JSR	$FFF4
+                STX	control
+                ; Read other keys
+                LDX	#0
+                LDY	#0
+                JSR	$FFF4
+                ; If none pressed then check again
+                ; (and update screen if Hex mode)
+                CPY	#$FF
+                BNE	mjmp5
+                BIT	display
+                BPL	mloopx
+                BMI	mjmp4
+mjmp5:
 
-	CPY	#$1B
-	BNE	notend
-; ESCAPE pressed
-; Firstly remove address of main
-; loop from stack. Then reset the
-; system variables changed.
-	JMP	escape
+                CPY	#$1B
+                BNE	notend
+                ; ESCAPE pressed
+                ; Firstly remove address of main
+                ; loop from stack. Then reset the
+                ; system variables changed.
+                JMP	escape
 
-notend
+notend:
 ; Flush keyboard buffer
-	TXA
-	PHA
-	LDA	#15
-	LDX	#1
-	JSR	$FFF4
-	PLA
-	TAX
+                TXA
+                PHA
+                LDA	#15
+                LDX	#1
+                JSR	$FFF4
+                PLA
+                TAX
 
-	BIT	toggle
-	BPL	togjmp0
-	LDA	#$00
-	BVC	togjmp1
-	ORA	#$BF
-togjmp1
-	STA	toggle
-togjmp0
+                BIT	toggle
+                BPL	togjmp0
+                LDA	#$00
+                BVC	togjmp1
+                ORA	#$BF
+togjmp1:
+                STA	toggle
+togjmp0:
 
-	CPX	#$8A
-	BNE	notdown
-; DOWN ARROW pressed
-	BIT	shift
-	BMI	down2
-	BIT	control
-	BPL	down1
-	LDA	#$80
-	STA	tmpscrlo
-down1
-	LDA	poslo
-	CLC
-	ADC	tmpscrlo
-	STA	poslo
-	BCC	mmloop
-down2
-	INC	poshi
-mmloop
-	RTS
+                CPX	#$8A
+                BNE	notdown
+                ; DOWN ARROW pressed
+                BIT	shift
+                BMI	down2
+                BIT	control
+                BPL	down1
+                LDA	#$80
+                STA	tmpscrlo
+down1:
+                LDA	poslo
+                CLC
+                ADC	tmpscrlo
+                STA	poslo
+                BCC	mmloop
+down2:
+                INC	poshi
+mmloop:
+                RTS
 
-notdown
-	CPX	#$8B
-	BNE	notup
-; UP ARROW pressed
-	BIT	shift
-	BMI	up2
-	BIT	display
-	BPL	up3
-	LDA	#$01
-	STA	tmpscrlo
-up3
-	BIT	control
-	BPL	up1
-	LDA	#$80
-	STA	tmpscrlo
-up1
-	LDA	poslo
-	SEC
-	SBC	tmpscrlo
-	STA	poslo
-	BCS	mmloop
-up2
-	DEC	poshi
-	RTS
+notdown:
+                CPX	#$8B
+                BNE	notup
+                ; UP ARROW pressed
+                BIT	shift
+                BMI	up2
+                BIT	display
+                BPL	up3
+                LDA	#$01
+                STA	tmpscrlo
+up3:
+                BIT	control
+                BPL	up1
+                LDA	#$80
+                STA	tmpscrlo
+up1:
+                LDA	poslo
+                SEC
+                SBC	tmpscrlo
+                STA	poslo
+                BCS	mmloop
+up2:
+                DEC	poshi
+                RTS
 
-notup
-	CPX	#$09
-	BNE	nottab
-; TAB pressed
-	LDX	#0
-	TXA
-tabloop
-	STA	$7C78,X
-	STA	$7D00,X
-	STA	$7E00,X
-	STA	$7F00,X
-	INX
-	BNE	tabloop
-tabstart
-	LDA	display
-	EOR	#$FF
-	STA	display
-	BEQ	tabjmp0
-	LDA	xpos
-	CLC
-	ADC	#$50
-	STA	tmp
-	LDA	poslo
-	ADC	tmp
-	STA	poslo
-	BCC	tj1
-	INC	poshi
-tj1
-	LDA	#11
-	BNE	tabjmp1
-tabjmp0
-	JSR	drawband
-sub50
-	LDA	poslo
-	SEC
-	SBC	#$50
-	STA	poslo
-	BCS	tj2
-	DEC	poshi
-tj2
-	JSR	round8
-	LDA	hmode
-	AND	#1
-	TAX
-	LDA	cursor3,X
-tabjmp1
-	STA	$248
-	STA	$FE20
-	JSR	printmode
-qmloop
-	RTS
+notup:
+                CPX	#$09
+                BNE	nottab
+                ; TAB pressed
+                LDX	#0
+                TXA
+tabloop:
+                STA	$7C78,X
+                STA	$7D00,X
+                STA	$7E00,X
+                STA	$7F00,X
+                INX
+                BNE	tabloop
+tabstart:
+                LDA	display
+                EOR	#$FF
+                STA	display
+                BEQ	tabjmp0
+                LDA	xpos
+                CLC
+                ADC	#$50
+                STA	tmp
+                LDA	poslo
+                ADC	tmp
+                STA	poslo
+                BCC	tj1
+                INC	poshi
+tj1:
+                LDA	#11
+                BNE	tabjmp1
+tabjmp0:
+                JSR	drawband
+sub50:
+                LDA	poslo
+                SEC
+                SBC	#$50
+                STA	poslo
+                BCS	tj2
+                DEC	poshi
+tj2:
+                JSR	round8
+                LDA	hmode
+                AND	#1
+                TAX
+                LDA	cursor3,X
+tabjmp1:
+                STA	$248
+                STA	$FE20
+                JSR	printmode
+qmloop:
+                RTS
 
-nottab
-	CPX	#$88
-	BNE	notleft
-; LEFT ARROW pressed
-left2
-	BIT	control
-	BMI	cleft2
-	BIT	display
-	BNE	qmloop
-	BIT	shift
-	BMI	sleft
-	LDA	xpos
-	BEQ	ljmp0
-	DEC	xpos
-	RTS
-ljmp0
-	LDA	#7
-	STA	xpos 
-	JMP	up1
-sleft
-	LDA	#0
-	STA	xpos
-	RTS
-cleft2
-	DEC	romid
-	JSR	romtitle
-	RTS
+nottab:
+                CPX	#$88
+                BNE	notleft
+                ; LEFT ARROW pressed
+left2:
+                BIT	control
+                BMI	cleft2
+                BIT	display
+                BNE	qmloop
+                BIT	shift
+                BMI	sleft
+                LDA	xpos
+                BEQ	ljmp0
+                DEC	xpos
+                RTS
+ljmp0:
+                LDA	#7
+                STA	xpos 
+                JMP	up1
+sleft:
+                LDA	#0
+                STA	xpos
+                RTS
+cleft2:
+                DEC	romid
+                JSR	romtitle
+                RTS
 
-notleft
-	CPX	#$89
-	BNE	notright
-; RIGHT ARROW pressed
-	BIT	control
-	BMI	cright2
-	BIT	display
-	BNE	qmloop
-	BIT	shift
-	BMI	sright
-right2
-	LDA	xpos
-	CMP	#7
-	BEQ	rjmp0
-	INC	xpos
-	RTS
-rjmp0
-	LDA	#0
-	STA	xpos
-	JMP	down1
-sright
-	LDA	#7
-	STA	xpos
-	RTS
-cright2
-	INC	romid
-	JSR	romtitle
-	RTS
+notleft:
+                CPX	#$89
+                BNE	notright
+                ; RIGHT ARROW pressed
+                BIT	control
+                BMI	cright2
+                BIT	display
+                BNE	qmloop
+                BIT	shift
+                BMI	sright
+right2:
+                LDA	xpos
+                CMP	#7
+                BEQ	rjmp0
+                INC	xpos
+                RTS
+rjmp0:
+                LDA	#0
+                STA	xpos
+                JMP	down1
+sright:
+                LDA	#7
+                STA	xpos
+                RTS
+cright2:
+                INC	romid
+                JSR	romtitle
+                RTS
 
-; If disassembly then no need for any
-; more key checks
-	BIT	display
-	BNE	qmloop
+                ; If disassembly then no need for any
+                ; more key checks
+                BIT	display
+                BNE	qmloop
 
-notright
-	CPX	#$87
-	BNE	notcopy
-; COPY pressed
-	LDA	hmode
-	EOR	#$FF
-	STA	hmode
-	AND	#1
-	TAX
-	LDA	cursor3,X
-	STA	$248
-	STA	$FE20
-	JMP	printmode
+notright:
+                CPX	#$87
+                BNE	notcopy
+                ; COPY pressed
+                LDA	hmode
+                EOR	#$FF
+                STA	hmode
+                AND	#1
+                TAX
+                LDA	cursor3,X
+                STA	$248
+                STA	$FE20
+                JMP	printmode
 
-notcopy
+notcopy:
 ; If none of the above keys then
 ; we must be trying to edit mem.
-	LDA	#$50
-	CLC
-	ADC	xpos
-	TAY
-	TXA
-	BIT	hmode
-	BMI	sascii
-	CMP	#'0'
-	BCC	storeend
-	CMP	#'G'
-	BCS	storeend
-	CMP	#':'
-	BCS	checkAtoF
-	SBC	#$2F
-; Edit memory in Hex mode.
-storeshift
-	STA	tmp
-	JSR	rdposx
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	ORA	tmp
-	JSR	wrposx
-	BIT	toggle
-	BMI	storeright
-	LDA	#$FF
-	STA	toggle
-	BEQ	storeright
-storeend
-	RTS
-checkAtoF
-	CMP	#'A'
-	BCC	storeend
-	SBC	#$37
-	JMP	storeshift
-; Edit memory in ASCII mode.
-sascii
-	JSR	wrposx
-storeright
-	LDA	#$00
-	STA	toggle
-	JMP	right2
+                LDA	#$50
+                CLC
+                ADC	xpos
+                TAY
+                TXA
+                BIT	hmode
+                BMI	sascii
+                CMP	#'0'
+                BCC	storeend
+                CMP	#'G'
+                BCS	storeend
+                CMP	#':'
+                BCS	checkAtoF
+                SBC	#$2F
+                ; Edit memory in Hex mode.
+storeshift:
+                STA	tmp
+                JSR	rdposx
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                ORA	tmp
+                JSR	wrposx
+                BIT	toggle
+                BMI	storeright
+                LDA	#$FF
+                STA	toggle
+                BEQ	storeright
+storeend:
+                RTS
+checkAtoF:
+                CMP	#'A'
+                BCC	storeend
+                SBC	#$37
+                JMP	storeshift
+                ; Edit memory in ASCII mode.
+sascii:
+                JSR	wrposx
+storeright:
+                LDA	#$00
+                STA	toggle
+                JMP	right2
 
 
 ;*********************************
@@ -916,93 +916,93 @@ storeright
 ; If there is no ROM present in
 ; this bank then print "Unknown"
 ;*********************************
-romtitle
+romtitle:
 ; Print ROM number (0-F)
-	LDA	romid
-	AND	#$0F
-	TAX
-	LDA	num,X
-	STA	$7C0F
-; Check for copyright string.
-; If not "(C)" then not a ROM
-	LDA	poslo
-	PHA
-	LDA	poshi
-	PHA
-	JSR	beginrom
-	LDY	#7
-	JSR	rdposx
-	TAY
-	LDX	#3
-	LDA	romid
-	CLC
-	JSR	checkrom
-	BNE	notarom
-; Display ROM name.
-	JSR	beginrom
-	LDY	#9
-rtloop
-	JSR	rdposx
-	STA	$7C13,X
-	INY
-	INX
-	CPX	#$15
-	BEQ	romend
-	CMP	#0
-	BNE	rtloop
-	LDA	#152
-	STA	$7C13,X
-	BNE	romend
-notarom
-	LDX	#10
-narloop
-	LDA	narmsg,X
-	STA	$7C13,X
-	DEX
-	BPL	narloop
-romend
-	PLA
-	STA	poshi
-	PLA
-	STA	poslo
-	RTS
+                LDA	romid
+                AND	#$0F
+                TAX
+                LDA	num,X
+                STA	$7C0F
+                ; Check for copyright string.
+                ; If not "(C)" then not a ROM
+                LDA	poslo
+                PHA
+                LDA	poshi
+                PHA
+                JSR	beginrom
+                LDY	#7
+                JSR	rdposx
+                TAY
+                LDX	#3
+                LDA	romid
+                CLC
+                JSR	checkrom
+                BNE	notarom
+                ; Display ROM name.
+                JSR	beginrom
+                LDY	#9
+rtloop:
+                JSR	rdposx
+                STA	$7C13,X
+                INY
+                INX
+                CPX	#$15
+                BEQ	romend
+                CMP	#0
+                BNE	rtloop
+                LDA	#152
+                STA	$7C13,X
+                BNE	romend
+notarom:
+                LDX	#10
+narloop:
+                LDA	narmsg,X
+                STA	$7C13,X
+                DEX
+                BPL	narloop
+romend:
+                PLA
+                STA	poshi
+                PLA
+                STA	poslo
+                RTS
 
-;*********************************
-; Print info about current display
-; and input mode (Hex/Asc/Dis)
-;*********************************
-printmode
+                ;*********************************
+                ; Print info about current display
+                ; and input mode (Hex/Asc/Dis)
+                ;*********************************
+printmode:
 ; Check display% and hmode%
 ; to decide what to print.
-	BIT	display
-	BPL	prmd0
-	LDX	#0
-	BVS	printit
-prmd0
-	BIT	hmode
-	BMI	prmd1
-	LDX	#hexmsg-dismsg
-	BVC	printit
-prmd1
-	LDX	#ascmsg-dismsg
-; Having decided, let's print it
-printit
-	LDY	#0
-pil
-	LDA	dismsg,X
-	STA	$7C37,Y
-	INX
-	INY
-	CMP	#0
-	BNE	pil
-	RTS
+                BIT	display
+                BPL	prmd0
+                LDX	#0
+                BVS	printit
+prmd0:
+                BIT	hmode
+                BMI	prmd1
+                LDX	#hexmsg-dismsg
+                BVC	printit
+prmd1:
+                LDX	#ascmsg-dismsg
+                ; Having decided, let's print it
+printit:
+                LDY	#0
+pil:
+                LDA	dismsg,X
+                STA	$7C37,Y
+                INX
+                INY
+                CMP	#0
+                BNE	pil
+                RTS
 
 ; ********************************
 ; MDIS
 ; ********************************
-mdispa
-	LDA	#$00
-	JMP	memcompa
+mdispa:
+                LDA	#$00
+                JMP	memcompa
 
 ;*********************************
 ; The actual entry point.
@@ -1012,67 +1012,67 @@ mdispa
 ; If no args given then use
 ; default of PAGE and current ROM.
 ;*********************************
-mempa
-	LDA	#$FF
-memcompa
-	STA	display
-; Read first arg - the memory
-; address to edit
-	JSR	rdnum
-	BNE	mdefaults
-	LDA	clibuf
-	STA	poslo
-	LDA	clibuf+1
-	STA	poshi
-; Read 2nd arg - ROM id to use
-	JSR	rdnum
-	BNE	mdefaults2
-	LDA	clibuf
-	AND	#$F
-	STA	tmp
-	JMP	start
-mdefaults
+mempa:
+                LDA	#$FF
+memcompa:
+                STA	display
+                ; Read first arg - the memory
+                ; address to edit
+                JSR	rdnum
+                BNE	mdefaults
+                LDA	clibuf
+                STA	poslo
+                LDA	clibuf+1
+                STA	poshi
+                ; Read 2nd arg - ROM id to use
+                JSR	rdnum
+                BNE	mdefaults2
+                LDA	clibuf
+                AND	#$F
+                STA	tmp
+                JMP	start
+mdefaults:
 ; Address defaults to PAGE
-	LDA	#$00
-	STA	poslo
-	LDA	$18
-	STA	poshi
-mdefaults2
-	LDA	$F4
-	STA	tmp
-	JMP	start
+                LDA	#$00
+                STA	poslo
+                LDA	$18
+                STA	poshi
+mdefaults2:
+                LDA	$F4
+                STA	tmp
+                JMP	start
 
 ;*********************************
 ; Converts memory address (poslo%)
 ; into an eight-byte boundary
 ; and an offset (xpos%).
 ;*********************************
-round8
-	LDA	poslo
-	PHA
-	AND	#$F8
-	STA	poslo
-	PLA
-	AND	#$7
-	STA	xpos
-	RTS
+round8:
+                LDA	poslo
+                PHA
+                AND	#$F8
+                STA	poslo
+                PLA
+                AND	#$7
+                STA	xpos
+                RTS
 
-;*********************************
+                ;*********************************
 
-; Low byte of 6845 cursor coords
-; for use with Hex mode.
-hhex
-	.byte	$10,$13,$16,$19,$1C,$1F,$22,$25
+                ; Low byte of 6845 cursor coords
+                ; for use with Hex mode.
+hhex:
+                .byte	$10,$13,$16,$19,$1C,$1F,$22,$25
 
-; Low byte of 6845 cursor coords
-; for use with ASCII mode.
-hascii
-	.byte	$28,$29,$2A,$2B,$2C,$2D,$2E,$2F
+                ; Low byte of 6845 cursor coords
+                ; for use with ASCII mode.
+hascii:
+                .byte	$28,$29,$2A,$2B,$2C,$2D,$2E,$2F
 
-; Cursor on/off numbers for Video
-; ULA control byte ($FE20).
-cursor3
-	.word	$4BCF
+                ; Cursor on/off numbers for Video
+                ; ULA control byte ($FE20).
+cursor3:
+                .word	$4BCF
 
 
 
@@ -1080,5 +1080,5 @@ cursor3
 dismsg	.text	"Disassembly",0
 hexmsg	.text	"Hexadecimal",0
 ascmsg	.text	"ASCII"
-	.byte	152
-	.byte	0
+                .byte	152
+                .byte	0

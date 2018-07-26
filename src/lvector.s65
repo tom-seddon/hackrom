@@ -1,142 +1,142 @@
 lvectmp = $70
 
-vecnames
-	.text	"USER"
-	.text	$80|"B","RK"
-	.text	$80|"I","RQ1"
-	.text	$80|"I","RQ2"
-	.text	$80|"O","SCLI"
-	.text	$80|"O","SBYTE"
-	.text	$80|"O","SWORD"
-	.text	$80|"O","SWRCH"
-	.text	$80|"O","SRDCH"
-	.text	$80|"O","SFILE"
-	.text	$80|"O","SARGS"
-	.text	$80|"O","SBGET"
-	.text	$80|"O","SBPUT"
-	.text	$80|"O","SGBPB"
-	.text	$80|"O","SFIND"
-	.text	$80|"F","SCV"
-	.text	$80|"E","VNTV"
-	.text	$80|"U","PTV"
-	.text	$80|"N","ETV"
-	.text	$80|"V","DUV"
-	.text	$80|"K","EYV"
-	.text	$80|"I","NSV"
-	.text	$80|"R","EMV"
-	.text	$80|"C","NPV"
-	.text	$80|"I","ND1V"
-	.text	$80|"I","ND2V"
-	.text	$80|"I","ND3V"
-	.byte	$80
+vecnames:
+                .text	"USER"
+                .text	$80|"B","RK"
+                .text	$80|"I","RQ1"
+                .text	$80|"I","RQ2"
+                .text	$80|"O","SCLI"
+                .text	$80|"O","SBYTE"
+                .text	$80|"O","SWORD"
+                .text	$80|"O","SWRCH"
+                .text	$80|"O","SRDCH"
+                .text	$80|"O","SFILE"
+                .text	$80|"O","SARGS"
+                .text	$80|"O","SBGET"
+                .text	$80|"O","SBPUT"
+                .text	$80|"O","SGBPB"
+                .text	$80|"O","SFIND"
+                .text	$80|"F","SCV"
+                .text	$80|"E","VNTV"
+                .text	$80|"U","PTV"
+                .text	$80|"N","ETV"
+                .text	$80|"V","DUV"
+                .text	$80|"K","EYV"
+                .text	$80|"I","NSV"
+                .text	$80|"R","EMV"
+                .text	$80|"C","NPV"
+                .text	$80|"I","ND1V"
+                .text	$80|"I","ND2V"
+                .text	$80|"I","ND3V"
+                .byte	$80
 
-lvj0
-	RTS
-sppad
-	DEY
-	BEQ	lvj0
-	LDA	#' '
-	JSR	$FFEE
-	JMP	sppad
+lvj0:
+                RTS
+sppad:
+                DEY
+                BEQ	lvj0
+                LDA	#' '
+                JSR	$FFEE
+                JMP	sppad
 
-lvectorspa
-	LDX	#$00
-	STX	lvectmp
-lvl1
-	LDA	#$86
-	JSR	$FFEE
-	LDY	#$06
-; Print the current vector name
-	LDA	vecnames,X
-lvl2
-	AND	#$7F
-	JSR	$FFEE
-	INX
-	LDA	vecnames,X
-; top bit set implies start of next.
-	BMI	lvj1
-	DEY
-	BNE	lvl2
-; pad out to next field.
-lvj1
-	TXA
-	PHA
-	JSR	sppad
-; print vector location
-	LDA	#$83
-	JSR	$FFEE
-	LDA	#'2'
-	JSR	$FFEE
-	LDA	lvectmp
-	JSR	wdigit
-; if extended vector then print the
-; extended vector location too.
-	LDX	lvectmp
-	LDA	$201,X
-	CMP	#$FF
-; not - skip code
-	BNE	lvj2
-	LDA	$200,X
-	CMP	#$52
-	BCS	lvj2
-	TAY
-; This is the extended vector no. 
-; multiplied by 3. No need to do any
-; division as the each entry in the
-; table is also 3 long. Not design -
-; fluke that (sizeof(addr)+sizeof(rom
-; num)) == sizeof(JSR opcode).
-	LDA	#$82
-	JSR	$FFEE
-	LDA	#'('
-	JSR	$FFEE
-	TYA
-	CLC
-	ADC	#$9F
-	PHA
-	LDA	#$00
-	ADC	#$0D
-	TAX
-	LDA	num,X
-	JSR	$FFEE
-	PLA
-	JSR	wdigit
-	LDA	#')'
-	JSR	$FFEE
-; where extended vector points to.
-	LDA	#$83
-	JSR	$FFEE
-	LDA	$DA0,Y
-	JSR	wdigit
-	LDA	$D9F,Y
-	JSR	wdigit
-	LDA	#$84
-	JSR	$FFEE
-	LDX	$DA1,Y
-	LDA	num,X
-	JSR	$FFEE
-	JMP	lvj3
-lvj2
-	LDA	#$85
-	JSR	$FFEE
-	LDY	#$07
-	JSR	sppad
-; where vector points to. Colour
-; depicts whether OS default or not.
-	LDX	lvectmp
-	LDA	$201,X
-	JSR	wdigit
-	LDA	$200,X
-	JSR	wdigit
-lvj3
-	JSR	$FFE7
-	PLA
-	TAX
-	LDA	lvectmp
-	CMP	#$34
-	BCS	lvl9
-	ADC	#$02
-	STA	lvectmp
-	JMP	lvl1
-lvl9
-	RTS
+lvectorspa:
+                LDX	#$00
+                STX	lvectmp
+lvl1:
+                LDA	#$86
+                JSR	$FFEE
+                LDY	#$06
+                ; Print the current vector name
+                LDA	vecnames,X
+lvl2:
+                AND	#$7F
+                JSR	$FFEE
+                INX
+                LDA	vecnames,X
+                ; top bit set implies start of next.
+                BMI	lvj1
+                DEY
+                BNE	lvl2
+                ; pad out to next field.
+lvj1:
+                TXA
+                PHA
+                JSR	sppad
+                ; print vector location
+                LDA	#$83
+                JSR	$FFEE
+                LDA	#'2'
+                JSR	$FFEE
+                LDA	lvectmp
+                JSR	wdigit
+                ; if extended vector then print the
+                ; extended vector location too.
+                LDX	lvectmp
+                LDA	$201,X
+                CMP	#$FF
+                ; not - skip code
+                BNE	lvj2
+                LDA	$200,X
+                CMP	#$52
+                BCS	lvj2
+                TAY
+                ; This is the extended vector no. 
+                ; multiplied by 3. No need to do any
+                ; division as the each entry in the
+                ; table is also 3 long. Not design -
+                ; fluke that (sizeof(addr)+sizeof(rom
+                ; num)) == sizeof(JSR opcode).
+                LDA	#$82
+                JSR	$FFEE
+                LDA	#'('
+                JSR	$FFEE
+                TYA
+                CLC
+                ADC	#$9F
+                PHA
+                LDA	#$00
+                ADC	#$0D
+                TAX
+                LDA	num,X
+                JSR	$FFEE
+                PLA
+                JSR	wdigit
+                LDA	#')'
+                JSR	$FFEE
+                ; where extended vector points to.
+                LDA	#$83
+                JSR	$FFEE
+                LDA	$DA0,Y
+                JSR	wdigit
+                LDA	$D9F,Y
+                JSR	wdigit
+                LDA	#$84
+                JSR	$FFEE
+                LDX	$DA1,Y
+                LDA	num,X
+                JSR	$FFEE
+                JMP	lvj3
+lvj2:
+                LDA	#$85
+                JSR	$FFEE
+                LDY	#$07
+                JSR	sppad
+                ; where vector points to. Colour
+                ; depicts whether OS default or not.
+                LDX	lvectmp
+                LDA	$201,X
+                JSR	wdigit
+                LDA	$200,X
+                JSR	wdigit
+lvj3:
+                JSR	$FFE7
+                PLA
+                TAX
+                LDA	lvectmp
+                CMP	#$34
+                BCS	lvl9
+                ADC	#$02
+                STA	lvectmp
+                JMP	lvl1
+lvl9:
+                RTS

@@ -3,236 +3,236 @@
 ;
 ; ---------------------------------
 
-formerr
-	JMP	synerr
+formerr:
+                JMP	synerr
 
-formatpa
-	LDX	#$02
-formloop9
-	TXA
-	PHA
-	JSR	rdnum
-	BNE	formerr
-	PLA
-	TAX
-	LDA	clibuf
-	PHA
-	DEX
-	BPL	formloop9
-	JSR	rdnum
-	BNE	noopt1
-	LDA	clibuf
-	PHA
-	JSR	rdnum
-	BNE	noopt2
-	LDA	clibuf
-	PHA
-	JSR	rdnum
-	BNE	noopt3
-	LDA	clibuf
-	PHA
-	LDA	clibuf+1
-	PHA
-	LDA	#$00
-	JMP	formover
-noopt1
-	LDA	#$01
-	PHA
-noopt2
-	PLA
-	PHA
-	TAX
-	LDA	maxsects,X
-	PHA
-noopt3
-	PLA
-	ASL	A
-	ASL	A
-	TAX
-	PLA
-	TAY
-	PHA
-	TXA
-	LSR	A
-	LSR	A
-	PHA
-	STA	tmp
-	TYA
-	LDY	tmp
-	DEX
-formloop0
-	STA	formidblk,X
-	PHA
-	DEX
-	DEY
-	TYA
-	STA	formidblk,X
-	LDA	#$00
-	DEX
-	STA	formidblk,X
-	DEX
-	STA	formidblk,X
-	PLA
-	DEX
-	BPL	formloop0
-	LDA	#<formidblk
-	PHA
-	LDA	#>formidblk
-	PHA
-	LDA	#$FF
-formover
-	STA	finctrk
-	PLA
-	STA	param+2
-	PLA
-	STA	param+1
-	PLA
-	STA	tmp
-	PLA
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	ASL	A
-	AND	#$E0
-	ORA	tmp
-	STA	tmp
-	PLA
-	STA	totrk
-	PLA
-	STA	fromtrk
-	STA	formstart
-	PLA
-	STA	param
-	JSR	pcprint
-	.text	'Format drive'
-	.byte	$81
-	.byte	$00
-	LDX	param
-	LDA	num,X
-	JSR	$FFEE
-	JSR	pcprint
-	.byte	$87
-	.text	'?'
-	.byte	$82
-	.byte	$00
-	JSR	$FFE0
-	JSR	capitalise
-	CMP	#'Y'
-	BEQ	goformat
-	JSR	pcprint
-	.text	'No'
-	.byte	$0D
-	.byte	$00
-	JMP	exitform
+formatpa:
+                LDX	#$02
+formloop9:
+                TXA
+                PHA
+                JSR	rdnum
+                BNE	formerr
+                PLA
+                TAX
+                LDA	clibuf
+                PHA
+                DEX
+                BPL	formloop9
+                JSR	rdnum
+                BNE	noopt1
+                LDA	clibuf
+                PHA
+                JSR	rdnum
+                BNE	noopt2
+                LDA	clibuf
+                PHA
+                JSR	rdnum
+                BNE	noopt3
+                LDA	clibuf
+                PHA
+                LDA	clibuf+1
+                PHA
+                LDA	#$00
+                JMP	formover
+noopt1:
+                LDA	#$01
+                PHA
+noopt2:
+                PLA
+                PHA
+                TAX
+                LDA	maxsects,X
+                PHA
+noopt3:
+                PLA
+                ASL	A
+                ASL	A
+                TAX
+                PLA
+                TAY
+                PHA
+                TXA
+                LSR	A
+                LSR	A
+                PHA
+                STA	tmp
+                TYA
+                LDY	tmp
+                DEX
+formloop0:
+                STA	formidblk,X
+                PHA
+                DEX
+                DEY
+                TYA
+                STA	formidblk,X
+                LDA	#$00
+                DEX
+                STA	formidblk,X
+                DEX
+                STA	formidblk,X
+                PLA
+                DEX
+                BPL	formloop0
+                LDA	#<formidblk
+                PHA
+                LDA	#>formidblk
+                PHA
+                LDA	#$FF
+formover:
+                STA	finctrk
+                PLA
+                STA	param+2
+                PLA
+                STA	param+1
+                PLA
+                STA	tmp
+                PLA
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                ASL	A
+                AND	#$E0
+                ORA	tmp
+                STA	tmp
+                PLA
+                STA	totrk
+                PLA
+                STA	fromtrk
+                STA	formstart
+                PLA
+                STA	param
+                JSR	pcprint
+                .text	'Format drive'
+                .byte	$81
+                .byte	$00
+                LDX	param
+                LDA	num,X
+                JSR	$FFEE
+                JSR	pcprint
+                .byte	$87
+                .text	'?'
+                .byte	$82
+                .byte	$00
+                JSR	$FFE0
+                JSR	capitalise
+                CMP	#'Y'
+                BEQ	goformat
+                JSR	pcprint
+                .text	'No'
+                .byte	$0D
+                .byte	$00
+                JMP	exitform
 
-goformat
-	JSR	pcprint
-	.text	'Yes'
-	.byte	$0D
-	.byte	$00
-	LDY	tmp
-formloop2
-	LDA	finctrk
-	BEQ	userids
-	TYA
-	AND	#$1F
-	ASL	A
-	ASL	A
-	STA	tmp
-	LDX	#$00
-	LDA	fromtrk
-formloop3
-	STA	formidblk,X
-	INX
-	INX
-	INX
-	INX
-	CPX	tmp
-	BNE	formloop3
-userids
-	LDX	fromtrk
-	LDA	param
-	JSR	format
-	AND	#$0F
-	CMP	#$12
-	BEQ	wperror
-	TYA
-	PHA
-	LDA	#134
-	JSR	$FFEE
-	LDA	fromtrk
-	JSR	wdigit
-	LDA	param+$C
-	BEQ	formok
-	LDA	#'?'-' '
-formok
-	CLC
-	ADC	#' '
-	JSR	$FFEE
-	PLA
-	TAY
-	INC	fromtrk
-	LDA	totrk
-	CMP	fromtrk
-	BCS	formloop2
+goformat:
+                JSR	pcprint
+                .text	'Yes'
+                .byte	$0D
+                .byte	$00
+                LDY	tmp
+formloop2:
+                LDA	finctrk
+                BEQ	userids
+                TYA
+                AND	#$1F
+                ASL	A
+                ASL	A
+                STA	tmp
+                LDX	#$00
+                LDA	fromtrk
+formloop3:
+                STA	formidblk,X
+                INX
+                INX
+                INX
+                INX
+                CPX	tmp
+                BNE	formloop3
+userids:
+                LDX	fromtrk
+                LDA	param
+                JSR	format
+                AND	#$0F
+                CMP	#$12
+                BEQ	wperror
+                TYA
+                PHA
+                LDA	#134
+                JSR	$FFEE
+                LDA	fromtrk
+                JSR	wdigit
+                LDA	param+$C
+                BEQ	formok
+                LDA	#'?'-' '
+formok:
+                CLC
+                ADC	#' '
+                JSR	$FFEE
+                PLA
+                TAY
+                INC	fromtrk
+                LDA	totrk
+                CMP	fromtrk
+                BCS	formloop2
 
-	CPY	#$2A
-	BNE	exitform
-	LDA	formstart
-	BNE	exitform
-; Set up catalogue
-	LDX	#$00
-	TXA
-formloop4
-	STA	buffer2,X
-	INX
-	BNE	formloop4
-	LDA	#<buffer1
-	STA	ptab
-	LDA	#>buffer1
-	STA	ptab+1
-	LDX	#$00
-	LDA	param
-	JSR	load_ids
-	LDY	#$00
-	LDA	#<buffer2
-	STA	param+1
-	LDA	#>buffer2
-	STA	param+2
-	LDA	param
-	JSR	savesect
-	LDA	#$00
-	LDY	#$00
-	LDX	totrk
-formloop5
-	CLC
-	ADC	#$0A
-	BCC	formnoinc
-	INY
-formnoinc
-	DEX
-	BPL	formloop5
-	STA	buffer2+7
-	STY	buffer2+6
-	LDA	param
-	LDX	#$00
-	LDY	#$01
-	JSR	savesect
-	JMP	exitform
+                CPY	#$2A
+                BNE	exitform
+                LDA	formstart
+                BNE	exitform
+                ; Set up catalogue
+                LDX	#$00
+                TXA
+formloop4:
+                STA	buffer2,X
+                INX
+                BNE	formloop4
+                LDA	#<buffer1
+                STA	ptab
+                LDA	#>buffer1
+                STA	ptab+1
+                LDX	#$00
+                LDA	param
+                JSR	load_ids
+                LDY	#$00
+                LDA	#<buffer2
+                STA	param+1
+                LDA	#>buffer2
+                STA	param+2
+                LDA	param
+                JSR	savesect
+                LDA	#$00
+                LDY	#$00
+                LDX	totrk
+formloop5:
+                CLC
+                ADC	#$0A
+                BCC	formnoinc
+                INY
+formnoinc:
+                DEX
+                BPL	formloop5
+                STA	buffer2+7
+                STY	buffer2+6
+                LDA	param
+                LDX	#$00
+                LDY	#$01
+                JSR	savesect
+                JMP	exitform
 
-wperror
-	JSR	discerrmsg
-exitform
-	JSR	$FFE7
-	JMP	fatal
+wperror:
+                JSR	discerrmsg
+exitform:
+                JSR	$FFE7
+                JMP	fatal
 
-maxsects
-	.byte	18
-	.byte	10
-	.byte	4
-	.byte	2
-	.byte	1
-	.byte	0
-	.byte	0
-	.byte	0
+maxsects:
+                .byte	18
+                .byte	10
+                .byte	4
+                .byte	2
+                .byte	1
+                .byte	0
+                .byte	0
+                .byte	0

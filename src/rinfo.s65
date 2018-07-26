@@ -13,283 +13,283 @@
 ; display information about.
 ; Usage = *RINFO <bank> ... <bank>
 ;*********************************
-rinfopa
-	JSR	reloc
-	JSR	beginrom
-; Check to see if we have at least
-; one arg. If not then do *RINFO
-; for all ROM images.
-	JSR	rdnum
-	BEQ	atleast1
-rinfostr
+rinfopa:
+                JSR	reloc
+                JSR	beginrom
+                ; Check to see if we have at least
+                ; one arg. If not then do *RINFO
+                ; for all ROM images.
+                JSR	rdnum
+                BEQ	atleast1
+rinfostr:
 ; Go through all ROM's
-	LDX	#0
-all
-	STX	clibuf
-	TXA
-	PHA
-	CLC
-	JSR	checkrom
-	BNE	rinfonext
-	JSR	doinfo
-rinfonext
-	PLA
-	TAX
-	INX
-	CPX	#$10
-	BNE	all
-	BEQ	rinfoend
-rinfoloop
-	JSR	rdnum
-	BNE	rinfoend
-atleast1
-	TYA
-	PHA
-	JSR	doinfo
-	PLA
-	TAY
-	JMP	rinfoloop
-rinfoend
-	RTS
+                LDX	#0
+all:
+                STX	clibuf
+                TXA
+                PHA
+                CLC
+                JSR	checkrom
+                BNE	rinfonext
+                JSR	doinfo
+rinfonext:
+                PLA
+                TAX
+                INX
+                CPX	#$10
+                BNE	all
+                BEQ	rinfoend
+rinfoloop:
+                JSR	rdnum
+                BNE	rinfoend
+atleast1:
+                TYA
+                PHA
+                JSR	doinfo
+                PLA
+                TAY
+                JMP	rinfoloop
+rinfoend:
+                RTS
 
 ;*********************************
 ; Dump out info about the ROM
 ; clibuf should hold the ROM no.
 ; we wish to do info for.
 ;*********************************
-doinfo
+doinfo:
 ; First check we're looking at a
 ; valid ROM
-	LDA	clibuf
-	JSR	checkrom
-	BEQ	romok
-	JSR	pcprint
-	.byte	$81
-	.text	"Not a ROM"
-	.byte	$0D,$00
-	RTS
-romok
-	JSR	beginrom
-; Print ROM number in hex
-	JSR	pcprint
-	.byte	$82
-	.text	"Bank number    :"
-	.byte	$86,$00
-	LDA	clibuf
-	AND	#$F
-	STA	romid
-	JSR	hex_asc
-	TYA
-	JSR	$FFEE
-	JSR	$FFE7
-; Print ROM title
-	JSR	pcprint
-	.byte	$82
-	.text	"ROM title      :"
-	.byte	$86,$00
-	LDY	#9
-titlerinfoloop
-	JSR	rdposx
-	CMP	#0
-	BEQ	rinfoendtl
-	AND	#$7F
-	CMP	#' '
-	BCC	tlj1
-	JSR	$FFEE
-tlj1
-	INY
-	BNE	titlerinfoloop
-rinfoendtl
-	JSR	$FFE7
-; Print version string
-	TYA
-	PHA
-	JSR	pcprint
-	.byte	$82
-	.text	"Version string :"
-	.byte	$86,$00
-	LDY	#7
-	JSR	rdposx
-	STA	tmpx
-	PLA
-	TAY
-	CPY	tmpx
-	BNE	vj1
-	JSR	pcprint
-	.text	"None",0
-	JMP	rinfoendvl
-vj1
-	INY
-versrinfoloop
-	JSR	rdposx
-	CMP	#0
-	BEQ	rinfoendvl
-	AND	#$7F
-	CMP	#' '
-	BCC	vlj1
-	JSR	$FFEE
-vlj1
-	INY
-	BNE	versrinfoloop
-rinfoendvl
-	JSR	$FFE7
-; Print version number (binary)
-	JSR	pcprint
-	.byte	$82
-	.text	"Binary version :"
-	.byte	$86,$00
-	LDY	#8
-	JSR	rdposx
-	JSR	bsdigit
-	JSR	$FFE7
-	JSR	pcprint
-	.byte	$82
-	.text	"Copyright      :"
-	.byte	$86,$00
-	LDY	#7
-	JSR	rdposx
-	TAY
-	INY
-copyl
-	JSR	rdposx
-	CMP	#0
-	BEQ	rinfoendcopy
-	AND	#$7F
-	CMP	#' '
-	BCC	clj1
-	JSR	$FFEE
-clj1
-	INY
-	BNE	copyl
-rinfoendcopy
-	JSR	$FFE7
-; Print type of code in ROM
-	JSR	pcprint
-	.byte	$82
-	.text	"ROM code       :"
-	.byte	$86,$00
-	LDY	#6
-	JSR	rdposx
-	PHA
-	AND	#$0F
-	ASL	A
-	TAX
-	LDA	typetab,X
-	STA	tmpx
-	LDA	typetab+1,X
-	STA	tmpy
-	JSR	locprint
-	JSR	$FFE7
-; Language entry (if it's a lang
-; ROM. Also, entry may not be
-; a JMP &xxxx (as in BASIC)
-	JSR	pcprint
-	.byte	$82
-	.text	"Language entry :"
-	.byte	$86,$00
-	PLA
-	PHA
-	AND	#$40
-	BNE	isalang
-	JSR	pcprint
-	.text	"Not a language",0
-	JMP	langdone
-isalang
-	LDY	#0
-	JSR	rdposx
-	CMP	#$4C
-	BEQ	langok
-	JSR	pcprint
-	.text	"Unknown",0
-	JMP	langdone
-langok
-	LDY	#2
-	JSR	rdposx
-	JSR	wdigit
-	DEY
-	JSR	rdposx
-	JSR	wdigit
-langdone
-	JSR	$FFE7
-; Print service entry if there
-	JSR	pcprint
-	.byte	$82
-	.text	"Service entry  :"
-	.byte	$86,$00
-	PLA
-	PHA
-	BMI	hasserv
-	JSR	pcprint
-	.text	"None",0
-	JMP	servdone
-hasserv
-	LDY	#5
-	JSR	rdposx
-	JSR	wdigit
-	DEY
-	JSR	rdposx
-	JSR	wdigit
-servdone
-	JSR	$FFE7
-; Finally Tube reloction address
-	JSR	pcprint
-	.byte	$82
-	.text	"Tube relocation:"
-	.byte	$86,$00
-	PLA
-	AND	#$20
-	BNE	istube
-	JSR	pcprint
-	.text	"None",0
-	JMP	tubedone
-istube
-	LDY	#7
-	JSR	rdposx
-	TAY
-	LDX	#2
-istl
-	JSR	rdposx
-	CMP	#0
-	BEQ	foundzero
-	INY
-	BNE	istl
-foundzero
-	INY
-	DEX
-	BNE	istl
-	INY
-	INY
-	INY
-	INY
-	LDX	#4
-istl2
-	DEY
-	JSR	rdposx
-	JSR	wdigit
-	DEX
-	BNE	istl2
-tubedone
-	JSR	$FFE7
-	JSR	$FFE7
-	RTS
+                LDA	clibuf
+                JSR	checkrom
+                BEQ	romok
+                JSR	pcprint
+                .byte	$81
+                .text	"Not a ROM"
+                .byte	$0D,$00
+                RTS
+romok:
+                JSR	beginrom
+                ; Print ROM number in hex
+                JSR	pcprint
+                .byte	$82
+                .text	"Bank number    :"
+                .byte	$86,$00
+                LDA	clibuf
+                AND	#$F
+                STA	romid
+                JSR	hex_asc
+                TYA
+                JSR	$FFEE
+                JSR	$FFE7
+                ; Print ROM title
+                JSR	pcprint
+                .byte	$82
+                .text	"ROM title      :"
+                .byte	$86,$00
+                LDY	#9
+titlerinfoloop:
+                JSR	rdposx
+                CMP	#0
+                BEQ	rinfoendtl
+                AND	#$7F
+                CMP	#' '
+                BCC	tlj1
+                JSR	$FFEE
+tlj1:
+                INY
+                BNE	titlerinfoloop
+rinfoendtl:
+                JSR	$FFE7
+                ; Print version string
+                TYA
+                PHA
+                JSR	pcprint
+                .byte	$82
+                .text	"Version string :"
+                .byte	$86,$00
+                LDY	#7
+                JSR	rdposx
+                STA	tmpx
+                PLA
+                TAY
+                CPY	tmpx
+                BNE	vj1
+                JSR	pcprint
+                .text	"None",0
+                JMP	rinfoendvl
+vj1:
+                INY
+versrinfoloop:
+                JSR	rdposx
+                CMP	#0
+                BEQ	rinfoendvl
+                AND	#$7F
+                CMP	#' '
+                BCC	vlj1
+                JSR	$FFEE
+vlj1:
+                INY
+                BNE	versrinfoloop
+rinfoendvl:
+                JSR	$FFE7
+                ; Print version number (binary)
+                JSR	pcprint
+                .byte	$82
+                .text	"Binary version :"
+                .byte	$86,$00
+                LDY	#8
+                JSR	rdposx
+                JSR	bsdigit
+                JSR	$FFE7
+                JSR	pcprint
+                .byte	$82
+                .text	"Copyright      :"
+                .byte	$86,$00
+                LDY	#7
+                JSR	rdposx
+                TAY
+                INY
+copyl:
+                JSR	rdposx
+                CMP	#0
+                BEQ	rinfoendcopy
+                AND	#$7F
+                CMP	#' '
+                BCC	clj1
+                JSR	$FFEE
+clj1:
+                INY
+                BNE	copyl
+rinfoendcopy:
+                JSR	$FFE7
+                ; Print type of code in ROM
+                JSR	pcprint
+                .byte	$82
+                .text	"ROM code       :"
+                .byte	$86,$00
+                LDY	#6
+                JSR	rdposx
+                PHA
+                AND	#$0F
+                ASL	A
+                TAX
+                LDA	typetab,X
+                STA	tmpx
+                LDA	typetab+1,X
+                STA	tmpy
+                JSR	locprint
+                JSR	$FFE7
+                ; Language entry (if it's a lang
+                ; ROM. Also, entry may not be
+                ; a JMP &xxxx (as in BASIC)
+                JSR	pcprint
+                .byte	$82
+                .text	"Language entry :"
+                .byte	$86,$00
+                PLA
+                PHA
+                AND	#$40
+                BNE	isalang
+                JSR	pcprint
+                .text	"Not a language",0
+                JMP	langdone
+isalang:
+                LDY	#0
+                JSR	rdposx
+                CMP	#$4C
+                BEQ	langok
+                JSR	pcprint
+                .text	"Unknown",0
+                JMP	langdone
+langok:
+                LDY	#2
+                JSR	rdposx
+                JSR	wdigit
+                DEY
+                JSR	rdposx
+                JSR	wdigit
+langdone:
+                JSR	$FFE7
+                ; Print service entry if there
+                JSR	pcprint
+                .byte	$82
+                .text	"Service entry  :"
+                .byte	$86,$00
+                PLA
+                PHA
+                BMI	hasserv
+                JSR	pcprint
+                .text	"None",0
+                JMP	servdone
+hasserv:
+                LDY	#5
+                JSR	rdposx
+                JSR	wdigit
+                DEY
+                JSR	rdposx
+                JSR	wdigit
+servdone:
+                JSR	$FFE7
+                ; Finally Tube reloction address
+                JSR	pcprint
+                .byte	$82
+                .text	"Tube relocation:"
+                .byte	$86,$00
+                PLA
+                AND	#$20
+                BNE	istube
+                JSR	pcprint
+                .text	"None",0
+                JMP	tubedone
+istube:
+                LDY	#7
+                JSR	rdposx
+                TAY
+                LDX	#2
+istl:
+                JSR	rdposx
+                CMP	#0
+                BEQ	foundzero
+                INY
+                BNE	istl
+foundzero:
+                INY
+                DEX
+                BNE	istl
+                INY
+                INY
+                INY
+                INY
+                LDX	#4
+istl2:
+                DEY
+                JSR	rdposx
+                JSR	wdigit
+                DEX
+                BNE	istl2
+tubedone:
+                JSR	$FFE7
+                JSR	$FFE7
+                RTS
 
-typetab
-	.word	c6502
-	.word	reserved
-	.word	c6502NB
-	.word	c6800
-	.word	cZ80
-	.word	c32016
-	.word	reserved
-	.word	c80186
-	.word	c80286
-	.word	reserved
-	.word	reserved
-	.word	reserved
-	.word	reserved 
-	.word	reserved
-	.word	reserved
-	.word	reserved
+typetab:
+                .word	c6502
+                .word	reserved
+                .word	c6502NB
+                .word	c6800
+                .word	cZ80
+                .word	c32016
+                .word	reserved
+                .word	c80186
+                .word	c80286
+                .word	reserved
+                .word	reserved
+                .word	reserved
+                .word	reserved 
+                .word	reserved
+                .word	reserved
+                .word	reserved
 
 c6502	.text	"6502 BASIC",0
 c6502NB	.text	"6502 (NOT BASIC)",0

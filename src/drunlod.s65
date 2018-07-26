@@ -2,36 +2,36 @@
 ; Dload
 ; 
 ; ------------------------------------
-derr
-	JMP	synerr
+derr:
+                JMP	synerr
 
-dloadpa
-	JSR	rdstr
-	BNE	derr
-	JSR	doosfblk
-	LDA	#$11
-	STA	osfileb+3
-	LDA	#$FF
-	JSR	doosfile
-	BNE	gomove
-	JSR	discerrmsg
-	JMP	fatal
-gomove
-	LDA	#$05
-	JSR	$FFDD
-	LDX	#$01
-drloop
-	LDA	osfileb+$0A,X
-	STA	mmsl,X
-	LDA	osfileb+$02,X
-	STA	mmds,X
-	DEX
-	BPL	drloop
-	LDA	#$00
-	STA	mmss
-	LDA	#$11
-	STA	mmss+1
-	JMP	mmove
+dloadpa:
+                JSR	rdstr
+                BNE	derr
+                JSR	doosfblk
+                LDA	#$11
+                STA	osfileb+3
+                LDA	#$FF
+                JSR	doosfile
+                BNE	gomove
+                JSR	discerrmsg
+                JMP	fatal
+gomove:
+                LDA	#$05
+                JSR	$FFDD
+                LDX	#$01
+drloop:
+                LDA	osfileb+$0A,X
+                STA	mmsl,X
+                LDA	osfileb+$02,X
+                STA	mmds,X
+                DEX
+                BPL	drloop
+                LDA	#$00
+                STA	mmss
+                LDA	#$11
+                STA	mmss+1
+                JMP	mmove
 
 
 ; ------------------------------------
@@ -40,6 +40,6 @@ drloop
 ; Neat huh?
 ; ------------------------------------
 
-drunpa
-	JSR	dloadpa
-	JMP	(osfileb+$06)
+drunpa:
+                JSR	dloadpa
+                JMP	(osfileb+$06)
