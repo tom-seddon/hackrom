@@ -1,0 +1,149 @@
+; ******************************
+; Displays a list of the rom/ram
+; banks and what is in them
+; Version 1.5
+; Last update 18/04/91
+; by James 'Rince' Bonfield.
+; ******************************
+
+
+;*********************************
+; No arguments needed for RLIST
+; It simply lists out details of
+; each ROM slot in turn.
+;*********************************
+rlistpa
+	JSR	reloc
+	LDA	#0
+	STA	romid
+rlistloop
+	LDA	#$86
+	JSR	$FFEE
+	LDX	romid
+	LDA	num,X
+	JSR	$FFEE
+; Check for copyright string.
+; If not "(C)" then not a ROM
+	LDA	romid
+	SEC
+	JSR	checkrom
+	PHA
+	BNE	rlistnotarom
+	PLA
+	LDX	romid
+	LDA	$2A1,X
+	BNE	romon
+	JSR	pcprint
+	.byte	$85
+	.text	"OFF"
+	.byte	$83,$00
+	JMP	jmp0
+romon
+	JSR	pcprint
+	.byte	$85
+	.text	"ON "
+	.byte	$83,$00
+jmp0
+	JSR	beginrom
+	LDY	#9
+	LDX	#2
+disp
+	JSR	rdposx
+	CMP	#$20
+	BCC	skip
+	JSR	$FFEE
+skip
+	INY
+	CMP	#0
+	BEQ	disp2
+	BNE	disp
+disp2
+	LDA	#$82
+	JSR	$FFEE
+	DEX
+	BNE	disp
+	BEQ	jmp1
+rlistnotarom
+	LDX	#4
+	LDA	#' '
+jmp2
+	JSR	$FFEE
+	DEX
+	BNE	jmp2
+
+	.if	X_PBUFF
+; Is it printer buffer?
+	LDA	pbuffon
+	BPL	notpbuff
+	LDY	numroms
+pbchk
+	DEY
+	BMI	notpbuff
+	LDA	pbufftab,Y
+	AND	#$0F
+	CMP	romid
+	BNE	pbchk
+	JSR	pcprint
+	.byte	$84
+	.text	'Printer buffer'
+	.byte	0
+	PLA
+	JMP	jmp1
+notpbuff
+	.endif
+
+	LDA	#$81
+	JSR	$FFEE
+	PLA
+	AND	#$70
+	BEQ	socket
+	LSR	A
+	LSR	A
+	LSR	A
+	LSR	A
+	TAX
+	DEX
+	TXA
+	AND	#2
+	BEQ	not10
+	LDA	#'1'
+	JSR	$FFEE
+not10
+	LDA	rvalues,X
+	JSR	$FFEE
+	LDX	#0
+swrl
+	LDA	rammsg,X
+	BMI	jmp1
+	JSR	$FFEE
+	INX
+	BNE	swrl
+socket
+	LDX	#0
+sockl
+	LDA	rommsg,X
+	BMI	jmp1
+	JSR	$FFEE
+	INX
+	BNE	sockl
+jmp1
+	JSR	$FFE7
+	LDX	romid
+	INX
+	STX	romid
+	CPX	#16
+	BEQ	rlend
+	JMP	rlistloop
+rlend
+	RTS
+
+; Messages to print when we fail
+; to find a rom.
+rammsg
+	.text	"K Sideways RAM"
+	.byte	$FF
+rommsg
+	.text	"ROM socket"
+	.byte	$FF
+rvalues
+	.text	'4826'

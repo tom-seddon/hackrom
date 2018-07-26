@@ -1,0 +1,73 @@
+; ******************************
+; Switch on a ROM.
+; Version 1.3
+; Last update 18/04/91
+; by James 'Rince' Bonfield.
+; ******************************
+
+;*********************************
+; Only arg taken is the ROM to
+; switch on.
+;*********************************
+ronpa
+	JSR	rdnum
+	BEQ	ronnoerror
+ronerror
+	JMP	synerr
+ronnoerror
+	JSR	reloc
+ron2
+; Place the ROM type byte (offset
+; of 6 into ROM header) into the
+; ROM table (at 2A1)
+	LDA	clibuf
+	AND	#$0F
+	TAX
+	LDA	#0
+	STA	poslo
+	LDA	#$80
+	STA	poshi
+	STX	romid
+	TYA
+	PHA
+	LDY	#6
+	JSR	rdposx
+	STA	$2A1,X
+	PLA
+	TAY
+ron1
+	JSR	rdnum
+	BEQ	ron2
+ronend
+	RTS
+
+; ******************************
+; Switch off a ROM.
+; Version 1.3
+; Last update 18/04/91
+; by James 'Rince' Bonfield.
+; ******************************
+
+;*********************************
+; Only a single arg taken - a hex
+; number for the ROM.
+; Possibly expand to switch off
+; ROMs by name too?
+;*********************************
+roffpa
+	JSR	rdnum
+	BEQ	roffnoerror
+rofferror
+	JMP	synerr
+roffnoerror
+; Blank out ROM in ROM table (2A1)
+	LDA	clibuf
+	AND	#$0F
+	TAX
+	LDA	#0
+	STA	$2A1,X
+roff0
+	JSR	rdnum
+	BEQ	roffnoerror
+roffend
+	RTS

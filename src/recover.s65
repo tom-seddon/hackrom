@@ -1,0 +1,58 @@
+basptr = $70
+; --------------------------------
+; Recover - recovers basic programs
+;           from 'Bad program' errors
+; --------------------------------
+
+recoverpa
+	LDA	$18
+	STA	basptr+1
+	LDA	#1
+	STA	basptr
+reclp1
+	LDY	#0
+	LDA	(basptr),Y
+	BMI	endprog
+	INY
+	INY
+	LDA	(basptr),Y
+	TAY
+	DEY
+	LDA	(basptr),Y
+	TAX
+	INY
+	TYA
+	CPX	#$0D
+	BEQ	noproblem
+	JSR	cure
+	BCS	endprog
+noproblem
+	CLC
+	ADC	basptr
+	STA	basptr
+	BCC	nobasinc
+	INC	basptr+1
+nobasinc
+	JMP	reclp1
+endprog
+	RTS
+cure
+	LDY	#2
+reclp2
+	LDA	(basptr),Y
+	CMP	#$0D
+	BEQ	found0D
+	INY
+	BNE	reclp2
+	LDY	#0
+	LDA	#$FF
+	STA	(basptr),Y
+	SEC
+	RTS
+found0D
+	INY
+	TYA
+	LDY	#2
+	STA	(basptr),Y
+	CLC
+	RTS

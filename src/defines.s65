@@ -1,0 +1,12 @@
+;*************************************
+; Definitions
+;*************************************
+
+WATFORD	= false
+ACORN	= true
+
+; What our Field separator is for
+; MFILL, MSEARCH and DFILL
+IFS	=	";"
+VERSION	=	"1.18"
+DFS	=	WATFORD

@@ -1,0 +1,61 @@
+; -------------------------------------
+; Send
+;
+; -------------------------------------
+
+senderr
+	JMP	synerr
+
+sendpa
+	JSR	rdnum
+	BNE	senderr
+	TYA
+	PHA
+	LDA	clibuf
+	STA	tmp2
+	LDA	#$80
+	STA	$F7
+	LDA	#$03
+	STA	$F6
+	JSR	osrdrm
+	CMP	#$4C
+	BEQ	gosend
+	PLA
+	JSR	pcprint
+	.text	'No service entry'
+	.byte	$0D,$00
+	RTS
+gosend
+	PLA
+	TAY
+	LDX	stacksave
+	TXS
+	LDA	#$00
+	STA	$105+numzpage,X
+	TSX
+	INX
+	INX
+	TXS
+	LDA	tmp2
+	STA	stacksave
+	LDX	#$00
+sendloop0
+	PLA
+	STA	$70,X
+	INX
+	CPX	#numzpage
+	BCC	sendloop0
+	INY
+	PLA
+	PLA
+	PLA
+	LDX	stacksave
+	LDA	#$04
+	STX	$F4
+	JMP	send_poke
+
+	.if	X_HACK_HEAD
+send_poke
+	STX	$FE30
+	JMP	$8003
+	.endif

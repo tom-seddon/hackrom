@@ -1,0 +1,101 @@
+; ------------------------------------
+; Loadids
+;
+; ------------------------------------
+
+ldiderr
+	JMP	synerr
+
+loadidspa
+	JSR	rdnum
+	BNE	ldiderr
+idcommon
+	LDA	clibuf+1
+	PHA
+	LDA	clibuf
+	PHA
+	JSR	rdnum
+	BNE	ldiderr
+	LDA	clibuf
+	PHA
+	JSR	rdnum
+	BNE	ldiderr
+	LDA	clibuf
+	STA	param+9
+	JSR	rdnum
+	BEQ	ldiddrv
+	LDA	$10C8
+	STA	clibuf
+ldiddrv
+	LDA	clibuf
+	STA	param
+	PLA
+	TAX
+	PLA
+	STA	ptab
+	PLA
+	STA	ptab+1
+	JSR	loadnumids
+	LDA	param+10
+	BEQ	noerr
+	JMP	discerrmsg
+noerr
+	RTS
+
+; -----------------------------------
+; Pids
+;
+; -----------------------------------
+
+pidspa
+	LDA	#>buffer1
+	STA	clibuf
+	LDA	#<buffer1
+	STA	clibuf+1
+	JSR	idcommon
+	JSR	pcprint
+	.byte	129,$0D
+	.text	"Log-Trk  Head  Log-Sect  Size"
+	.byte	$00
+	LDA	param+9
+	AND	#$1F
+	ASL	A
+	ASL	A
+	STA	param+9
+	LDX	#$00
+pidloop0
+	JSR	spaces
+	LDA	buffer1,X
+	JSR	wdigit
+	INX
+	CPX	param+9
+	BNE	pidloop0
+	JSR	$FFE7
+	JSR	$FFE7
+	RTS
+
+spaces
+	TXA
+	AND	#$03
+	BNE	space
+	JSR	$FFE7
+	LDA	#0
+space
+	TAY
+	PHA
+	LDA	colour,Y
+	JSR	$FFEE
+	PLA
+	TAY
+	LDA	nspace,Y
+	TAY
+	LDA	#' '
+pidloop1
+	JSR	$FFEE
+	DEY
+	BPL	pidloop1
+	RTS
+nspace
+	.byte	1,3,4,4
+colour
+	.byte	134,129,130,131

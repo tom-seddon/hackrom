@@ -1,0 +1,196 @@
+; ------------------------------------
+; Screen Saver. Switches off screen
+; after a specified amount of time.
+;
+; SCREENSAVE (<timeout)>
+; SCREENSAVE     switch on to def. vals
+; SCREENSAVE 0   switch off
+; SCREENSAVE <x> switch on with timeout
+;                of <x> centisecs.   
+; ------------------------------------
+
+; Use unused bytes in Page 3 (mainly
+; used by VDU code)
+current	EQU	&537F
+oldwrch	EQU	&539F;3A0
+oldirq1	EQU	&53A1;3A2
+timer	EQU	&53A3;3A4
+timeout	EQU	&53A5;3A6
+irq1loc	EQU	&204;205
+oswrchloc	EQU	&20E;20F
+
+; Switch screen back on.
+; Doesn't need to be fast - so make as
+; small as possible instead.
+scron
+	LDA	#&00
+	STA	current
+	TXA
+	PHA
+	LDA	&355
+	AND	#&07
+	TAX
+	LDA	scrontab,X
+	LDX	#&08
+	STX	&FE00
+	STA	&FE01
+	PLA
+	TAX
+	RTS
+
+; our new oswrch routine
+checkw
+	JMP	endwrch
+
+	PHA
+	LDA	#>timeout
+	STA	timer
+	LDA	#<timeout
+	STA	timer+1
+	LDA	current
+	BEQ	wjmp1
+	JSR	scron
+wjmp1
+	PLA
+endwrch
+	JMP	(oldwrch)
+
+; nothing pressed - so dec. timer
+nokey
+	PLA
+	AND	#&40
+	BEQ	endirq
+	DEC	timer
+	BNE	eok
+	DEC	timer+1
+	BNE	eok
+	LDA	&355
+	AND	#&7F
+	TAX
+	LDA	scrofftab,X
+	LDX	#8
+	STA	current
+	STX	&FE00
+	STA	&FE01
+eok
+	JMP	endirq
+
+; the new IRQ1 handler
+myirq
+	JMP	endirq
+
+; key pressed?
+	LDA	&FE4D
+	PHA
+	AND	#&01
+	BEQ	nokey
+	LDA	#>timeout
+	STA	timer
+	LDA	#<timeout
+	STA	timer+1
+	LDA	current
+	BEQ	noevent
+	JSR	scron
+noevent
+	PLA
+endirq
+	LDA	&FC
+	JMP	(oldirq1)
+
+scrontab
+	HEX	&0101010101010193
+scrofftab
+	HEX	&F1F1F1F1F1F1F1F3
+
+screensavepa
+	JSR	rdnum
+	BNE	default
+	LDX	clibuf+1
+	LDY	clibuf
+	CPY	#&00
+	BNE	ss1
+	CPX	#&00
+	BNE	ss1
+; switch screensaver off. Should we
+; check for stupid actions, such as
+; switching off then not on? I guess so
+	LDA	&DA7
+	CMP	&F4
+	BNE	ss3	; already off
+	SEI
+	LDA	#&FF
+	STA	&DA7
+	LDA	oldwrch
+	STA	oswrchloc
+	LDA	oldwrch+1
+	STA	oswrchloc+1
+	LDA	oldirq1
+	STA	irq1loc
+	LDA	oldirq1+1
+	STA	irq1loc+1
+	CLI
+ss3
+	RTS
+default
+	LDX	#&1
+	LDY	#&0
+ss1
+	STX	timeout+1
+	STX	timer+1
+	STY	timeout
+	STY	timer
+; check if it's already running
+; suffice to simply see if this rom
+; has hijacked IRQ1 as no other command
+; in it does this. (yet!)
+;
+; 238/239 is address of the extended
+; the vector table. We should read this
+; to work out where the table is. But
+; we can rely on it being &D9F
+	LDA	&DA7; IRQ1 rom num.
+	CMP	&F4
+	BNE	ss2
+RTS
+; vectors not setup yet - so do them.
+ss2
+	SEI
+; remember old ones
+	LDA	oswrchloc
+	STA	oldwrch
+	LDA	oswrchloc+1
+	STA	oldwrch+1
+	LDA	irq1loc
+	STA	oldirq1
+	LDA	irq1loc+1
+	STA	oldirq1+1
+; store new in extended table
+	LDA	#>checkw
+	STA	&DB4
+	LDA	#<checkw
+	STA	&DB5
+	LDA	#>myirq
+	STA	&DA5
+	LDA	#<myirq
+	STA	&DA6
+; set rom no. in extended table
+	LDA	&F4
+	STA	&DA7
+	STA	&DB6
+; store jump to OS &FFxx in vec table
+	LDA	#&FF
+	STA	oswrchloc+1
+	STA	irq1loc+1
+	LDA	#&15
+	STA	oswrchloc
+	LDA	#&06
+	STA	irq1loc
+	CLI
+	RTS
+
+; -------------------------------------
+; Next file
+;
+ACC	ASET	@ACC+1
+	CHN	@(FILE@ACC)
+; -------------------------------------

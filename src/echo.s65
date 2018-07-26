@@ -1,0 +1,64 @@
+; -----------------------------------
+; *ECHO
+;
+; -----------------------------------
+echopa
+	JSR	wipeclib
+echolp0
+	JSR	rdnum
+	BNE	echover
+	JSR	wrnum
+	JMP	echolp0
+
+echover
+	CMP	#';'
+	BNE	exitecho
+echolp2
+	JSR	rdstr
+	BNE	echover2
+	JSR	wrstr
+	JMP	echolp2
+
+echover2
+	CMP	#';'
+	BNE	exitecho
+echover3
+	JSR	rdstrnum
+	BNE	exitecho
+	BCC	echonum
+	BCS	echostr
+echonum
+	JSR	wrnum
+	JMP	echover3
+echostr
+	JSR	wrstr
+	LDY	newy
+	JMP	echover3
+exitecho
+	RTS
+
+
+wrnum
+	LDX	#3
+echolp1
+	LDA	clibuf,X
+	JSR	wdigit
+	DEX
+	BPL	echolp1
+	JSR	$FFE7
+	RTS
+
+wrstr
+	CPX	#0
+	BEQ	exitwrstr
+echolp3
+	LDA	($F2),Y
+	JSR	$FFEE
+	INY
+	DEX
+	BNE	echolp3
+exitwrstr
+	JSR	$FFE7
+	LDY	newy
+	LDX	#0
+	RTS
