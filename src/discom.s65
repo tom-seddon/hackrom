@@ -81,8 +81,8 @@ sectsizes
 ; Do osword $7F
 ; --------------------------------
 os7F
-	LDX	#>param
-	LDY	#<param
+	LDX	#<param
+	LDY	#>param
 	LDA	#$7F
 	JMP	$FFF1
 
@@ -329,14 +329,14 @@ verify
 tabP = ptab+2
 loadsector
 	PHA
-	LDA	#>buffer2
-	STA	tabP
 	LDA	#<buffer2
+	STA	tabP
+	LDA	#>buffer2
 	STA	tabP+1
 	STX	tabP+2
 	STY	tabP+3
-	LDX	#>tabP
-	LDY	#<tabP
+	LDX	#<tabP
+	LDY	#>tabP
 	PLA
 
 ; --------------------------------
@@ -387,9 +387,9 @@ loadsect
 	PLP
 	JMP	iderror
 goids
-	LDA	#>buffer1
-	STA	param+1
 	LDA	#<buffer1
+	STA	param+1
+	LDA	#>buffer1
 	STA	param+2
 	LDA	param
 	JSR	load_ids
@@ -601,9 +601,9 @@ not62
 	RTS
 
 ptabcom
-	LDA	#>buffer1
-	STA	ptab
 	LDA	#<buffer1
+	STA	ptab
+	LDA	#>buffer1
 	STA	ptab+1
 	RTS
 

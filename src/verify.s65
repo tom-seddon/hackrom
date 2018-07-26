@@ -213,9 +213,9 @@ verloop3
 	.byte	134
 	.text	':'
 	.byte	135,0
-	LDA	#>buffer1
-	STA	ptab
 	LDA	#<buffer1
+	STA	ptab
+	LDA	#>buffer1
 	STA	ptab+1
 	LDA	param
 	LDX	fromtrk

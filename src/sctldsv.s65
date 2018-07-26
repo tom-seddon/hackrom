@@ -25,8 +25,8 @@ slsloop0
 	STX	tabP+2
 	STY	tabP+3
 	LDA	param
-	LDX	#>tabP
-	LDY	#<tabP
+	LDX	#<tabP
+	LDY	#>tabP
 	JSR	loadsect
 	BCC	slsldok
 	JMP	error_die

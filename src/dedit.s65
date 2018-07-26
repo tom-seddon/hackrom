@@ -164,20 +164,20 @@ blankloop
 	RTS
 ; --------------------------------
 round
-	LDA	#<buffer2
+	LDA	#>buffer2
 	CMP	bytehi
 	BCC	ok1
 	BNE	setlo
-	LDA	#>buffer2
+	LDA	#<buffer2
 	CMP	bytelo
 	BCC	ok1
 	BNE	setlo
 ok1
-	LDA	#>buffer2
+	LDA	#<buffer2
 	CLC
 	ADC	sectsizelo
 	STA	resultlo
-	LDA	#<buffer2
+	LDA	#>buffer2
 	ADC	sectsizehi
 	STA	resulthi
 	SEC
@@ -198,9 +198,9 @@ sethi
 	STA	bytehi
 	JMP	notsetlo
 setlo
-	LDA	#>buffer2
-	STA	bytelo
 	LDA	#<buffer2
+	STA	bytelo
+	LDA	#>buffer2
 	STA	bytehi
 notsetlo
 ok2
@@ -273,9 +273,9 @@ logimsg
 	PHA
 	JSR	dedinit
 dedmloop
-	LDA	#<(dedmloop-1)
-	PHA
 	LDA	#>(dedmloop-1)
+	PHA
+	LDA	#<(dedmloop-1)
 	PHA
 	LDA	dedpl
 	BEQ	dedplx
@@ -787,9 +787,9 @@ notdeldata
 	BEQ	noreset
 	LDA	#0
 	STA	pos
-	LDA	#<buffer2
-	STA	bytehi
 	LDA	#>buffer2
+	STA	bytehi
+	LDA	#<buffer2
 	STA	bytelo
 noreset
 	LDA	#5
@@ -871,9 +871,9 @@ caploop
 	STA	buffer2,X
 	INX
 	BNE	caploop
-	LDA	#>buffer2
-	STA	tmp
 	LDA	#<buffer2
+	STA	tmp
+	LDA	#>buffer2
 	STA	tmp2
 comploop1
 	LDY	#0
@@ -1012,15 +1012,15 @@ dedhsloop0
 	STA	tmpscrhi
 dedhsloop2
 	LDA	tmpscrhi
-	CMP	#<buffer2
+	CMP	#>buffer2
 	BCC	blankline
-	LDA	#<buffer2
+	LDA	#>buffer2
 	CLC
 	ADC	sectsizehi
 	CMP	tmpscrhi
 	BCC	blankline
 	BNE	displine
-	LDA	#>buffer2
+	LDA	#<buffer2
 	CLC
 	ADC	sectsizelo
 	STA	tmp3
@@ -1057,11 +1057,11 @@ dedhsjmp3
 displine
 	LDA	tmpscrhi
 	SEC
-	SBC	#<buffer2
+	SBC	#>buffer2
 	JSR	printnumx
 	LDA	tmpscrlo
 	SEC
-	SBC	#>buffer2
+	SBC	#<buffer2
 	JSR	printnumx
 	LDA	screenlo
 	CLC

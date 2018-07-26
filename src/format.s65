@@ -75,9 +75,9 @@ formloop0
 	PLA
 	DEX
 	BPL	formloop0
-	LDA	#>formidblk
-	PHA
 	LDA	#<formidblk
+	PHA
+	LDA	#>formidblk
 	PHA
 	LDA	#$FF
 formover
@@ -188,17 +188,17 @@ formloop4
 	STA	buffer2,X
 	INX
 	BNE	formloop4
-	LDA	#>buffer1
-	STA	ptab
 	LDA	#<buffer1
+	STA	ptab
+	LDA	#>buffer1
 	STA	ptab+1
 	LDX	#$00
 	LDA	param
 	JSR	load_ids
 	LDY	#$00
-	LDA	#>buffer2
-	STA	param+1
 	LDA	#<buffer2
+	STA	param+1
+	LDA	#>buffer2
 	STA	param+2
 	LDA	param
 	JSR	savesect

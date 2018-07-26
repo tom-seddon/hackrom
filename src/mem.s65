@@ -621,9 +621,9 @@ mdis1
 ; places the address is stored on
 ; the stack so RTS takes us here.
 mloop
-	LDA	#<(mloop-1)
-	PHA
 	LDA	#>(mloop-1)
+	PHA
+	LDA	#<(mloop-1)
 	PHA
 mloopx
 ; Display appropriate screen

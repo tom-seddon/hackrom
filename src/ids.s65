@@ -48,9 +48,9 @@ noerr
 ; -----------------------------------
 
 pidspa
-	LDA	#>buffer1
-	STA	clibuf
 	LDA	#<buffer1
+	STA	clibuf
+	LDA	#>buffer1
 	STA	clibuf+1
 	JSR	idcommon
 	JSR	pcprint

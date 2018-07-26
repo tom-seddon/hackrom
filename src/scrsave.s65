@@ -43,9 +43,9 @@ checkw
 	JMP	endwrch
 
 	PHA
-	LDA	#>timeout
-	STA	timer
 	LDA	#<timeout
+	STA	timer
+	LDA	#>timeout
 	STA	timer+1
 	LDA	current
 	BEQ	wjmp1
@@ -84,9 +84,9 @@ myirq
 	PHA
 	AND	#&01
 	BEQ	nokey
-	LDA	#>timeout
-	STA	timer
 	LDA	#<timeout
+	STA	timer
+	LDA	#>timeout
 	STA	timer+1
 	LDA	current
 	BEQ	noevent
@@ -165,13 +165,13 @@ ss2
 	LDA	irq1loc+1
 	STA	oldirq1+1
 ; store new in extended table
-	LDA	#>checkw
-	STA	&DB4
 	LDA	#<checkw
+	STA	&DB4
+	LDA	#>checkw
 	STA	&DB5
-	LDA	#>myirq
-	STA	&DA5
 	LDA	#<myirq
+	STA	&DA5
+	LDA	#>myirq
 	STA	&DA6
 ; set rom no. in extended table
 	LDA	&F4

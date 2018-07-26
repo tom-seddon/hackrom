@@ -305,8 +305,8 @@ decimal
 	JSR	hexD
 	TYA
 	PHA
-	LDX	#>clibuf
-	LDY	#<clibuf
+	LDX	#<clibuf
+	LDY	#>clibuf
 	JSR	dec_hex
 	LDX	#3
 decloop0
@@ -1141,8 +1141,8 @@ rlsblank0
 	RTS
 
 doosfile
-	LDX	#>osfileb
-	LDY	#<osfileb
+	LDX	#<osfileb
+	LDY	#>osfileb
 	JMP	osfile
 
 break

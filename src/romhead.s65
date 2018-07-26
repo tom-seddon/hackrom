@@ -112,9 +112,9 @@ spechelp
 	JMP	romquit
 
 spechelp2
-	LDA	#>subjects
-	STA	xtablo
 	LDA	#<subjects
+	STA	xtablo
+	LDA	#>subjects
 	STA	xtabhi
 	LDA	#$00
 	STA	cpflag
@@ -263,9 +263,9 @@ synerr
 	PHA
 	LDA	$20F
 	PHA
-	LDA	#>oswrch_con
-	STA	$20E
 	LDA	#<oswrch_con
+	STA	$20E
+	LDA	#>oswrch_con
 	STA	$20F
 	LDA	#$00
 	STA	$0100
@@ -665,9 +665,9 @@ hzero
 ; Check for * commands
 ;*********************************
 mchcomm
-	LDA	#>comm
-	STA	xtablo
 	LDA	#<comm
+	STA	xtablo
+	LDA	#>comm
 	STA	xtabhi
 	JMP	matchstr
 
