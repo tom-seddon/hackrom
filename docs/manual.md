@@ -1,80 +1,3 @@
-# Contents
-
-Introduction
-
-The Command Line
-        Numerical values
-        String values
-        Syntax definitions
-        Current syntax problems
-
-Obtaining Help
-
-Memory Commands
-        Introduction
-        Memory Editor and Disassembler
-                Hex dump mode
-                Disassembly mode
-                Summary
-        Memory Copy
-        Memory Swap
-        Memory Compare
-        Memory Fill
-        Memory Search
-        Memory CRC
-
-Disk Commands
-        Introduction
-        Disk Editor
-                Control Panel
-                Control Panel Keys
-        Sector ID editor
-        Disk Formatter
-        Loading and Saving Sectors
-        Load Sector IDs
-        Display Sector IDs
-        Verify Disk
-        Fill Disk
-        Fast Backup
-        Permanent *ENABLE
-        Display Disk Gaps
-        Display Disk Format
-
-File Commands
-        Introduction
-        Loading and Running commands in DFS workspace
-        'Safe' File Removal
-        File CRCs
-        Updating File Start and Execution Addresses
-        Concatenating Files
-        Multiple File Copy
-        Disassembly
-        Closing IO Channels
-        DES Encryption
-        Comparing Files
-
-Rom Commands
-        Introduction
-        List ROM bank information
-        Switching ROMs on and off
-        Loading and Saving ROMs
-        Obtaining detailed ROM information
-        Master Compatible Sideways RAM commands
-        Building a *ROM filing system ROM image
-        Sending commands to other ROMs
-
-General Commands
-        Introduction
-        Printer Buffer
-        List System Vectors
-        *KEY manipulations
-        Numeric base conversions
-        BREAK commands
-        'Bad Program' recovery
-        Command Line 'Echo'
-
-Command Summary
-
 -------------------------------------------------------------------------------
 
 # Introduction
@@ -93,12 +16,12 @@ hexadecimal.
 In addition to this, there are a set of predefined constant available.
 These are:
 
-* '@ROM' - &8000
-* '@PAGE' - Current value of BASIC `PAGE` (eg &1900)
-* '@TOP' - Current value of BASIC `TOP` (eg &1902)
-* '@LOMEM' - Current value of `LOMEM`
-* '@HIMEM' - Current value of `HIMEM`
-* '@OSHWM' - Current value of OSHWM
+* `@ROM` - &8000
+* `@PAGE` - Current value of BASIC `PAGE` (eg &1900)
+* `@TOP` - Current value of BASIC `TOP` (eg &1902)
+* `@LOMEM` - Current value of `LOMEM`
+* `@HIMEM` - Current value of `HIMEM`
+* `@OSHWM` - Current value of OSHWM
 
 A numerical value may be derived as an increment to a previous
 numerical value by using the `+` prefix.
@@ -322,7 +245,7 @@ force a refresh press an unrecognised key such as the spacebar.
 Hex dump keys:
 
 | Key | Function |
-|---
+|---|
 | Tab | switch to disassembly mode
 | Copy | toggle editing position from hex to ASCII and back again.
 | Left arrow | Move cursor left (one byte lower in memory)
