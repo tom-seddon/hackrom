@@ -245,19 +245,19 @@ force a refresh press an unrecognised key such as the spacebar.
 Hex dump keys:
 
 | Key | Function |
-|---|
-| Tab | switch to disassembly mode
-| Copy | toggle editing position from hex to ASCII and back again.
-| Left arrow | Move cursor left (one byte lower in memory)
-| Right arrow | Move cursor right (one byte higher in memory)
-| Up arrow | Scroll up (move eight bytes lower in memory)
-| Down arrow | Scroll down (move eight bytes higher in memory)
-| Cntrl+L/R arrow | Change ROM bank down (L) or up (R) one  
-| Cntrl+U/D arrow | Move up or down memory by &80 bytes
-| Shift+L/R arrow | Jump to left or right of current line on screen
-| Shift+U/D arrow | Move up or down memory by &100 bytes
-| Escape | Quit
-| Other | Edit the data below the cursor. This will either change a nibble or change a byte depending on editing position
+|---|---|
+| Tab | switch to disassembly mode |
+| Copy | toggle editing position from hex to ASCII and back again. |
+| Left arrow | Move cursor left (one byte lower in memory) |
+| Right arrow | Move cursor right (one byte higher in memory) |
+| Up arrow | Scroll up (move eight bytes lower in memory) |
+| Down arrow | Scroll down (move eight bytes higher in memory) |
+| Cntrl+L/R arrow | Change ROM bank down (L) or up (R) one   |
+| Cntrl+U/D arrow | Move up or down memory by &80 bytes |
+| Shift+L/R arrow | Jump to left or right of current line on screen |
+| Shift+U/D arrow | Move up or down memory by &100 bytes |
+| Escape | Quit |
+| Other | Edit the data below the cursor. This will either change a nibble or change a byte depending on editing position |
 
 
 Disassembly keys:
