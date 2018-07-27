@@ -93,7 +93,12 @@ osfile = $FFDD
 
 ;-------------------------------------------------------------------------
 ;
-;  Zero page allocation.
+; Zero page allocation.
+;
+; Where it's obvious that something is routine- or file-specific, I've
+; put it in the appropriate section for that file, and given its name
+; a suitable prefix. But there are some stragglers, and I've just let
+; them live here with their original names.
 ;
 
                 .dsection bss
@@ -101,136 +106,373 @@ osfile = $FFDD
 
 ; random stuff that appears to be fairly unstructured.
                 
-xtab:
-comrun:
-tmpbuf:
-hdinc:
-dhinc:
-ptrfrom:
-tmpop:
-dtrk:
-lvectmp:
-kltmp:
-basptr:
-newy:
-vnumsects:
                 .byte ?         ;$70
-tmpam:
-dlsect:
-endstr:
                 .byte ?         ;$71
-mstmpy:
-htmp:
 toggle:
-ptrto:
-tmplen:
-dpsect:
                 .byte ?         ;$72
-helpind:
-display:
-type:
                 .byte ?         ;$73
 tmp:
-endptr:
-membuf:
 mfbuf:
                 .byte ?         ;$74
 tmp2:
-helpind2:
-extvec:
                 .byte ?         ;$75
 tmp5:
-mcopyrom:
                 .byte ?         ;$76
-htmpy:
-mask:
 tmp4:
 tmpx:
-fbflag:
                 .byte ?         ;$77
-xtmp:
-sectsizelo:
 tmpy:
-tableptr:
                 .byte ?         ;$78
-comprint:
-sectsizehi:
 romid:
                 .byte ?         ;$79
-cpflag:
-resultlo:
 tmpscrlo:
                 .byte ?         ;$7a
-resulthi:
 tmpscrhi:
-filltmpy1:
                 .byte ?         ;$7b
 byte:
-bytelo:
 poslo:
-filltmpy2:
                 .byte ?         ;$7c
-bytehi:
 poshi:
                 .byte ?         ;$7d
 tmp3:
 tmpposlo:
                 .byte ?         ;$7e
-sect:
 tmpposhi:
 dedpl:
                 .byte ?         ;$7f
 control:
 screenlo:
 numlo:
-oldclibuf:
-finctrk:
                 .byte ?         ;$80
 shift:
 screenhi:
 numhi:
 totrk:
                 .byte ?         ;$81
-input:
-tmpblock:
 fromtrk:
                 .byte ?         ;$82
-pos:
-formstart:
-               
                 .byte ?         ;$83
 param:
-clibuf:
-hdbuf:
                 .byte ?         ;$84
                 .byte ?         ;$85
-mmtmp:
                 .byte ?         ;$86
-error:
 block:
                 .byte ?         ;$87
                 .byte ?         ;$88
                 .byte ?         ;$89
-xpos:
                 .byte ?         ;$8a
-hmode:
                 .byte ?         ;$8b
-ptrDH:
-ptrHD:
                 .byte ?         ;$8c
                 .byte ?         ;$8d
-dhbits:
-hdbits:
                 .byte ?         ;$8e
-loaded:
-deleted:
-verify_cr:
                 .byte ?         ;$8f
 
-                ; bits allocated in blocks...
+* = $74
+membuf:
+                .fill 8,?
 
-                ; memcoms
+* = $80
+oldclibuf:
+                .fill 4,?
+clibuf:
+                .fill 8,?
+                
+;-------------------------------------------------------------------------
+;
+; romhead.s65
+;
+* = $70
+                
+romhead_xtab:
+romhead_comrun:
+                .word ?
+romhead_mstmpy:
+romhead_htmp:
+                .byte ?
+romhead_helpind:
+                .word ?
+romhead_helpind2:
+                .word ?
+                .byte ?
+romhead_xtmp:
+                .byte ?
+romhead_comprint:
+                .byte ?
+romhead_cpflag:
+                .byte ?
 
+;-------------------------------------------------------------------------
+;
+; discom.s65
+;
+* = $70
+discom_tmpbuf:
+                .word ?
+
+;-------------------------------------------------------------------------
+;
+; common.s65
+;
+* = $70
+common_hdinc:
+common_dhinc:
+                .fill 4,?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+common_ptrDH:
+common_ptrHD:
+                .word ?
+common_dhbits:
+common_hdbits:
+                .byte ?
+
+* = $70
+common_newy:
+                .byte ?
+common_endstr:
+                .byte ?
+                
+
+;-------------------------------------------------------------------------
+;
+; mem.s65
+;
+* = $70
+mem_tmpop:
+                .byte ?
+mem_tmpam:
+                .byte ?
+mem_tmplen:
+                .byte ?
+mem_display:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+mem_tmpblock:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+mem_xpos:
+                .byte ?
+mem_hmode:
+                .byte ?
+;-------------------------------------------------------------------------
+;
+; dedit.s65
+;
+* = $70
+dedit_dtrk:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+dedit_sectsizelo:
+                .byte ?
+dedit_sectsizehi:
+                .byte ?
+dedit_resultlo:
+                .byte ?
+dedit_resulthi:
+                .byte ?
+dedit_bytelo:
+                .byte ?
+dedit_bytehi:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+dedit_input:
+                .byte ?
+dedit_pos:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+dedit_loaded:
+                .byte ?
+                
+
+;-------------------------------------------------------------------------
+;
+; discom.s65
+;
+* = $70
+discom_dtrk:
+                .byte ?
+discom_dlsect:
+                .byte ?
+discom_dpsect:
+                .byte ?
+discom_type:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+discom_error:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+discom_deleted:
+                .byte ?
+
+;-------------------------------------------------------------------------
+;
+; lvector.s65
+;
+* = $70
+lvector_lvectmp:
+                .byte ?
+
+;-------------------------------------------------------------------------
+;
+; keycoms.s65
+;
+* = $70
+keycoms_kltmp:
+                .byte ?
+
+;-------------------------------------------------------------------------
+;
+; recover.s65
+;
+* = $70
+recover_basptr:
+                .word ?
+
+;-------------------------------------------------------------------------
+;
+; verify.s65
+;
+* = $70
+verify_vnumsects:
+                .byte ?
+                .fill 30,?
+verify_cr:
+                .byte ?
+
+;-------------------------------------------------------------------------
+;
+; pbuff.s65
+;
+* = $70
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+pbuff_extvec:
+                .word ?
+
+;-------------------------------------------------------------------------
+;
+; format.s65
+;
+
+* = $80
+
+format_finctrk:
+                .byte ?
+                .byte ?
+                .byte ?
+format_formstart:
+                .byte ?
+                
+;-------------------------------------------------------------------------
+;
+; memcom.s65
+; 
+
+* = $70
+                .fill $b,?
+memcom_filltmpy1:
+                .byte ?
+memcom_filltmpy2:
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+                .byte ?
+memcom_mmtmp:
+                .byte ?
+                
 * = membuf
 
 memsrc:
@@ -328,7 +570,10 @@ mSmr:
 mSdl:
                 .byte ?
 
-; other...
+;-------------------------------------------------------------------------
+;
+; Other
+; 
 ptab= param+1
                 
 numzpage = $20

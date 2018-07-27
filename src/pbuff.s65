@@ -126,21 +126,21 @@ pbloop5:
                 LDX	#$00
                 LDY	#$FF
                 JSR	$FFF4
-                STX	extvec
-                STY	extvec+1
+                STX	pbuff_extvec
+                STY	pbuff_extvec+1
                 LDY	#$3F
                 LDX	#$00
 pbloop6:
                 LDA	entries,X
-                STA	(extvec),Y
+                STA	(pbuff_extvec),Y
                 INX
                 INY
                 LDA	entries,X
-                STA	(extvec),Y
+                STA	(pbuff_extvec),Y
                 INX
                 INY
                 LDA	$F4
-                STA	(extvec),Y
+                STA	(pbuff_extvec),Y
                 INY
                 CPX	#$06
                 BNE	pbloop6

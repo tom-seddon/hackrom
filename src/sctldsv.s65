@@ -156,7 +156,7 @@ sldnot_phys
 	LDA	#&FF
 rest_sldpa
 	PHA
-	LDY	newy
+	LDY	common_newy
 	LDX	#&00
 	JSR	rdnum
 	BNE	sctldsverr

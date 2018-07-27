@@ -134,7 +134,7 @@ calc:
                 LDA	op,X
                 STA	tmp
                 AND	#$7F
-                STA	tmpop
+                STA	mem_tmpop
                 CLC
                 TXA
                 ROR	A
@@ -155,18 +155,18 @@ clcjmp:
                 ROL	A
                 PLA
                 ROL	A
-                STA	tmpam
+                STA	mem_tmpam
                 ; Length = length(mode)
                 TAX
                 LDA	length,X
-                STA	tmplen
+                STA	mem_tmplen
                 RTS
 
 ;*********************************
 ; Print a single mnemonic.
 ;*********************************
 printop:
-                LDA	tmpop
+                LDA	mem_tmpop
                 ASL	A
                 TAX
                 LDY	#0
@@ -270,7 +270,7 @@ sloop0:
                 ADC	#0
                 STA	screenhi
                 ; Print opcode as ASCII
-                LDX	tmplen
+                LDX	mem_tmplen
                 LDY	#0
 sloop2:
                 JSR	rdtmpposx
@@ -295,7 +295,7 @@ sjmp6:
                 JSR	amprint
                 LDA	tmpposlo
                 CLC
-                ADC	tmplen
+                ADC	mem_tmplen
                 STA	tmpposlo
                 BCC	sjmp1
                 INC	tmpposhi
@@ -323,7 +323,7 @@ send:
 ;*********************************
 amprint:
 ;Find addressing mode data
-                LDX	tmpam
+                LDX	mem_tmpam
                 LDA	amoffset,X
                 TAX
 amloop:
@@ -358,12 +358,12 @@ relative:
 ;
 ; For both BBS/BBR & branches the
 ; relative portion is the last byte.
-                LDY	tmplen
+                LDY	mem_tmplen
                 DEY
                 LDA	tmpposlo
                 CLC
                 ; BBS/BBR are 3 bytes, Branches are 2
-                ADC	tmplen
+                ADC	mem_tmplen
                 STA	tmp
                 LDA	tmpposhi
                 ADC	#0
@@ -464,8 +464,8 @@ hexscreen:
                 LDA	#14
                 LDX	#$2A
                 JSR	poke6845
-                LDX	xpos
-                LDA	hmode
+                LDX	mem_xpos
+                LDA	mem_hmode
                 BNE	ascii
                 LDA	hhex,X
                 JMP	hjmp0
@@ -505,7 +505,7 @@ hsloop2:
                 LDX	#7
 hsloop1:
                 JSR	rdposx
-                STA	tmpblock,X
+                STA	mem_tmpblock,X
                 SEC
                 JSR	printnum
                 INY
@@ -519,7 +519,7 @@ hsloop1:
 hsloop3:
                 TXA
                 PHA
-                LDA	tmpblock,X
+                LDA	mem_tmpblock,X
                 AND	#$7F
                 TAX
                 LDA	letter,X
@@ -597,10 +597,10 @@ titmsg:
                 JSR	romtitle
                 LDA	#$00
                 STA	toggle
-                STA	hmode
+                STA	mem_hmode
                 LDA	#$CF
                 JSR	setcursor
-                BIT	display
+                BIT	mem_display
                 BMI	mdis1
                 JSR	sub50
 mdis1:
@@ -617,7 +617,7 @@ mloop:
                 PHA
 mloopx:
 ; Display appropriate screen
-                BIT	display
+                BIT	mem_display
                 BPL	mjmp3
                 JSR	disscreen
                 LDY	#0
@@ -648,7 +648,7 @@ mjmp4:
                 ; (and update screen if Hex mode)
                 CPY	#$FF
                 BNE	mjmp5
-                BIT	display
+                BIT	mem_display
                 BPL	mloopx
                 BMI	mjmp4
 mjmp5:
@@ -706,7 +706,7 @@ notdown:
                 ; UP ARROW pressed
                 BIT	shift
                 BMI	up2
-                BIT	display
+                BIT	mem_display
                 BPL	up3
                 LDA	#$01
                 STA	tmpscrlo
@@ -739,11 +739,11 @@ tabloop:
                 INX
                 BNE	tabloop
 tabstart:
-                LDA	display
+                LDA	mem_display
                 EOR	#$FF
-                STA	display
+                STA	mem_display
                 BEQ	tabjmp0
-                LDA	xpos
+                LDA	mem_xpos
                 CLC
                 ADC	#$50
                 STA	tmp
@@ -766,7 +766,7 @@ sub50:
                 DEC	poshi
 tj2:
                 JSR	round8
-                LDA	hmode
+                LDA	mem_hmode
                 AND	#1
                 TAX
                 LDA	cursor3,X
@@ -784,21 +784,21 @@ nottab:
 left2:
                 BIT	control
                 BMI	cleft2
-                BIT	display
+                BIT	mem_display
                 BNE	qmloop
                 BIT	shift
                 BMI	sleft
-                LDA	xpos
+                LDA	mem_xpos
                 BEQ	ljmp0
-                DEC	xpos
+                DEC	mem_xpos
                 RTS
 ljmp0:
                 LDA	#7
-                STA	xpos 
+                STA	mem_xpos 
                 JMP	up1
 sleft:
                 LDA	#0
-                STA	xpos
+                STA	mem_xpos
                 RTS
 cleft2:
                 DEC	romid
@@ -811,23 +811,23 @@ notleft:
                 ; RIGHT ARROW pressed
                 BIT	control
                 BMI	cright2
-                BIT	display
+                BIT	mem_display
                 BNE	qmloop
                 BIT	shift
                 BMI	sright
 right2:
-                LDA	xpos
+                LDA	mem_xpos
                 CMP	#7
                 BEQ	rjmp0
-                INC	xpos
+                INC	mem_xpos
                 RTS
 rjmp0:
                 LDA	#0
-                STA	xpos
+                STA	mem_xpos
                 JMP	down1
 sright:
                 LDA	#7
-                STA	xpos
+                STA	mem_xpos
                 RTS
 cright2:
                 INC	romid
@@ -836,16 +836,16 @@ cright2:
 
                 ; If disassembly then no need for any
                 ; more key checks
-                BIT	display
+                BIT	mem_display
                 BNE	qmloop
 
 notright:
                 CPX	#$87
                 BNE	notcopy
                 ; COPY pressed
-                LDA	hmode
+                LDA	mem_hmode
                 EOR	#$FF
-                STA	hmode
+                STA	mem_hmode
                 AND	#1
                 TAX
                 LDA	cursor3,X
@@ -858,10 +858,10 @@ notcopy:
 ; we must be trying to edit mem.
                 LDA	#$50
                 CLC
-                ADC	xpos
+                ADC	mem_xpos
                 TAY
                 TXA
-                BIT	hmode
+                BIT	mem_hmode
                 BMI	sascii
                 CMP	#'0'
                 BCC	storeend
@@ -964,12 +964,12 @@ romend:
 printmode:
 ; Check display% and hmode%
 ; to decide what to print.
-                BIT	display
+                BIT	mem_display
                 BPL	prmd0
                 LDX	#0
                 BVS	printit
 prmd0:
-                BIT	hmode
+                BIT	mem_hmode
                 BMI	prmd1
                 LDX	#hexmsg-dismsg
                 BVC	printit
@@ -1005,7 +1005,7 @@ mdispa:
 mempa:
                 LDA	#$FF
 memcompa:
-                STA	display
+                STA	mem_display
                 ; Read first arg - the memory
                 ; address to edit
                 JSR	rdnum
@@ -1044,7 +1044,7 @@ round8:
                 STA	poslo
                 PLA
                 AND	#$7
-                STA	xpos
+                STA	mem_xpos
                 RTS
 
                 ;*********************************

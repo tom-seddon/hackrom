@@ -99,7 +99,7 @@ phys_logi:
                 ASL	A
                 TAX
                 LDA	buffer3+2,X
-                STA	dlsect
+                STA	discom_dlsect
                 JSR	putlsect
                 RTS
 
@@ -165,43 +165,43 @@ blankloop:
                 ; --------------------------------
 round:
                 LDA	#>buffer2
-                CMP	bytehi
+                CMP	dedit_bytehi
                 BCC	ok1
                 BNE	setlo
                 LDA	#<buffer2
-                CMP	bytelo
+                CMP	dedit_bytelo
                 BCC	ok1
                 BNE	setlo
 ok1:
                 LDA	#<buffer2
                 CLC
-                ADC	sectsizelo
-                STA	resultlo
+                ADC	dedit_sectsizelo
+                STA	dedit_resultlo
                 LDA	#>buffer2
-                ADC	sectsizehi
-                STA	resulthi
+                ADC	dedit_sectsizehi
+                STA	dedit_resulthi
                 SEC
-                LDA	bytehi
-                CMP	resulthi
+                LDA	dedit_bytehi
+                CMP	dedit_resulthi
                 BCC	ok2
                 BNE	sethi
-                LDA	bytelo
-                CMP	resultlo
+                LDA	dedit_bytelo
+                CMP	dedit_resultlo
                 BCC	ok2
 sethi:
-                LDA	resultlo
+                LDA	dedit_resultlo
                 SEC
                 SBC	#8
-                STA	bytelo
-                LDA	resulthi
+                STA	dedit_bytelo
+                LDA	dedit_resulthi
                 SBC	#0
-                STA	bytehi
+                STA	dedit_bytehi
                 JMP	notsetlo
 setlo:
                 LDA	#<buffer2
-                STA	bytelo
+                STA	dedit_bytelo
                 LDA	#>buffer2
-                STA	bytehi
+                STA	dedit_bytehi
 notsetlo:
 ok2:
                 RTS
@@ -213,12 +213,12 @@ dedinit:
                 .byte	31,7,0
                 LDA	#0
                 JSR	$FFEE
-                STA	input
-                STA	pos
+                STA	dedit_input
+                STA	dedit_pos
                 LDA	#$FF
                 STA	dedpl
                 LDA	#$05
-                STA	loaded
+                STA	dedit_loaded
                 RTS
                 ; --------------------------------
 deditpa:
@@ -290,13 +290,13 @@ dedplloop:
                 INY
                 CPY	#4
                 BNE	dedplloop
-                LDA	loaded
+                LDA	dedit_loaded
                 AND	#$0F
                 CMP	#5
                 BEQ	nodisp
                 JSR	deddisplay
 nodisp:
-                LDX	input
+                LDX	dedit_input
                 LDA	cursor,X
                 STA	$FE20
                 STA	$248
@@ -304,7 +304,7 @@ nodisp:
                 JSR	$FFEE
                 LDA	ptrcoords,X
                 CLC
-                ADC	pos
+                ADC	dedit_pos
                 TAX
                 LDA	xcoord,X
                 JSR	$FFEE
@@ -336,7 +336,7 @@ dedmloopx:
                 JSR	$FFF4
                 BIT	control
                 BMI	dedend
-                LDA	input
+                LDA	dedit_input
                 CMP	#5
                 BCC	dedend
                 JMP	dedinit
@@ -352,30 +352,30 @@ dednotend:
                 BEQ	dedtab
                 JMP	dednottab
 dedtab:
-                LDA	input
+                LDA	dedit_input
                 CMP	#6
                 BNE	diftab
                 LDA	#4
-                STA	input
+                STA	dedit_input
 diftab:
-                INC	input
-                LDA	loaded
+                INC	dedit_input
+                LDA	dedit_loaded
                 AND	#$F
-                CMP	input
+                CMP	dedit_input
                 BNE	dednotmod
                 LDA	#0
-                STA	input
+                STA	dedit_input
 dednotmod:
-                LDA	input
+                LDA	dedit_input
                 CMP	#5
                 BCS	dednot0pos
                 LDA	#0
-                STA	pos
+                STA	dedit_pos
 dednot0pos:
                 RTS
 
 dednottab:
-                LDA	input
+                LDA	dedit_input
                 BNE	doarrows
                 JMP	drivekeys
 doarrows:
@@ -392,13 +392,13 @@ up_down:
                 BIT	control
                 BMI	downsect
 deddown1:
-                LDA	bytelo
+                LDA	dedit_bytelo
                 CLC
                 ADC	#8
-                STA	bytelo
+                STA	dedit_bytelo
                 BCC	mdedmloop
 deddown2:
-                INC	bytehi
+                INC	dedit_bytehi
 mdedmloop:
                 JMP	round
 downsect:
@@ -420,7 +420,7 @@ gonextsect:
                 JSR	putlst
                 LDA	#$02
 gonextsct:
-                STA	input
+                STA	dedit_input
                 LDX	#$0D
                 JMP	dednotcopy
 okdown2:
@@ -442,13 +442,13 @@ dedup:
                 BIT	control
                 BMI	upsect
 dedup1:
-                LDA	bytelo
+                LDA	dedit_bytelo
                 SEC
                 SBC	#8
-                STA	bytelo
+                STA	dedit_bytelo
                 BCS	mdedmloop
 dedup2:
-                DEC	bytehi
+                DEC	dedit_bytehi
                 JMP	round
 upsect:
                 LDA	dedpl
@@ -477,28 +477,28 @@ notup_down:
 dedISleft:
                 CMP	#5
                 BCS	editleft
-                LDA	pos
+                LDA	dedit_pos
                 BEQ	return1
-                DEC	pos
+                DEC	dedit_pos
                 RTS
 editleft:
                 BIT	shift
                 BMI	dedsleft
                 BIT	control
                 BMI	downtrack 
-                LDA	pos
+                LDA	dedit_pos
                 BEQ	rjmp
-                DEC	pos
+                DEC	dedit_pos
                 RTS
 rjmp:
                 LDA	#7
-                STA	pos
+                STA	dedit_pos
                 LDA	#8
                 STA	tmpscrlo
                 JMP	dedup1
 dedsleft:
                 LDA	#0
-                STA	pos
+                STA	dedit_pos
 return1:
                 RTS
 downtrack:
@@ -525,11 +525,11 @@ dedskip0:
                 CMP	#5
                 BCS	editright
 dedright:
-                LDX	input
-                LDA	pos
+                LDX	dedit_input
+                LDA	dedit_pos
                 CMP	posblpos,X
                 BEQ	return2
-                INC	pos
+                INC	dedit_pos
 return2:
                 RTS
 editright:
@@ -538,20 +538,20 @@ editright:
                 BIT	control
                 BMI	uptrack
 dedrightx:
-                LDA	pos
+                LDA	dedit_pos
                 CMP	#7
                 BEQ	rjmp2
-                INC	pos
+                INC	dedit_pos
                 RTS
 rjmp2:
                 LDA	#0
-                STA	pos
+                STA	dedit_pos
                 LDA	#8
                 STA	tmpscrlo
                 JMP	deddown1
 dedsright:
                 LDA	#7
-                STA	pos
+                STA	dedit_pos
                 RTS
 uptrack:
                 JSR	gettrk
@@ -599,7 +599,7 @@ dednotcopy:
                 BNE	dednotCR
                 CMP	#5
                 BCS	dednotCR
-                LDA	input
+                LDA	dedit_input
                 CMP	#2
                 BNE	dedoverb
                 JSR	ctrlL
@@ -609,7 +609,7 @@ dedoverb:
                 BNE	dedoverc
                 JSR	ctrlP
 dedoverc:
-                LDA	input
+                LDA	dedit_input
                 CMP	#4
                 BNE	dednotfile
                 JSR	dedloadfile
@@ -621,8 +621,8 @@ goload:
 noload:
                 JSR	message
                 LDA	#0
-                STA	sectsizelo
-                STA	sectsizehi
+                STA	dedit_sectsizelo
+                STA	dedit_sectsizehi
                 JSR	deddisplay
 dedrts:
                 RTS
@@ -630,7 +630,7 @@ dedrts:
 dednotCR:
                 TXA
                 PHA
-                LDX	input
+                LDX	dedit_input
                 CPX	#4
                 BEQ	fileinput
                 BCS	editmem
@@ -651,17 +651,17 @@ fileinput:
                 AND	#$7F
                 CMP	#$7F
                 BNE	normkey
-                LDA	pos
+                LDA	dedit_pos
                 CMP	#1
                 BEQ	donothing
                 LDA	$7C44
                 CMP	#32
                 BNE	del7
-                DEC	pos
+                DEC	dedit_pos
 del7:
                 LDA	ptrcoords+4
                 CLC
-                ADC	pos
+                ADC	dedit_pos
                 TAX
                 LDA	#31
                 JSR	$FFEE
@@ -680,7 +680,7 @@ donothing:
 editmem:
                 PLA
                 AND	#$7F
-                LDX	input
+                LDX	dedit_input
                 CPX	#5
                 BNE	store
                 LDX	#$F
@@ -702,7 +702,7 @@ number:
                 LDA	toggle
                 EOR	#$FF
                 STA	toggle
-                LDY	pos
+                LDY	dedit_pos
                 LDA	(byte),Y
                 ASL	A
                 ASL	A
@@ -710,11 +710,11 @@ number:
                 ASL	A
                 ORA	tmp
 store:
-                LDY	pos
+                LDY	dedit_pos
                 STA	(byte),Y
                 LDA	toggle
                 BEQ	goright
-                LDA	input
+                LDA	dedit_input
                 CMP	#6
                 BEQ	goright
                 RTS
@@ -723,7 +723,7 @@ goright:
 
 dedload:
                 JSR	gettrk
-                STA	dtrk
+                STA	dedit_dtrk
                 TAX
                 JSR	ptabcom
                 JSR	getdrv
@@ -732,7 +732,7 @@ dedload:
                 AND	#$1E
                 BNE	dednotok
                 JSR	sort_ids
-                LDA	input
+                LDA	dedit_input
                 CMP	#$02
                 BNE	nogetl
 dolp:
@@ -759,7 +759,7 @@ nogetp:
 dedover:
 
                 TAY
-                LDX	dtrk
+                LDX	dedit_dtrk
                 JSR	getdrv
                 CLC
                 JSR	loadsector
@@ -782,36 +782,36 @@ loadOK:
                 PLA
                 TAX
 notdeldata:
-                LDA	loaded
+                LDA	dedit_loaded
                 CMP	#$07
                 BEQ	noreset
                 LDA	#0
-                STA	pos
+                STA	dedit_pos
                 LDA	#>buffer2
-                STA	bytehi
+                STA	dedit_bytehi
                 LDA	#<buffer2
-                STA	bytelo
+                STA	dedit_bytelo
 noreset:
                 LDA	#5
-                STA	input
-                LDA	loaded
+                STA	dedit_input
+                LDA	dedit_loaded
                 AND	#$F0
                 ORA	#$07
-                STA	loaded
+                STA	dedit_loaded
                 TXA
                 JSR	hex_asc
                 STA	$7C5C
                 STY	$7C5D
                 LDX	tmp3
                 LDA	sectsizes,X
-                STA	sectsizehi
+                STA	dedit_sectsizehi
                 INX
                 LDA	sectsizes,X
-                STA	sectsizelo
+                STA	dedit_sectsizelo
                 JSR	hex_asc
                 STA	$7C6E
                 STY	$7C6F
-                LDA	sectsizehi
+                LDA	dedit_sectsizehi
                 JSR	hex_asc
                 STA	$7C6C
                 STY	$7C6D
@@ -1004,10 +1004,10 @@ dedhsloop0:
                 STA	screenhi
                 LDX	#0
                 SEC
-                LDA	bytelo
+                LDA	dedit_bytelo
                 SBC	#$40
                 STA	tmpscrlo
-                LDA	bytehi
+                LDA	dedit_bytehi
                 SBC	#0
                 STA	tmpscrhi
 dedhsloop2:
@@ -1016,13 +1016,13 @@ dedhsloop2:
                 BCC	blankline
                 LDA	#>buffer2
                 CLC
-                ADC	sectsizehi
+                ADC	dedit_sectsizehi
                 CMP	tmpscrhi
                 BCC	blankline
                 BNE	displine
                 LDA	#<buffer2
                 CLC
-                ADC	sectsizelo
+                ADC	dedit_sectsizelo
                 STA	tmp3
                 LDA	tmpscrlo
                 CMP	tmp3

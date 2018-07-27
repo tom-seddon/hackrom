@@ -160,26 +160,26 @@ quote:
                 PHA
                 DEY
                 JSR	gsinit
-                STY	newy
-                STY	endstr
+                STY	common_newy
+                STY	common_endstr
 quote1:
                 JSR	gsread
                 BCS	quote2
-                STY	newy
-                LDY	endstr
+                STY	common_newy
+                LDY	common_endstr
                 STA	($F2),Y
-                INC	endstr
-                LDY	newy
+                INC	common_endstr
+                LDY	common_newy
                 ; BNE instead?
                 JMP	quote1
 quote2:
-                INC	newy
+                INC	common_newy
                 PLA
                 TAY
                 ; zero flag already clear
                 EOR	#$FF
                 CLC
-                ADC	endstr
+                ADC	common_endstr
                 TAX
                 INX
                 SEC
@@ -422,25 +422,25 @@ clearclib:
 ; Exit : hexnum = second 4 bytes table
 ; ----------------------------------
 dec_hex:
-                STX	ptrDH
-                STY	ptrDH+1
+                STX	common_ptrDH
+                STY	common_ptrDH+1
                 LDA	#0
-                STA	dhbits
+                STA	common_dhbits
                 LDY	#7
 zerohexnum:
-                STA	(ptrDH),Y
+                STA	(common_ptrDH),Y
                 DEY
                 CPY	#3
                 BNE	zerohexnum
 zeroinc:
-                STA	dhinc,Y
+                STA	common_dhinc,Y
                 DEY
                 BPL	zeroinc
-                INC	dhinc
+                INC	common_dhinc
                 LDA	#0
                 BEQ	overDH1
 dhmloop:
-                LDA	dhbits
+                LDA	common_dhbits
                 AND	#3
                 BNE	overDH1
                 LDY	#3
@@ -449,8 +449,8 @@ dhmloop:
 loopDH5:
                 INX
                 PLA
-                ADC	dhinc,X
-                STA	dhinc,X
+                ADC	common_dhinc,X
+                STA	common_dhinc,X
                 DEY
                 BPL	loopDH5
 overDH1:
@@ -458,7 +458,7 @@ overDH1:
                 BNE	overDH4
                 LDX	#3
 loopDH4:
-                LDA	dhinc,X
+                LDA	common_dhinc,X
                 PHA
                 DEX
                 BPL	loopDH4
@@ -466,9 +466,9 @@ overDH4:
                 LDY	#3
                 CLC
 shiftloop:
-                LDA	(ptrDH),Y
+                LDA	(common_ptrDH),Y
                 ROR	A
-                STA	(ptrDH),Y
+                STA	(common_ptrDH),Y
                 DEY
                 BPL	shiftloop
                 BCC	overDH2
@@ -478,9 +478,9 @@ shiftloop:
                 PHP
 loopDH2:
                 PLP
-                LDA	(ptrDH),Y
-                ADC	dhinc,X
-                STA	(ptrDH),Y
+                LDA	(common_ptrDH),Y
+                ADC	common_dhinc,X
+                STA	(common_ptrDH),Y
                 PHP
                 INX
                 INY
@@ -488,7 +488,7 @@ loopDH2:
                 BNE	loopDH2
                 PLP
 overDH2:
-                LDA	dhbits
+                LDA	common_dhbits
                 AND	#3
                 CMP	#3
                 BEQ	overDH3
@@ -496,13 +496,13 @@ overDH2:
                 LDX	#0
                 LDY	#3
 loopDH3:
-                ROL	dhinc,X
+                ROL	common_dhinc,X
                 INX
                 DEY
                 BPL	loopDH3
 overDH3:
-                INC	dhbits
-                LDA	dhbits
+                INC	common_dhbits
+                LDA	common_dhbits
                 CMP	#32
                 BNE	dhmloop
                 PLA
@@ -523,29 +523,29 @@ overDH3:
 ; --------------------------------
 
 hex_dec:
-                STX	ptrHD
-                STY	ptrHD+1
+                STX	common_ptrHD
+                STY	common_ptrHD+1
                 LDA	#32
-                STA	hdbits
+                STA	common_hdbits
                 LDY	#7
                 LDA	#0
 zerodecnum:
-                STA	(ptrHD),Y
+                STA	(common_ptrHD),Y
                 DEY
                 CPY	#3
                 BNE	zerodecnum
 zeroincHD:
-                STA	hdinc,Y
+                STA	common_hdinc,Y
                 DEY
                 BPL	zeroincHD
-                INC	hdinc
+                INC	common_hdinc
 HDmloop:
                 LDY	#3
                 CLC
 hdshift:
-                LDA	(ptrHD),Y
+                LDA	(common_ptrHD),Y
                 ROR	A
-                STA	(ptrHD),Y
+                STA	(common_ptrHD),Y
                 DEY
                 BPL	hdshift
                 BCC	overHD2
@@ -556,9 +556,9 @@ hdshift:
 loopHD2:
                 PLP
                 SED
-                LDA	(ptrHD),Y
-                ADC	hdinc,X
-                STA	(ptrHD),Y
+                LDA	(common_ptrHD),Y
+                ADC	common_hdinc,X
+                STA	(common_ptrHD),Y
                 PHP
                 CLD
                 INX
@@ -572,15 +572,15 @@ overHD2:
                 LDX	#0
 loopHD1:
                 SED
-                LDA	hdinc,X
-                ADC	hdinc,X
-                STA	hdinc,X
+                LDA	common_hdinc,X
+                ADC	common_hdinc,X
+                STA	common_hdinc,X
                 CLD
                 INX
                 DEY
                 BPL	loopHD1
-                DEC	hdbits
-                LDA	hdbits
+                DEC	common_hdbits
+                LDA	common_hdbits
                 BNE	HDmloop
                 RTS
 
@@ -1060,10 +1060,10 @@ rlsblank0:
                 ADC	#$00
                 STA	osfileb+1
                 PLA
-                STA	endstr
+                STA	common_endstr
                 TYA
                 CLC
-                ADC	endstr
+                ADC	common_endstr
                 TAY
                 LDA	#$0D
                 STA	($F2),Y

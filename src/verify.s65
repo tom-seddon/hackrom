@@ -120,7 +120,7 @@ verloop1:
                 STA	buffer1+3
                 INC	buffer1+3
                 JSR	sort_ids
-                STA	vnumsects
+                STA	verify_vnumsects
                 LDY	#$00
 verloop2:
                 TYA
@@ -168,7 +168,7 @@ verOK:
                 PLA
                 TAY
                 INY
-                CPY	vnumsects
+                CPY	verify_vnumsects
                 BNE	verloop2
                 LDA	#134
                 JSR	$FFEE
@@ -226,7 +226,7 @@ verloop3:
                 JMP	vnextrk2
 govsect:
                 JSR	sort_ids
-                STA	vnumsects
+                STA	verify_vnumsects
                 LDA	buffer3+3
                 ASL	A
                 ASL	A
@@ -294,7 +294,7 @@ vnextsect:
                 PLA
                 TAY
                 INY
-                CPY	vnumsects
+                CPY	verify_vnumsects
                 BNE	verloop4
 vnextrk2:
                 JSR	$FFE7

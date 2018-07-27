@@ -10,7 +10,7 @@ touchpa:
                 JSR	rdstr
                 BNE	toucherr
                 JSR	doosfblk
-                LDY	newy
+                LDY	common_newy
                 JSR	rdnum
                 BNE	toucherr
                 LDX	#$02

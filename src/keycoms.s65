@@ -57,7 +57,7 @@ klloop0:
                 DEY
                 BPL	klloop0
                 ; calc length of key in X reg.
-                STY	kltmp
+                STY	keycoms_kltmp
                 LDY	#$10
 klloop:
                 SEC
@@ -67,17 +67,17 @@ klloop:
                 ; equal is when X = Y.
                 BEQ	kljmp1
                 BCC	kljmp1
-                CMP	kltmp
+                CMP	keycoms_kltmp
                 BCS	kljmp1
-                STA	kltmp
+                STA	keycoms_kltmp
 kljmp1:
                 DEY
                 BPL	klloop
-                INC	kltmp
+                INC	keycoms_kltmp
                 BEQ	kljmp3
                 LDY	$B00,X
 klloop3:
-                DEC	kltmp
+                DEC	keycoms_kltmp
                 BEQ	kljmp3
                 ; print it out in GSREAD style.
                 LDA	$B01,Y

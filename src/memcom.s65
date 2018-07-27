@@ -65,11 +65,11 @@ mmcom2:
 mmfb2:
                 JSR	rdwr1s
                 JSR	rdposx
-                STA	mmtmp
+                STA	memcom_mmtmp
                 ;	LDA	(mmss),Y
 mscom:
                 JSR	rdwr2s
-                LDA	mmtmp
+                LDA	memcom_mmtmp
 mfcom:
                 JSR	wrposx
                 ;	STA	(mmds),Y
@@ -148,10 +148,10 @@ mc1:
 mc2:
                 JSR	rdwr1s
                 JSR	rdposx
-                STA	mmtmp
+                STA	memcom_mmtmp
                 JSR	rdwr2s
                 JSR	rdposx
-                CMP	mmtmp
+                CMP	memcom_mmtmp
                 BNE	mcend
                 INY
                 BEQ	mcj1
@@ -206,7 +206,7 @@ ms2:
                 JSR	rdwr1s
                 JSR	rdposx
                 ;	LDA	(ms1s),Y
-                STA	mmtmp
+                STA	memcom_mmtmp
                 JSR	rdwr2s
                 JSR	rdposx
                 PHA
@@ -245,12 +245,12 @@ mfill0:
                 LDA	mfml+1
                 BEQ	mfillend
 mfill1:
-                STY	mmtmp
+                STY	memcom_mmtmp
                 JSR	rdwr1s
                 TXA
                 TAY
                 LDA	(mfd),Y
-                LDY	mmtmp
+                LDY	memcom_mmtmp
                 JSR	mfcom
                 ; mfcom - part of mscom
                 ; 	INC	mfml
@@ -348,13 +348,13 @@ fillend:
                 INY
                 CMP	#IFS
                 PHP
-                STY	filltmpy1
-                LDA	filltmpy2
+                STY	memcom_filltmpy1
+                LDA	memcom_filltmpy2
                 PLP
                 RTS
 fill:
                 LDA	#$00
-                STA	filltmpy2
+                STA	memcom_filltmpy2
 fillx:
                 JSR	rdstrnum
                 BNE	fillend
@@ -362,21 +362,21 @@ fillx:
 fill0:
                 LDA	($F2),Y
                 INY
-                STY	filltmpy1
-                LDY	filltmpy2
+                STY	memcom_filltmpy1
+                LDY	memcom_filltmpy2
                 STA	($F2),Y
                 INY
-                STY	filltmpy2
-                LDY	filltmpy1
-                CPY	endstr
+                STY	memcom_filltmpy2
+                LDY	memcom_filltmpy1
+                CPY	common_endstr
                 BCC	fill0
-                LDY	newy
+                LDY	common_newy
                 ; BNE fill ?
                 JMP	fillx
 fillnum:
                 TYA
                 PHA
-                LDY	filltmpy2
+                LDY	memcom_filltmpy2
                 LDX	#$03
 fillnum0:
                 LDA	clibuf,X
@@ -392,7 +392,7 @@ fillnum1:
                 INY
                 DEX
                 BPL	fillnum1
-                STY	filltmpy2
+                STY	memcom_filltmpy2
                 PLA
                 TAY
                 JMP	fillx

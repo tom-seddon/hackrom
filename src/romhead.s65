@@ -103,11 +103,11 @@ spechelp:
 
 spechelp2:
                 LDA	#<subjects
-                STA	xtab+0
+                STA	romhead_xtab+0
                 LDA	#>subjects
-                STA	xtab+1
+                STA	romhead_xtab+1
                 LDA	#$00
-                STA	cpflag  ;00 = print subject help
+                STA	romhead_cpflag  ;00 = print subject help
                 TYA
                 PHA
                 JSR	matchstr
@@ -119,11 +119,11 @@ spechelp2:
                 RTS
                 
 sphelpok:
-                STX	comprint ;save command to print
+                STX	romhead_comprint ;save command to print
                 LDA	#$FF
-                STA	cpflag  ;FF = print specific command help
+                STA	romhead_cpflag  ;FF = print specific command help
                 PHA
-                LDA	comprint ;get command to print
+                LDA	romhead_comprint ;get command to print
                 LDX	#$FF
 sphlp:
                 INX             ;
@@ -149,16 +149,16 @@ gospechelp:
                 ; get pointer to list of command names for this
                 ; subject.
                 LDA	subjtab,X
-                STA	helpind
+                STA	romhead_helpind
                 LDA	subjtab+1,X
-                STA	helpind+1
+                STA	romhead_helpind+1
 
                 ; get pointer to list of command syntaxes for this
                 ; subject.
                 LDA	syntab+1,X
-                STA	helpind2+1
+                STA	romhead_helpind2+1
                 LDA	syntab,X
-                STA	helpind2
+                STA	romhead_helpind2
 
                 TXA             ;get subject*2
                 LSR	A       ;get subject
@@ -170,10 +170,10 @@ gospechelp:
 helploop:
 nh:
                 INY
-                LDA	cpflag
+                LDA	romhead_cpflag
                 CLC             
                 ADC	#$01    ;C set if printing specific command
-                LDA	(helpind),Y ;get first char of subject
+                LDA	(romhead_helpind),Y ;get first char of subject
                 BPL	norq        ;taken if that subject is valid
 
                 ; backspace over the redundant two indents. Maybe I'm
@@ -186,7 +186,7 @@ norq:
                 BEQ	nh2      ;???
                 BCC	showcom  ;taken if printing help for all
                                  ;commands in the subject
-                CPX	comprint ;is current command the command of
+                CPX	romhead_comprint ;is current command the command of
                                  ;interest?
                 BNE	nh       ;taken if not the command of interest
 showcom:
@@ -198,35 +198,35 @@ nh2:
                 TXA
                 PHA
                 LDA	helptab,X
-                STA	xtmp
+                STA	romhead_xtmp
                 BEQ	nextcom
                 BPL	go
                 AND	#$7F
-                STA	xtmp
+                STA	romhead_xtmp
                 SEC
-                LDA	helpind2
-                SBC	xtmp
-                STA	helpind2
+                LDA	romhead_helpind2
+                SBC	romhead_xtmp
+                STA	romhead_helpind2
                 BCS	hover
-                DEC	helpind2+1
+                DEC	romhead_helpind2+1
 hover:
-                LDA	xtmp
+                LDA	romhead_xtmp
 go:
                 TAY
-                LDA	cpflag
+                LDA	romhead_cpflag
                 BEQ	cpok
-                CPX	comprint
+                CPX	romhead_comprint
                 BNE	skipcom
 cpok:
                 LDA	#' '
                 JSR	$FFEE
 again:
                 DEY
-                LDA	(helpind2),Y
+                LDA	(romhead_helpind2),Y
                 BPL	nh4
                 TAX
                 LDA	toktab-$80,X
-                STA	htmp
+                STA	romhead_htmp
                 LDA	toktab-$81,X
                 TAX
                 JMP	nh5
@@ -235,7 +235,7 @@ nh3:
 nh5:
                 LDA	tokens,X
                 INX
-                CPX	htmp
+                CPX	romhead_htmp
                 BNE	nh3
 nh4:
                 JSR	$FFEE
@@ -243,20 +243,20 @@ nh4:
                 BNE	again
 skipcom:
                 CLC
-                LDA	xtmp
-                ADC	helpind2
-                STA	helpind2
+                LDA	romhead_xtmp
+                ADC	romhead_helpind2
+                STA	romhead_helpind2
                 BCC	hover2
-                INC	helpind2+1
+                INC	romhead_helpind2+1
 hover2:
 nextcom:
                 PLA
                 TAX
                 PLA
                 TAY
-                LDA	cpflag
+                LDA	romhead_cpflag
                 BEQ	docr
-                CPX	comprint
+                CPX	romhead_comprint
                 BNE	nocr
 docr:
                 JSR	$FFE7
@@ -453,9 +453,9 @@ hzero:
 ;*********************************
 mchcomm:
                 LDA	#<comm
-                STA	xtab+0
+                STA	romhead_xtab+0
                 LDA	#>comm
-                STA	xtab+1
+                STA	romhead_xtab+1
                 JMP	matchstr
 
 
@@ -471,9 +471,9 @@ command:
                 ASL	A
                 TAX
                 LDA	comtab,X
-                STA	comrun
+                STA	romhead_comrun
                 LDA	comtab+1,X
-                STA	comrun+1
+                STA	romhead_comrun+1
                 TSX
                 STX	stacksave
                 JSR	runcom
@@ -483,7 +483,7 @@ command:
                 STA	$105+numzpage,X
                 RTS
 runcom:
-                JMP	(comrun)
+                JMP	(romhead_comrun)
 
 ;*********************************
 ; Match cli string in $FF terminated
@@ -509,22 +509,22 @@ msloop:
                 LDA	($F2),Y
                 ; uppercase it
                 JSR	capitalise
-                STY	mstmpy
+                STY	romhead_mstmpy
                 LDY	#$00
-                CMP	(xtab),Y
+                CMP	(romhead_xtab),Y
                 BNE	msnext
-                LDY	mstmpy
+                LDY	romhead_mstmpy
 
-                INC	xtab+0
+                INC	romhead_xtab+0
                 BNE	msskip1
-                INC	xtab+1
+                INC	romhead_xtab+1
 msskip1:
                 INY
                 BNE	msloop
 msnext:
                 CMP	#'.'
                 BNE	nosuccess
-                INC	mstmpy
+                INC	romhead_mstmpy
                 ; Z always clear
                 BNE	mssuccess
 nosuccess:
@@ -533,11 +533,11 @@ nosuccess:
                 CMP	#' '
                 BNE	msnfail
 mschkz:
-                LDA	(xtab),Y
+                LDA	(romhead_xtab),Y
                 BEQ	mssuccess
                 ; Scan for zero terminator
 msnfail:
-                LDA	(xtab),Y
+                LDA	(romhead_xtab),Y
                 BEQ	msnfail2
                 CMP	#$FF
                 BEQ	msfail
@@ -546,14 +546,14 @@ msnfail:
                 ; Move to start of next command
 msnfail2:
                 INY
-                LDA	(xtab),Y
+                LDA	(romhead_xtab),Y
                 BMI	msnfail
                 TYA
                 CLC
-                ADC	xtab+0
-                STA	xtab+0
+                ADC	romhead_xtab+0
+                STA	romhead_xtab+0
                 BCC	msskip2
-                INC	xtab+1
+                INC	romhead_xtab+1
 msskip2:
                 PLA
                 TAY
@@ -563,11 +563,11 @@ msfail:
                 SEC
                 RTS
 mssuccess:
-                INC	xtab+0
+                INC	romhead_xtab+0
                 BCC	msskip3
-                INC	xtab+1
+                INC	romhead_xtab+1
 msskip3:
-                LDY	mstmpy
+                LDY	romhead_mstmpy
                 PLA
                 CLC
                 RTS

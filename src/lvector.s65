@@ -39,7 +39,7 @@ sppad:
 
 lvectorspa:
                 LDX	#$00
-                STX	lvectmp
+                STX	lvector_lvectmp
 lvl1:
                 LDA	#$86
                 JSR	$FFEE
@@ -65,11 +65,11 @@ lvj1:
                 JSR	$FFEE
                 LDA	#'2'
                 JSR	$FFEE
-                LDA	lvectmp
+                LDA	lvector_lvectmp
                 JSR	wdigit
                 ; if extended vector then print the
                 ; extended vector location too.
-                LDX	lvectmp
+                LDX	lvector_lvectmp
                 LDA	$201,X
                 CMP	#$FF
                 ; not - skip code
@@ -121,7 +121,7 @@ lvj2:
                 JSR	sppad
                 ; where vector points to. Colour
                 ; depicts whether OS default or not.
-                LDX	lvectmp
+                LDX	lvector_lvectmp
                 LDA	$201,X
                 JSR	wdigit
                 LDA	$200,X
@@ -130,11 +130,11 @@ lvj3:
                 JSR	$FFE7
                 PLA
                 TAX
-                LDA	lvectmp
+                LDA	lvector_lvectmp
                 CMP	#$34
                 BCS	lvl9
                 ADC	#$02
-                STA	lvectmp
+                STA	lvector_lvectmp
                 JMP	lvl1
 lvl9:
                 RTS

@@ -350,10 +350,10 @@ loadsect:
                 STY	ptab+1
                 LDY	#0
                 LDA	(ptab),Y
-                STA	tmpbuf
+                STA	discom_tmpbuf
                 INY
                 LDA	(ptab),Y
-                STA	tmpbuf+1
+                STA	discom_tmpbuf+1
                 INY
                 LDA	(ptab),Y
                 INY
@@ -454,25 +454,25 @@ doload:
                 AND	#$20
 
                 BEQ	ndel
-                LDA	deleted
+                LDA	discom_deleted
                 AND	#$0F
                 ORA	#$20
-                STA	deleted
+                STA	discom_deleted
 ndel:
 
-                LDA	tmpbuf
+                LDA	discom_tmpbuf
                 STA	param+1
-                LDA	tmpbuf+1
+                LDA	discom_tmpbuf+1
                 STA	param+2
                 LDA	#$57
                 STA	param+6
                 JSR	os7F
                 CLC
                 LDA	#0
-                STA	error
+                STA	discom_error
                 JMP	finload
 iderror:
-                STA	error
+                STA	discom_error
                 SEC
 finload:
                 PHP
@@ -488,7 +488,7 @@ finload:
                 PLA
                 TAX
                 PLP
-                LDA	error
+                LDA	discom_error
                 RTS
 
 ; --------------------------------
@@ -523,7 +523,7 @@ savesect:
                 STA	param+4
                 LDA	#3
                 STA	param+5
-                LDA	deleted
+                LDA	discom_deleted
                 AND	#$20
                 BEQ	add
                 LDA	#$4
@@ -604,32 +604,32 @@ ptabcom:
 nextlsect:
                 STA	param
                 LDA	#0
-                STA	type
+                STA	discom_type
                 BEQ	nplsect
 prevlsect:
                 STA	param
                 LDA	#$FF
-                STA	type
+                STA	discom_type
 nplsect:
-                STY	dlsect
-                STX	dtrk
+                STY	discom_dlsect
+                STX	discom_dtrk
                 TXA
                 PHA
                 TYA
                 PHA
 nplloop0:
-                LDA	type
+                LDA	discom_type
                 BEQ	nls0
-                DEC	dlsect
-                LDA	dlsect
+                DEC	discom_dlsect
+                LDA	discom_dlsect
                 CMP	#$FF
                 BEQ	incdectrk
                 BNE	nplloop1
 nls0:
-                INC	dlsect
+                INC	discom_dlsect
                 BEQ	incdectrk
 nplloop1:
-                LDA	dlsect
+                LDA	discom_dlsect
                 LDY	#$00
 nplloop2:
                 CMP	buffer1+2,Y
@@ -642,17 +642,17 @@ nplloop2:
                 BNE	nplloop2
                 BEQ	nplloop0
 incdectrk:
-                LDA	type
+                LDA	discom_type
                 BEQ	nls1
-                DEC	dtrk
+                DEC	discom_dtrk
                 BMI	nplexit
                 BPL	nls2
 nls1:
-                INC	dtrk
+                INC	discom_dtrk
 nls2:
                 JSR	ptabcom
                 LDA	param
-                LDX	dtrk
+                LDX	discom_dtrk
                 JSR	load_ids
                 LDA	param+10
                 AND	#$1F
@@ -673,8 +673,8 @@ nplfnd:
                 PLA
                 PLA
                 LDA	param
-                LDX	dtrk
-                LDY	dlsect
+                LDX	discom_dtrk
+                LDY	discom_dlsect
                 CLC
                 RTS
 
@@ -692,22 +692,22 @@ nplfnd:
 nextpsect:
                 STA	param
                 LDA	#0
-                STA	type
+                STA	discom_type
                 BEQ	nppsect
 prevpsect:
                 STA	param
                 LDA	#$FF
-                STA	type
+                STA	discom_type
 nppsect:
-                STY	dpsect
-                STX	dtrk
+                STY	discom_dpsect
+                STX	discom_dtrk
                 TXA
                 PHA
                 TYA
                 PHA
                 JSR	sort_ids
-                LDX	dpsect
-                LDA	type
+                LDX	discom_dpsect
+                LDA	discom_type
                 BEQ	nps0
                 DEX
                 BMI	idtrk
@@ -727,19 +727,19 @@ nps1:
                 PLA
                 PLA
                 LDA	param
-                LDX	dtrk
+                LDX	discom_dtrk
                 CLC
                 RTS
 idtrk:
-                LDA	type
+                LDA	discom_type
                 BEQ	nps2
-                DEC	dtrk
+                DEC	discom_dtrk
                 BMI	npsexit
                 BPL	nps3
 nps2:
-                INC	dtrk
+                INC	discom_dtrk
 nps3:
-                LDX	dtrk
+                LDX	discom_dtrk
                 JSR	ptabcom
                 LDA	param
                 JSR	load_ids

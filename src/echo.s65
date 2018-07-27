@@ -32,7 +32,7 @@ echonum:
                 JMP	echover3
 echostr:
                 JSR	wrstr
-                LDY	newy
+                LDY	common_newy
                 JMP	echover3
 exitecho:
                 RTS
@@ -59,6 +59,6 @@ echolp3:
                 BNE	echolp3
 exitwrstr:
                 JSR	$FFE7
-                LDY	newy
+                LDY	common_newy
                 LDX	#0
                 RTS

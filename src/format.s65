@@ -81,7 +81,7 @@ formloop0:
                 PHA
                 LDA	#$FF
 formover:
-                STA	finctrk
+                STA	format_finctrk
                 PLA
                 STA	param+2
                 PLA
@@ -101,7 +101,7 @@ formover:
                 STA	totrk
                 PLA
                 STA	fromtrk
-                STA	formstart
+                STA	format_formstart
                 PLA
                 STA	param
                 JSR	pcprint
@@ -133,7 +133,7 @@ goformat:
                 .byte	$00
                 LDY	tmp
 formloop2:
-                LDA	finctrk
+                LDA	format_finctrk
                 BEQ	userids
                 TYA
                 AND	#$1F
@@ -179,7 +179,7 @@ formok:
 
                 CPY	#$2A
                 BNE	exitform
-                LDA	formstart
+                LDA	format_formstart
                 BNE	exitform
                 ; Set up catalogue
                 LDX	#$00
