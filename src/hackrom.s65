@@ -80,6 +80,8 @@ IFS	=	";"
 VERSION	=	"1.19"
 DFS	=	WATFORD
 
+TUBE_CLAIM_ID = 25
+
 ;-------------------------------------------------------------------------
 ;
 ; OS routines.
@@ -90,7 +92,17 @@ osrdrm = $FFB9
 gsinit = $FFC2
 gsread = $FFC5
 osfile = $FFDD
+osbyte=$fff4
 
+;-------------------------------------------------------------------------
+;
+; Romid bits.
+;
+
+romid_rom_mask  = %00001111     ;ROM slot index
+romid_tube_mask = %01000000     ;bit 6 - set if Tube parasite RAM
+                                ;(other bits are then ignored)
+                
 ;-------------------------------------------------------------------------
 ;
 ; Zero page allocation.
@@ -156,7 +168,6 @@ param:
                 .byte ?         ;$84
                 .byte ?         ;$85
                 .byte ?         ;$86
-block:
                 .byte ?         ;$87
                 .byte ?         ;$88
                 .byte ?         ;$89
@@ -169,6 +180,10 @@ block:
 
 * = $74
 membuf:
+                .fill 8,?
+
+* = $87
+block:
                 .fill 8,?
 
 * = $80
@@ -283,14 +298,7 @@ mem_display:
                 .byte ?
                 .byte ?
 mem_tmpblock:
-                .byte ?
-                .byte ?
-                .byte ?
-                .byte ?
-                .byte ?
-                .byte ?
-                .byte ?
-                .byte ?
+                .fill 8,?
 mem_xpos:
                 .byte ?
 mem_hmode:
@@ -660,5 +668,5 @@ drive_addr = $1046
                 .include "keycoms.s65"
                 .include "recover.s65"
                 .include "echo.s65"
-                                
+                .include "mem_access.s65"                
                 

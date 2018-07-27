@@ -580,7 +580,7 @@ start:
                 JSR	pcprint
                 ; Banner at top of screen
 titmsg:
-                .word	$0716 ;MODE 7
+                .byte 22, 7 ;MODE 7
                 .byte	129
                 .text	"Memory Bank"
                 .byte	134
@@ -906,10 +906,13 @@ storeright:
 ; If there is no ROM present in
 ; this bank then print "Unknown"
 ;*********************************
-romtitle:
+romtitle: .proc
 ; Print ROM number (0-F)
+                bit romid
+                bvs tube
+rom:
                 LDA	romid
-                AND	#$0F
+                AND	#romid_rom_mask
                 TAX
                 LDA	num,X
                 STA	$7C0F
@@ -956,6 +959,21 @@ romend:
                 PLA
                 STA	poslo
                 RTS
+
+tube:
+                jsr get_tube_flag
+                beq rom         ;taken if Tube isn't actually active
+                                ;after all.
+                
+                ldx #parasitemsg.end-parasitemsg-1
+tube_loop:
+                lda parasitemsg,X
+                sta $7c0f,x
+                dex
+                bpl tube_loop
+                rts
+                
+                .pend
 
                 ;*********************************
                 ; Print info about current display
@@ -1018,9 +1036,7 @@ memcompa:
                 JSR	rdnum
                 BNE	mdefaults2
                 LDA	clibuf
-                AND	#$F
-                STA	tmp
-                JMP	start
+                jmp got_tmp
 mdefaults:
 ; Address defaults to PAGE
                 LDA	#$00
@@ -1028,7 +1044,14 @@ mdefaults:
                 LDA	$18
                 STA	poshi
 mdefaults2:
+                ; Select parasite RAM (Tube active) or current ROM
+                ; (Tube inactive).
+                jsr get_tube_flag
+                and #$40
+                bne got_tmp
+                
                 LDA	$F4
+got_tmp:
                 STA	tmp
                 JMP	start
 
@@ -1067,8 +1090,16 @@ cursor3:
 
 
 ; The three modes
-dismsg	.text	"Disassembly",0
-hexmsg	.text	"Hexadecimal",0
-ascmsg	.text	"ASCII"
+dismsg:
+                .text	"Disassembly",0
+hexmsg:
+                .text	"Hexadecimal",0
+ascmsg:
+                .text	"ASCII"
                 .byte	152
                 .byte	0
+parasitemsg: .proc
+                .text "Parasite"
+end:
+                .pend
+                

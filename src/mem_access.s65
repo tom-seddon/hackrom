@@ -1,0 +1,278 @@
+;-------------------------------------------------------------------------
+;
+; Thunks copied over the stack.
+; 
+relocstart:
+                .logical $100
+mem_access_thunk: .proc
+go:
+                jmp *&$ff00
+thunk_lsb = *-2
+
+rdposx:
+                sta $fe30
+                lda (poslo),Y
+                
+finish:
+                ldx $f4
+                stx $fe30
+                ldx #$ff
+original_x = *-1
+                plp
+                rts
+
+rdtmpposx:
+                sta $fe30
+                lda (tmpposlo),Y
+                jmp finish
+
+wrposx: .proc
+                sta $fe30
+                lda #$ff
+value = * -1
+                sta (poslo),Y
+                jmp finish
+                .pend
+
+tube_mask:
+                .byte 0
+tube_addr:
+                .fill 4,0
+end:
+                .pend
+                .here
+relocend:
+
+                .cerror (>mem_access_thunk)!=(>mem_access_thunk.end),"mem access thunk mustn't straddle a page boundary"
+                
+;-------------------------------------------------------------------------
+; 
+; Read a byte from memory. Takes a byte from memory location
+; pos(lo/hi)% + Y register and returns value in A reg. X and Y
+; registers are preserved
+; 
+;-------------------------------------------------------------------------
+
+rdposx: .proc
+                lda #<mem_access_thunk.rdposx
+                jsr call_mem_access_thunk
+                bcs tube
+                rts
+
+tube:
+                ldx #poslo
+                jmp read_tube
+                .pend
+
+rdtmpposx: .proc
+                lda #<mem_access_thunk.rdtmpposx
+                jsr call_mem_access_thunk
+                bcs tube
+                rts
+
+tube:
+                ldx #tmpposlo
+                jmp read_tube
+                .pend
+
+;-------------------------------------------------------------------------
+;
+; Opposite of rdposx% - We write a byte to poslo%+Y
+;
+;-------------------------------------------------------------------------
+
+wrposx: .proc
+                sta mem_access_thunk.wrposx.value
+                lda #<mem_access_thunk.wrposx
+                jsr call_mem_access_thunk
+                bcc done
+                
+tube:
+                tya
+                pha
+                
+                lda #1          ;multi byte, host->parasite
+                ldx #poslo
+                jsr prepare_tube
+                bcs done
+                
+                lda mem_access_thunk.wrposx.value
+                sta $fee5
+                
+                jsr release_tube
+
+done:
+                ldx mem_access_thunk.original_x
+                pla
+                tay
+                
+                rts
+                .pend
+
+
+;-------------------------------------------------------------------------
+;
+; Call mem access thunk to read memory if possible.
+;
+; Entry: A = LSB of memory access routine inside relocated thunk
+; Exit:  C=0 if routine was called
+;        C=1 if Tube access is required
+;        X/Y preserved
+call_mem_access_thunk: .proc
+                sta mem_access_thunk.thunk_lsb
+                stx mem_access_thunk.original_x
+
+                lda romid
+                bit mem_access_thunk.tube_mask
+                bne tube
+
+                and #romid_rom_mask
+
+                clc
+                php
+                sei
+                jmp mem_access_thunk
+
+tube:
+                sec
+                rts
+                .pend
+
+;-------------------------------------------------------------------------
+;
+; Read through the Tube.
+;
+; Entry: X = ZP address of 2-byte parasite address
+;        Y = offset to add to parasite address
+;
+; Exit:  A = byte read
+;        X restored from mem_access_thunk.original_x
+;        Y preserved
+read_tube: .proc
+                tya
+                pha
+                
+                lda #0          ;multi byte, parasite->host
+                jsr prepare_tube
+                bcs done
+
+                jsr ret         ;12 cycles
+                jsr ret         ;24 cycles
+                jsr ret         ;36 cycles
+                jsr ret         ;48 cycles
+
+                lda $fee5
+                sta mem_access_thunk.wrposx.value ;well, it has to go
+                                                  ;somewhere.
+                                                  
+                jsr release_tube
+
+done:
+                ldx mem_access_thunk.original_x
+                pla
+                tay
+                
+                lda mem_access_thunk.wrposx.value
+
+ret:
+                rts
+                .pend
+
+;-------------------------------------------------------------------------
+;
+; Prepare Tube for read or write.
+;
+; Entry: A = transfer reason code (see app note p9)
+;        X = ZP address of 2-byte parasite address
+;        Y = offset to add to parasite address
+; 
+; Exit: C=0 if Tube claimed and transfer initiated
+; 
+;       C=1 if transfer canceled because the address is that of one of
+;       the Tube registers
+; 
+prepare_tube: .proc
+                ; Save transfer reason.
+                pha
+                
+                ; form 32-bit Tube address plus offset.
+                clc
+                tya
+                adc 0,x
+                sta mem_access_thunk.tube_addr+0
+                lda #0
+                adc 1,x
+                sta mem_access_thunk.tube_addr+1
+                lda #0
+                sta mem_access_thunk.tube_addr+2
+                sta mem_access_thunk.tube_addr+3
+
+                ; try to avoid the Tube hardware registers.
+                lda mem_access_thunk.tube_addr+1
+                cmp #$fe
+                bne claim_tube
+
+                lda mem_access_thunk.tube_addr+0
+                cmp #$f8
+                bcc claim_tube
+
+                pla
+                rts
+
+claim_tube:
+                lda #$c0+TUBE_CLAIM_ID
+                jsr $406
+                bcc claim_tube
+
+                ; point at parameter block, set transfer reason, and
+                ; initiate.
+                ldx #<mem_access_thunk.tube_addr
+                ldy #>mem_access_thunk.tube_addr
+                pla
+                jsr $406
+                
+                clc             ;all good
+                rts
+                .pend
+
+;-------------------------------------------------------------------------
+;
+; Release Tube.
+; 
+release_tube: .proc
+                lda #$80+TUBE_CLAIM_ID
+                jmp $406
+                .pend
+                
+;---------------------------------
+; Relocates the read and write
+; routines over the stack so that
+; we can read/write to other ROMs
+;---------------------------------
+reloc: .proc
+                LDX	#relocend-relocstart
+copyrdwr:
+                LDA	relocstart,X
+                STA	$100,X
+                DEX
+                BPL	copyrdwr
+
+                ; Check Tube presence and set up Tube mask. When no
+                ; Tube, the Tube mask is 0, so the Tube parasite RAM
+                ; bit is ignored.
+                jsr get_tube_flag
+                and #romid_tube_mask
+                sta mem_access_thunk.tube_mask
+                
+                RTS
+                .pend
+
+get_tube_flag: .proc
+                lda #234
+                ldx #0
+                ldy #255
+                jsr osbyte
+                txa
+                rts
+                .pend
+                
