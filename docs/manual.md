@@ -263,15 +263,15 @@ Hex dump keys:
 Disassembly keys:
 
 | Key | Function |
-|---
-| Tab |    switch to hex dump mode
-| Up arrow       | Scroll up 1 line (currently 1, 2 or 3 bytes lower in memory)
-| Down arrow     | Scroll down 1 line (1 opcode bytes worth higher in memory)
-| Cntrl+L/R arrow| Change ROM bank down (L) or up (R) one  
-| Cntrl+U/D arrow| Move up or down memory by &80 bytes
-| Shift+U/D arrow| Move up or down memory by &100 bytes
-| Escape         | Quit
-| Anything else  | Refresh screen
+|---|---|
+| Tab |    switch to hex dump mode |
+| Up arrow       | Scroll up 1 line (currently 1, 2 or 3 bytes lower in memory) |
+| Down arrow     | Scroll down 1 line (1 opcode bytes worth higher in memory) |
+| Cntrl+L/R arrow| Change ROM bank down (L) or up (R) one   |
+| Cntrl+U/D arrow| Move up or down memory by &80 bytes |
+| Shift+U/D arrow| Move up or down memory by &100 bytes |
+| Escape         | Quit |
+| Anything else  | Refresh screen |
 
 
 ## Memory Copy
@@ -397,14 +397,15 @@ of parameters used to point to a sector on the disk.
 
 Control Panel Keys:
 
-
-| Tab         |    Move to next field
-| Return      |    Load sector
-| Escape      |    Quit DEDIT
-| Cntrl-P     |    Put DEDIT in physical sector mode
-| Cntrl-L     |    Put DEDIT in logical sector mode
-| Left arrow  |    Move cursor in field left
-| Right Arrow |    Move cursor in field right
+| Key | Function |
+|---|---|
+| Tab         |    Move to next field |
+| Return      |    Load sector |
+| Escape      |    Quit DEDIT |
+| Cntrl-P     |    Put DEDIT in physical sector mode |
+| Cntrl-L     |    Put DEDIT in logical sector mode |
+| Left arrow  |    Move cursor in field left |
+| Right Arrow |    Move cursor in field right |
 
 
 To move the block cursor around the fields use the TAB key. Each field
@@ -447,18 +448,20 @@ There are various control keys available during the editing session,
 some for moving around the screen and others for moving around the
 disk. These are:
 
-| Up arrow         |       Move up a line in the editing area
-| Down arrow       |       Move down a line in the editing area
-| Left arrow       |       Move cursor left
-| Right arrow      |       Move cursor right
-| Shift+L/R arrow  |       Move to far left/right of editing area
-| Shift+U/D arrow  |       Move to top/bottom of editing area
-| Tab              |       Toggle between hex-byte and ascii-char editing
-| Copy             |       Write the edited sector to the disk
-| Cntrl+R/L arrow  |       Move down/up a track on the disk
-| Cntrl+U/D arrow  |       Move up/down a sector on the disk
-| Escape           |       Quit to control panel
-| Cntrl Escape     |       Quit DEDIT
+| Key | Function |
+|---|---|
+| Up arrow         |       Move up a line in the editing area |
+| Down arrow       |       Move down a line in the editing area |
+| Left arrow       |       Move cursor left |
+| Right arrow      |       Move cursor right |
+| Shift+L/R arrow  |       Move to far left/right of editing area |
+| Shift+U/D arrow  |       Move to top/bottom of editing area |
+| Tab              |       Toggle between hex-byte and ascii-char editing |
+| Copy             |       Write the edited sector to the disk |
+| Cntrl+R/L arrow  |       Move down/up a track on the disk |
+| Cntrl+U/D arrow  |       Move up/down a sector on the disk |
+| Escape           |       Quit to control panel |
+| Cntrl Escape     |       Quit DEDIT |
 
 The only editing keys which work in hex-byte mode are 0..9, A..F, but
 in ascii-char edit mode all keys can be used to edit.
@@ -909,4 +912,3 @@ A prefix of '*' represents currently unimplemented commands.
     * HBREAK
       RECOVER
       ECHO (byte) ...; (string) ...; ((byte)("string")) ...
-`
