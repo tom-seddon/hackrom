@@ -13,10 +13,12 @@ TOM:=1
 endif
 endif
 
+VER?=$(shell date)
+
 .PHONY:all
 all:
 	$(MKDIR) $(OUTPUT)
-	$(TASS) hackrom.s65 -L$(OUTPUT)/hackrom.lst -o$(OUTPUT)/hackrom.rom
+	$(TASS) hackrom.s65 -L$(OUTPUT)/hackrom.lst -o$(OUTPUT)/hackrom.rom "-DVERSION=\"$(VER)\""
 ifdef CTAGS
 	@$(CTAGS) --langdef=64tass --langmap=64tass:.s65 '--regex-64tass=/^([A-Za-z0-9_]+)/\\1/' -eR .
 	@$(CHECKSUM) $(OUTPUT)/hackrom.rom
