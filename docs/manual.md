@@ -306,7 +306,7 @@ Syntax:
 
 Syntax:
 
-*MSEARCH <from> <(to)(+len)> <(byte)("string")> ... (; <bank>)
+    *MSEARCH <from> <(to)(+len)> <(byte)("string")> ... (; <bank>)
 
 
 ## Memory Cyclic Redundancy Check (UNIMPLEMENTED)
@@ -609,7 +609,7 @@ Syntax:
 
 Syntax:
 
-*CONCAT <dest fsp> <src fsp> ...
+    *CONCAT <dest fsp> <src fsp> ...
 
 
 ## Multiple File Copy (UNIMPLEMENTED)
@@ -617,7 +617,7 @@ Syntax:
 
 Syntax:
 
-*FCOPY <drv> <drv> (<fsp> ...)
+    *FCOPY <drv> <drv> (<fsp> ...)
 
 
 ## Disassembly (UNIMPLEMENTED)
@@ -638,7 +638,7 @@ Syntax:
 
 Description:
 
-"*CLOSE 0" will close all channels.
+`*CLOSE 0` will close all channels.
 
 
 ## DES Encryption (UNIMPLEMENTED)
@@ -733,22 +733,18 @@ Syntax:
 ## Sending commands to other ROMs
 
 
-    Syntax:
+Syntax:
 
-*SEND <bank> <string>
+    *SEND <bank> <string>
 
 
 -------------------------------------------------------------------------------
 
-                               General Commands
-                               ================
+# General Commands
 
+## Introduction
 
-                                 Introduction
-                                 ------------
-
-Commands
---------
+## Commands
 
 * `PBUFF` - Sideways RAM printer buffer
 * `LVECTORS` - List system vectors
