@@ -462,14 +462,11 @@ get_PAGE_MSB: .proc
                 jsr get_tube_flag
                 jsr is_BASIC
 
-host:
+                bcc basic
+
+not_basic:
                 cmp #0
-                bne parasite
-                bcs host_not_basic
-                
-host_basic:
-                lda $18
-                rts
+                bne parasite_not_basic
 
 host_not_basic:
                 ; just get OSHWM
@@ -494,8 +491,18 @@ host_not_basic:
 
                 rts
 
-parasite:
-                bcs parasite_not_basic
+parasite_not_basic:
+                ; just get OSHWM
+                lda #$08
+                rts
+
+basic:
+                cmp #0
+                bne parasite_basic
+                
+host_basic:
+                lda $18
+                rts
 
 parasite_basic:
                 pha
@@ -517,11 +524,6 @@ parasite_basic:
                 tax
                 pla
 
-                rts
-
-parasite_not_basic:
-                ; just get OSHWM
-                lda #$08
                 rts
                 
                 .pend
