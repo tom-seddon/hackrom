@@ -36,8 +36,6 @@ value = * -1
 
 tube_mask:
                 .byte 0
-tube_addr:
-                .fill 4,0
 end:
                 .pend
                 .here
@@ -72,7 +70,35 @@ rdtmpposx: .proc
 
 tube:
                 ldx #tmpposlo
-                jmp read_tube
+                .cerror *!=read_tube,"oops"
+                .pend
+
+read_tube: .proc
+                tya
+                pha
+
+                clc
+                tya
+                adc 0,x
+                pha
+
+                lda 1,x
+                adc #0
+                tay
+
+                pla
+                tax
+
+                jsr read_parasite
+
+                tax
+
+                pla
+                tay
+
+                txa
+                ldx mem_access_thunk.original_x
+                rts
                 .pend
 
 ;-------------------------------------------------------------------------
@@ -90,23 +116,26 @@ wrposx: .proc
 tube:
                 tya
                 pha
-                
-                lda #1          ;multi byte, host->parasite
-                ldx #poslo
-                jsr prepare_tube
-                bcs done
-                
+
+                clc
+                tya
+                adc poslo+0
+                tax
+
+                lda poslo+1
+                adc #0
+                tay
+
                 lda mem_access_thunk.wrposx.value
-                sta $fee5
-                
-                jsr release_tube
+                jsr write_parasite
 
                 pla
                 tay
-                
-done:
+
                 ldx mem_access_thunk.original_x
-                
+                lda mem_access_thunk.wrposx.value
+
+done:
                 rts
                 .pend
 
@@ -141,101 +170,28 @@ tube:
 
 ;-------------------------------------------------------------------------
 ;
-; Read through the Tube.
+; Call this to get the 48 cycle Tube read delay.
 ;
-; Entry: X = ZP address of 2-byte parasite address
-;        Y = offset to add to parasite address
-;
-; Exit:  A = byte read
-;        X restored from mem_access_thunk.original_x
-;        Y preserved
-read_tube: .proc
-                tya
-                pha
-                
-                lda #0          ;multi byte, parasite->host
-                jsr prepare_tube
-                bcs done
-
-                jsr ret         ;12 cycles
-                jsr ret         ;24 cycles
-                jsr ret         ;36 cycles
-                jsr ret         ;48 cycles
-
-                lda $fee5
-                sta mem_access_thunk.wrposx.value ;well, it has to go
-                                                  ;somewhere.
-                                                  
-                jsr release_tube
-
+tube_read_delay: .proc
+                ; +6 here.
+                jsr done        ;+12 = 18
+                jsr done        ;+12 = 30
+                jsr done        ;+12 = 42
 done:
-                ldx mem_access_thunk.original_x
-                pla
-                tay
-                
-                lda mem_access_thunk.wrposx.value
-
-ret:
-                rts
+                rts             ;+6 = 48
                 .pend
-
+                
 ;-------------------------------------------------------------------------
 ;
-; Prepare Tube for read or write.
-;
-; Entry: A = transfer reason code (see app note p9)
-;        X = ZP address of 2-byte parasite address
-;        Y = offset to add to parasite address
+; Claim Tube.
 ; 
-; Exit: C=0 if Tube claimed and transfer initiated
-; 
-;       C=1 if transfer canceled because the address is that of one of
-;       the Tube registers
-; 
-prepare_tube: .proc
-                ; Save transfer reason.
-                pha
-                
-                ; form 32-bit Tube address plus offset.
-                clc
-                tya
-                adc 0,x
-                sta mem_access_thunk.tube_addr+0
-                lda #0
-                adc 1,x
-                sta mem_access_thunk.tube_addr+1
-                lda #0
-                sta mem_access_thunk.tube_addr+2
-                sta mem_access_thunk.tube_addr+3
-
-                ; try to avoid the Tube hardware registers.
-                lda mem_access_thunk.tube_addr+1
-                cmp #$fe
-                bne claim_tube
-
-                lda mem_access_thunk.tube_addr+0
-                cmp #$f8
-                bcc claim_tube
-
-                pla
-                rts
-
-claim_tube:
+claim_tube: .proc
                 lda #$c0+TUBE_CLAIM_ID
                 jsr $406
                 bcc claim_tube
-
-                ; point at parameter block, set transfer reason, and
-                ; initiate.
-                ldx #<mem_access_thunk.tube_addr
-                ldy #>mem_access_thunk.tube_addr
-                pla
-                jsr $406
-                
-                clc             ;all good
-                rts
+                rts                
                 .pend
-
+                
 ;-------------------------------------------------------------------------
 ;
 ; Release Tube.
@@ -268,12 +224,303 @@ copyrdwr:
                 RTS
                 .pend
 
+;-------------------------------------------------------------------------
+;
+; Get flag in A indicating tube presence.
+;
+; Exit: A=$ff if tube present, $00 if not, and Z set accordingly
+;       X/Y preserved
+
 get_tube_flag: .proc
-                lda #234
-                ldx #0
-                ldy #255
-                jsr osbyte
                 txa
+                pha
+                tya
+                pha
+
+                lda #234
+                jsr osbyte_x0_y255
+                cpx #$ff        ;C set if Tube present
+
+                pla
+                tay
+                pla
+                tax
+
+                lda #0
+                sbc #0
+                eor #$ff
+                
+                rts
+                .pend
+
+;-------------------------------------------------------------------------
+; 
+; Read byte from parasite memory.
+;
+; Entry: YX = address
+;
+; Exit:  A = value read
+
+read_parasite: .proc
+                ; avoid Tube I/O
+                cpy #$fe
+                bne good_address
+                cpx #$f8
+                bcc good_address
+bad_address:
+                lda #$ff
+                rts
+
+good_address:
+                lda #0
+                pha
+                pha
+                tya
+                pha
+                txa
+                pha
+
+                jsr claim_tube
+
+                tsx
+                inx
+                ldy #1
+                lda #0          ;multi byte, parasite->host
+                jsr $406
+
+                jsr tube_read_delay
+
+                lda $fee5
+                pha
+
+                jsr release_tube
+                
+                pla
+
+                tsx
+                inx
+                inx
+                inx
+                inx
+                txs
+                
+                rts
+                .pend
+
+;-------------------------------------------------------------------------
+;
+; Write byte to parasite memory.
+;
+; Entry: YX = address
+;        A = byte to write
+
+write_parasite: .proc
+                ; avoid Tube I/O
+                cpy #$fe
+                bne good_address
+                cpx #$f8
+                bcs done
+                
+good_address:
+                pha             ;save byte to write
+
+                lda #0
+                pha
+                pha
+                tya
+                pha
+                txa
+                pha
+
+                jsr claim_tube
+                
+                tsx
+                inx
+                ldy #1
+                lda #1          ;multi byte, host->parasite
+                jsr $406
+
+                ; discard address
+                tsx
+                inx
+                inx
+                inx
+                inx
+                txs
+
+                pla             ;get byte to write
+                sta $fee5
+
+                jsr release_tube
+
+done:
                 rts
                 .pend
                 
+                
+                
+;-------------------------------------------------------------------------
+;
+; Check if the current language is BASIC.
+;
+; Exit: C=0 if BASIC, C=1 if not
+;       A/X/Y preserved
+is_BASIC: .proc
+                pha
+                txa
+                pha
+                tya
+                pha
+
+                lda tmp
+                pha
+
+                lda #187        ;read BASIC ROM slot
+                jsr osbyte_x0_y255
+                stx tmp
+
+                lda #252        ;read current language ROM
+                jsr osbyte_x0_y255
+                cpx tmp
+
+                clc
+                beq +
+                sec
++
+
+                pla
+                sta tmp               
+
+                pla
+                tay
+                pla
+                tax
+                pla
+                rts
+                .pend
+                
+;-------------------------------------------------------------------------
+;
+; Read byte from BASIC's zero page workspace.
+;
+; Entry: X = address of byte to read
+;
+; Exit: zero page byte in A
+;
+;       C=1 if BASIC is not the current language
+
+read_BASIC_zp: .proc
+zp_addr = tmp
+basic_slot = tmp2
+                jsr is_BASIC
+                php
+                
+is_basic:
+                jsr get_tube_flag
+                bne read_parasite
+
+read_host:
+                lda 0,x
+                plp
+                rts
+
+read_parasite:
+                ldy #0
+                jsr read_parasite
+                plp
+                rts
+
+                .pend
+
+;-------------------------------------------------------------------------
+;
+; Get default romid.
+;
+; Exit: A = $40 if Tube active, or contents of $f4 if not
+;       X/Y preserved
+
+get_default_romid: .proc
+                jsr get_tube_flag
+                bne tube
+                lda $f4
+                rts
+tube:
+                lda #romid_tube_mask
+                rts
+                .pend
+                
+;-------------------------------------------------------------------------
+;
+; Get useful PAGE MSB.
+;
+; Do various bits and bobs to try to get a useful value...
+;
+; Exit: A = PAGE MSB
+;       X/Y preserved
+
+get_PAGE_MSB: .proc
+                jsr get_tube_flag
+                jsr is_BASIC
+
+host:
+                cmp #0
+                bne parasite
+                bcs host_not_basic
+                
+host_basic:
+                lda $18
+                rts
+
+host_not_basic:
+                ; just get OSHWM
+                pha
+                txa
+                pha
+                tya
+                pha
+
+                lda #131
+                jsr osbyte
+
+                tsx             ;+1=y +2=x +3=a
+                sty $103,x
+
+                pla
+                tay
+                pla
+                tax
+                pla
+
+                rts
+
+parasite:
+                bcs parasite_not_basic
+
+parasite_basic:
+                pha
+                txa
+                pha
+                tya
+                pha
+
+                ldy #$00
+                ldx #$18
+                jsr read_parasite
+
+                tsx             ;+1=y +2=x +3=a
+                sta $103,x
+
+                pla
+                tay
+                pla
+                tax
+                pla
+
+                rts
+
+parasite_not_basic:
+                ; just get OSHWM
+                lda #$08
+                rts
+                
+                .pend

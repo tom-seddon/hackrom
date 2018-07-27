@@ -1039,18 +1039,12 @@ memcompa:
                 jmp got_tmp
 mdefaults:
 ; Address defaults to PAGE
-                LDA	#$00
-                STA	poslo
-                LDA	$18
-                STA	poshi
+                lda #0
+                sta posli
+                jsr get_PAGE_MSB
+                sta poshi
 mdefaults2:
-                ; Select parasite RAM (Tube active) or current ROM
-                ; (Tube inactive).
-                jsr get_tube_flag
-                and #$40
-                bne got_tmp
-                
-                LDA	$F4
+                jsr get_default_romid
 got_tmp:
                 STA	tmp
                 JMP	start

@@ -27,7 +27,7 @@ rdoptrom:
                 ; use default of this rom
                 PLA
                 TAX
-                LDA	$F4
+                jsr get_default_romid ;LDA	$F4
                 STA	membuf,X
                 INX
                 ; clear zero flag - already done.

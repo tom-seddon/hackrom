@@ -1027,3 +1027,9 @@ keycom:
                 BEQ	doosfblk
                 JMP	synerr
 
+
+osbyte_x0_y255:
+                ldx #0
+                ldy #255
+                jmp osbyte
+                
