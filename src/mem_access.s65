@@ -483,7 +483,8 @@ host_not_basic:
                 jsr osbyte
 
                 tsx             ;+1=y +2=x +3=a
-                sty $103,x
+                tya
+                sta $103,x
 
                 pla
                 tay
