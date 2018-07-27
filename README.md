@@ -1,7 +1,8 @@
 # Hackrom
 
 Handy utility ROM for the BBC Micro by James Bonfield and Stephen
-Youell. Includes minor updates and a 
+Youell. This slightly updated version has better support for the
+second processor.
 
 > This code is copyright 1993 by James Bonfield and Stephen Youell.
 > You may copy and distribute copies of this source code provided that
@@ -17,4 +18,3 @@ Markdown sprinkled on it.
 [Releases](./releases/) - pick folder with biggest version number...
 
 [Build instructions](./docs/build.md).
-
