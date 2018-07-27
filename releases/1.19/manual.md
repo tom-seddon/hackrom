@@ -1,80 +1,3 @@
-# Contents
-
-Introduction
-
-The Command Line
-        Numerical values
-        String values
-        Syntax definitions
-        Current syntax problems
-
-Obtaining Help
-
-Memory Commands
-        Introduction
-        Memory Editor and Disassembler
-                Hex dump mode
-                Disassembly mode
-                Summary
-        Memory Copy
-        Memory Swap
-        Memory Compare
-        Memory Fill
-        Memory Search
-        Memory CRC
-
-Disk Commands
-        Introduction
-        Disk Editor
-                Control Panel
-                Control Panel Keys
-        Sector ID editor
-        Disk Formatter
-        Loading and Saving Sectors
-        Load Sector IDs
-        Display Sector IDs
-        Verify Disk
-        Fill Disk
-        Fast Backup
-        Permanent *ENABLE
-        Display Disk Gaps
-        Display Disk Format
-
-File Commands
-        Introduction
-        Loading and Running commands in DFS workspace
-        'Safe' File Removal
-        File CRCs
-        Updating File Start and Execution Addresses
-        Concatenating Files
-        Multiple File Copy
-        Disassembly
-        Closing IO Channels
-        DES Encryption
-        Comparing Files
-
-Rom Commands
-        Introduction
-        List ROM bank information
-        Switching ROMs on and off
-        Loading and Saving ROMs
-        Obtaining detailed ROM information
-        Master Compatible Sideways RAM commands
-        Building a *ROM filing system ROM image
-        Sending commands to other ROMs
-
-General Commands
-        Introduction
-        Printer Buffer
-        List System Vectors
-        *KEY manipulations
-        Numeric base conversions
-        BREAK commands
-        'Bad Program' recovery
-        Command Line 'Echo'
-
-Command Summary
-
 -------------------------------------------------------------------------------
 
 # Introduction
@@ -93,12 +16,12 @@ hexadecimal.
 In addition to this, there are a set of predefined constant available.
 These are:
 
-* '@ROM' - &8000
-* '@PAGE' - Current value of BASIC `PAGE` (eg &1900)
-* '@TOP' - Current value of BASIC `TOP` (eg &1902)
-* '@LOMEM' - Current value of `LOMEM`
-* '@HIMEM' - Current value of `HIMEM`
-* '@OSHWM' - Current value of OSHWM
+* `@ROM` - &8000
+* `@PAGE` - Current value of BASIC `PAGE` (eg &1900)
+* `@TOP` - Current value of BASIC `TOP` (eg &1902)
+* `@LOMEM` - Current value of `LOMEM`
+* `@HIMEM` - Current value of `HIMEM`
+* `@OSHWM` - Current value of OSHWM
 
 A numerical value may be derived as an increment to a previous
 numerical value by using the `+` prefix.
@@ -322,33 +245,33 @@ force a refresh press an unrecognised key such as the spacebar.
 Hex dump keys:
 
 | Key | Function |
-|---
-| Tab | switch to disassembly mode
-| Copy | toggle editing position from hex to ASCII and back again.
-| Left arrow | Move cursor left (one byte lower in memory)
-| Right arrow | Move cursor right (one byte higher in memory)
-| Up arrow | Scroll up (move eight bytes lower in memory)
-| Down arrow | Scroll down (move eight bytes higher in memory)
-| Cntrl+L/R arrow | Change ROM bank down (L) or up (R) one  
-| Cntrl+U/D arrow | Move up or down memory by &80 bytes
-| Shift+L/R arrow | Jump to left or right of current line on screen
-| Shift+U/D arrow | Move up or down memory by &100 bytes
-| Escape | Quit
-| Other | Edit the data below the cursor. This will either change a nibble or change a byte depending on editing position
+|---|---|
+| Tab | switch to disassembly mode |
+| Copy | toggle editing position from hex to ASCII and back again. |
+| Left arrow | Move cursor left (one byte lower in memory) |
+| Right arrow | Move cursor right (one byte higher in memory) |
+| Up arrow | Scroll up (move eight bytes lower in memory) |
+| Down arrow | Scroll down (move eight bytes higher in memory) |
+| Cntrl+L/R arrow | Change ROM bank down (L) or up (R) one   |
+| Cntrl+U/D arrow | Move up or down memory by &80 bytes |
+| Shift+L/R arrow | Jump to left or right of current line on screen |
+| Shift+U/D arrow | Move up or down memory by &100 bytes |
+| Escape | Quit |
+| Other | Edit the data below the cursor. This will either change a nibble or change a byte depending on editing position |
 
 
 Disassembly keys:
 
 | Key | Function |
-|---
-| Tab |    switch to hex dump mode
-| Up arrow       | Scroll up 1 line (currently 1, 2 or 3 bytes lower in memory)
-| Down arrow     | Scroll down 1 line (1 opcode bytes worth higher in memory)
-| Cntrl+L/R arrow| Change ROM bank down (L) or up (R) one  
-| Cntrl+U/D arrow| Move up or down memory by &80 bytes
-| Shift+U/D arrow| Move up or down memory by &100 bytes
-| Escape         | Quit
-| Anything else  | Refresh screen
+|---|---|
+| Tab |    switch to hex dump mode |
+| Up arrow       | Scroll up 1 line (currently 1, 2 or 3 bytes lower in memory) |
+| Down arrow     | Scroll down 1 line (1 opcode bytes worth higher in memory) |
+| Cntrl+L/R arrow| Change ROM bank down (L) or up (R) one   |
+| Cntrl+U/D arrow| Move up or down memory by &80 bytes |
+| Shift+U/D arrow| Move up or down memory by &100 bytes |
+| Escape         | Quit |
+| Anything else  | Refresh screen |
 
 
 ## Memory Copy
@@ -383,7 +306,7 @@ Syntax:
 
 Syntax:
 
-*MSEARCH <from> <(to)(+len)> <(byte)("string")> ... (; <bank>)
+    *MSEARCH <from> <(to)(+len)> <(byte)("string")> ... (; <bank>)
 
 
 ## Memory Cyclic Redundancy Check (UNIMPLEMENTED)
@@ -474,14 +397,15 @@ of parameters used to point to a sector on the disk.
 
 Control Panel Keys:
 
-
-| Tab         |    Move to next field
-| Return      |    Load sector
-| Escape      |    Quit DEDIT
-| Cntrl-P     |    Put DEDIT in physical sector mode
-| Cntrl-L     |    Put DEDIT in logical sector mode
-| Left arrow  |    Move cursor in field left
-| Right Arrow |    Move cursor in field right
+| Key | Function |
+|---|---|
+| Tab         |    Move to next field |
+| Return      |    Load sector |
+| Escape      |    Quit DEDIT |
+| Cntrl-P     |    Put DEDIT in physical sector mode |
+| Cntrl-L     |    Put DEDIT in logical sector mode |
+| Left arrow  |    Move cursor in field left |
+| Right Arrow |    Move cursor in field right |
 
 
 To move the block cursor around the fields use the TAB key. Each field
@@ -524,18 +448,20 @@ There are various control keys available during the editing session,
 some for moving around the screen and others for moving around the
 disk. These are:
 
-| Up arrow         |       Move up a line in the editing area
-| Down arrow       |       Move down a line in the editing area
-| Left arrow       |       Move cursor left
-| Right arrow      |       Move cursor right
-| Shift+L/R arrow  |       Move to far left/right of editing area
-| Shift+U/D arrow  |       Move to top/bottom of editing area
-| Tab              |       Toggle between hex-byte and ascii-char editing
-| Copy             |       Write the edited sector to the disk
-| Cntrl+R/L arrow  |       Move down/up a track on the disk
-| Cntrl+U/D arrow  |       Move up/down a sector on the disk
-| Escape           |       Quit to control panel
-| Cntrl Escape     |       Quit DEDIT
+| Key | Function |
+|---|---|
+| Up arrow         |       Move up a line in the editing area |
+| Down arrow       |       Move down a line in the editing area |
+| Left arrow       |       Move cursor left |
+| Right arrow      |       Move cursor right |
+| Shift+L/R arrow  |       Move to far left/right of editing area |
+| Shift+U/D arrow  |       Move to top/bottom of editing area |
+| Tab              |       Toggle between hex-byte and ascii-char editing |
+| Copy             |       Write the edited sector to the disk |
+| Cntrl+R/L arrow  |       Move down/up a track on the disk |
+| Cntrl+U/D arrow  |       Move up/down a sector on the disk |
+| Escape           |       Quit to control panel |
+| Cntrl Escape     |       Quit DEDIT |
 
 The only editing keys which work in hex-byte mode are 0..9, A..F, but
 in ascii-char edit mode all keys can be used to edit.
@@ -683,7 +609,7 @@ Syntax:
 
 Syntax:
 
-*CONCAT <dest fsp> <src fsp> ...
+    *CONCAT <dest fsp> <src fsp> ...
 
 
 ## Multiple File Copy (UNIMPLEMENTED)
@@ -691,7 +617,7 @@ Syntax:
 
 Syntax:
 
-*FCOPY <drv> <drv> (<fsp> ...)
+    *FCOPY <drv> <drv> (<fsp> ...)
 
 
 ## Disassembly (UNIMPLEMENTED)
@@ -712,7 +638,7 @@ Syntax:
 
 Description:
 
-"*CLOSE 0" will close all channels.
+`*CLOSE 0` will close all channels.
 
 
 ## DES Encryption (UNIMPLEMENTED)
@@ -807,22 +733,18 @@ Syntax:
 ## Sending commands to other ROMs
 
 
-    Syntax:
+Syntax:
 
-*SEND <bank> <string>
+    *SEND <bank> <string>
 
 
 -------------------------------------------------------------------------------
 
-                               General Commands
-                               ================
+# General Commands
 
+## Introduction
 
-                                 Introduction
-                                 ------------
-
-Commands
---------
+## Commands
 
 * `PBUFF` - Sideways RAM printer buffer
 * `LVECTORS` - List system vectors
@@ -986,4 +908,3 @@ A prefix of '*' represents currently unimplemented commands.
     * HBREAK
       RECOVER
       ECHO (byte) ...; (string) ...; ((byte)("string")) ...
-`
