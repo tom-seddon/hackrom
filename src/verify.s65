@@ -185,10 +185,6 @@ vnexttrk:
 ver_exit:
                 RTS
 
-
-
-
-vnumsects = $70
 everify:
                 PLA
                 STA	totrk

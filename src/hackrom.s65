@@ -87,6 +87,9 @@ DFS	=	WATFORD
 oswrch = $ffee
 osnewl = $ffe7
 osrdrm = $FFB9
+gsinit = $FFC2
+gsread = $FFC5
+osfile = $FFDD
 
 ;-------------------------------------------------------------------------
 ;
@@ -109,9 +112,12 @@ dtrk:
 lvectmp:
 kltmp:
 basptr:
+newy:
+vnumsects:
                 .byte ?         ;$70
 tmpam:
 dlsect:
+endstr:
                 .byte ?         ;$71
 mstmpy:
 htmp:
@@ -331,6 +337,9 @@ numzpage = $20
 ;
 ; Spare OS 1.20 stuff.
 ;
+* = $2ee
+osfileb:
+                
 * = $39f
 stacksave:
                 .byte ?

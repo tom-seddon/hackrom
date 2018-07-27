@@ -152,10 +152,6 @@ asc_hex:
 ; style conversion. Write the converted
 ; string back out over the top of the
 ; old string and pad out with chars.
-gsinit = $FFC2
-gsread = $FFC5
-newy = $70
-endstr = $71
 ;
 rdquoted:
 quote:
@@ -952,12 +948,6 @@ narmsg	.text	"Unknown"
                 ; current bank.
 copyright	.text	")C("
 
-; Relocate to $100 - but assemble at
-; current position (*), remembering
-; where we were
-; oldorg = *
-; 	ORG	$100
-
 relocstart:
                 .logical $100
 ;---------------------------------
@@ -1051,9 +1041,6 @@ beginrom:
 ;---------------------------------
 ; Osfile block builder and executer
 ;---------------------------------
-osfile = $FFDD
-osfileb = $2EE
-
 doosfblk:
                 TXA
                 PHA
