@@ -1,9 +1,15 @@
-                .dsection code
-* = $8000
-
+;-------------------------------------------------------------------------
+; 
+; X_ROM_HEAD must be true, and X_HACK_HEAD must be false. These
+; defines will go away in the long run.
+                
 X_ROM_HEAD = true
 X_HACK_HEAD = false
-                
+
+;-------------------------------------------------------------------------
+;
+; Select individual commands.
+
 X_BASE = false
 X_BREAK = false
 X_CLOSE = true
@@ -61,7 +67,320 @@ X_SRWRITE = false
 X_TOUCH = true
 X_VERIFY = true
 
-                .include "defines.s65"
+;-------------------------------------------------------------------------
+; 
+; Other definitions.
+; 
+WATFORD	= false
+ACORN	= true
+
+; What our Field separator is for
+; MFILL, MSEARCH and DFILL
+IFS	=	";"
+VERSION	=	"1.19"
+DFS	=	WATFORD
+
+;-------------------------------------------------------------------------
+;
+; OS routines.
+; 
+oswrch = $ffee
+osnewl = $ffe7
+osrdrm = $FFB9
+
+;-------------------------------------------------------------------------
+;
+;  Zero page allocation.
+;
+
+                .dsection bss
+* = $70
+
+; random stuff that appears to be fairly unstructured.
+                
+xtab:
+comrun:
+tmpbuf:
+hdinc:
+dhinc:
+ptrfrom:
+tmpop:
+dtrk:
+lvectmp:
+kltmp:
+basptr:
+                .byte ?         ;$70
+tmpam:
+dlsect:
+                .byte ?         ;$71
+mstmpy:
+htmp:
+toggle:
+ptrto:
+tmplen:
+dpsect:
+                .byte ?         ;$72
+helpind:
+display:
+type:
+                .byte ?         ;$73
+tmp:
+endptr:
+membuf:
+mfbuf:
+                .byte ?         ;$74
+tmp2:
+helpind2:
+extvec:
+                .byte ?         ;$75
+tmp5:
+mcopyrom:
+                .byte ?         ;$76
+htmpy:
+mask:
+tmp4:
+tmpx:
+fbflag:
+                .byte ?         ;$77
+xtmp:
+sectsizelo:
+tmpy:
+tableptr:
+                .byte ?         ;$78
+comprint:
+sectsizehi:
+romid:
+                .byte ?         ;$79
+cpflag:
+resultlo:
+tmpscrlo:
+                .byte ?         ;$7a
+resulthi:
+tmpscrhi:
+filltmpy1:
+                .byte ?         ;$7b
+byte:
+bytelo:
+poslo:
+filltmpy2:
+                .byte ?         ;$7c
+bytehi:
+poshi:
+                .byte ?         ;$7d
+tmp3:
+tmpposlo:
+                .byte ?         ;$7e
+sect:
+tmpposhi:
+dedpl:
+                .byte ?         ;$7f
+control:
+screenlo:
+numlo:
+oldclibuf:
+finctrk:
+                .byte ?         ;$80
+shift:
+screenhi:
+numhi:
+totrk:
+                .byte ?         ;$81
+input:
+tmpblock:
+fromtrk:
+                .byte ?         ;$82
+pos:
+formstart:
+               
+                .byte ?         ;$83
+param:
+clibuf:
+hdbuf:
+                .byte ?         ;$84
+                .byte ?         ;$85
+mmtmp:
+                .byte ?         ;$86
+error:
+block:
+                .byte ?         ;$87
+                .byte ?         ;$88
+                .byte ?         ;$89
+xpos:
+                .byte ?         ;$8a
+hmode:
+                .byte ?         ;$8b
+ptrDH:
+ptrHD:
+                .byte ?         ;$8c
+                .byte ?         ;$8d
+dhbits:
+hdbits:
+                .byte ?         ;$8e
+loaded:
+deleted:
+verify_cr:
+                .byte ?         ;$8f
+
+                ; bits allocated in blocks...
+
+                ; memcoms
+
+* = membuf
+
+memsrc:
+                .word ?
+memlen:
+                .word ?
+memdest:
+                .word ?
+memsrom:
+                .byte ?
+memdrom:
+                .byte ?
+
+
+                ; memcoms - *MFILL?
+* = mfbuf
+
+mffrom:
+                .word ?
+mfto:
+                .word ?
+mfdata:
+                .word ?
+mfbank:
+                .byte ?
+mflen:
+                .byte ?
+
+                ; memcom - mmove
+
+* = block
+mmss:
+                .word ?
+mmsl:
+                .word ?
+mmds:
+                .word ?
+mmsr:
+                .byte ?
+mmdr:
+                .byte ?
+
+                ; memcom - mcmp
+
+* = block
+mc1s:
+                .word ?
+mclen:
+                .word ?
+mc2s:
+                .word ?
+mc1r:
+                .byte ?
+mc2r:
+                .byte ?
+
+                ; memcom - mswap
+* = block
+ms1s:
+                .word ?
+mslen:
+                .word ?
+ms2s:
+                .word ?
+ms1r:
+                .byte ?
+ms2r:
+                .byte ?
+
+                ; memcom - mfill
+
+* = block
+mfms:
+                .word ?
+mfml:
+                .word ?
+mfd:
+                .word ?
+mfmr:
+                .byte ?
+mfdl:
+                .byte ?
+
+                ; memcom - msearch
+
+* = block
+mSms:
+                .word ?
+mSml:
+                .word ?
+mSd:
+                .word ?
+mSmr:
+                .byte ?
+mSdl:
+                .byte ?
+
+; other...
+ptab= param+1
+                
+numzpage = $20
+                
+;-------------------------------------------------------------------------
+;
+; Spare OS 1.20 stuff.
+;
+* = $39f
+stacksave:
+                .byte ?
+comnum:
+                .byte ?
+pbuffon:
+                .byte ?
+
+;-------------------------------------------------------------------------
+;
+; Printer buffer bits.
+;
+* = $880
+pbufftab:
+                .fill 16,?
+numroms:
+                .byte ?
+
+;-------------------------------------------------------------------------
+;
+; Other buffers, probably ill-advised...
+;
+* = $a00
+buffer1:
+formidblk:
+                .fill 128,?
+buffer3:
+                .fill 128,?
+
+* = $6000
+buffer2:
+
+
+;-------------------------------------------------------------------------
+;
+; DFS workspace nonsense, definitely ill-advised...
+;
+                .if	DFS
+drive_addr = $10C8
+                .else
+drive_addr = $1046
+                .endif
+
+;-------------------------------------------------------------------------
+;
+;  Code.
+
+                .dsection code
+* = $8000
+
                 .include "romhead.s65"
                 .include "common.s65"
                 .include "errors.s65"

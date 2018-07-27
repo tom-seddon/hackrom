@@ -1,19 +1,3 @@
-xtablo	=	$70
-xtabhi	=	$71
-comrun	=	$70 ; $71
-mstmpy	=	$72
-htmp	=	$72
-helpind	=	$73 ; $74
-helpind2	=	$75 ; $76
-htmpy	=	$77
-xtmp	=	$78
-comprint	=	$79
-cpflag	=	$7A
-stacksave	=	$39F
-comnum	=	$3A0
-pbuffon	=	$3A1
-numzpage	=	$20
-
 ;*********************************
 ; The ROM header
 ;*********************************
@@ -119,9 +103,9 @@ spechelp:
 
 spechelp2:
                 LDA	#<subjects
-                STA	xtablo
+                STA	xtab+0
                 LDA	#>subjects
-                STA	xtabhi
+                STA	xtab+1
                 LDA	#$00
                 STA	cpflag  ;00 = print subject help
                 TYA
@@ -469,9 +453,9 @@ hzero:
 ;*********************************
 mchcomm:
                 LDA	#<comm
-                STA	xtablo
+                STA	xtab+0
                 LDA	#>comm
-                STA	xtabhi
+                STA	xtab+1
                 JMP	matchstr
 
 
@@ -527,13 +511,13 @@ msloop:
                 JSR	capitalise
                 STY	mstmpy
                 LDY	#$00
-                CMP	(xtablo),Y
+                CMP	(xtab),Y
                 BNE	msnext
                 LDY	mstmpy
 
-                INC	xtablo
+                INC	xtab+0
                 BNE	msskip1
-                INC	xtabhi
+                INC	xtab+1
 msskip1:
                 INY
                 BNE	msloop
@@ -549,11 +533,11 @@ nosuccess:
                 CMP	#' '
                 BNE	msnfail
 mschkz:
-                LDA	(xtablo),Y
+                LDA	(xtab),Y
                 BEQ	mssuccess
                 ; Scan for zero terminator
 msnfail:
-                LDA	(xtablo),Y
+                LDA	(xtab),Y
                 BEQ	msnfail2
                 CMP	#$FF
                 BEQ	msfail
@@ -562,14 +546,14 @@ msnfail:
                 ; Move to start of next command
 msnfail2:
                 INY
-                LDA	(xtablo),Y
+                LDA	(xtab),Y
                 BMI	msnfail
                 TYA
                 CLC
-                ADC	xtablo
-                STA	xtablo
+                ADC	xtab+0
+                STA	xtab+0
                 BCC	msskip2
-                INC	xtabhi
+                INC	xtab+1
 msskip2:
                 PLA
                 TAY
@@ -579,9 +563,9 @@ msfail:
                 SEC
                 RTS
 mssuccess:
-                INC	xtablo
+                INC	xtab+0
                 BCC	msskip3
-                INC	xtabhi
+                INC	xtab+1
 msskip3:
                 LDY	mstmpy
                 PLA

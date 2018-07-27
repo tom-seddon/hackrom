@@ -8,13 +8,6 @@
 ; block+7  : dest rom
 ; where block is $70 ?
 ; ------------------------------------
-mmtmp = $86
-block = $87
-mmss = block
-mmsl = block+2
-mmds = block+4
-mmsr = block+6
-mmdr = block+7
 mmove:
 ; check zero length / dec length by 1
 ;	LDA	mmsl
@@ -144,11 +137,6 @@ msend:
 ; be looked at to see where the diff
 ; occurred.
 ; ------------------------------------
-mc1s = block
-mclen = block+2
-mc2s = block+4
-mc1r = block+6
-mc2r = block+7
 mcmp:
                 JSR	reloc
                 LDY	#$00
@@ -198,11 +186,6 @@ mcend3:
 ; block+6  : blk1 rom
 ; block+7  : blk2 rom
 ; ------------------------------------
-ms1s = block
-mslen = block+2
-ms2s = block+4
-ms1r = block+6
-ms2r = block+7
 mswap:
 ; check zero length / dec length by 1
 ;	LDA	msl
@@ -249,11 +232,6 @@ ms2:
 ; block+6  : mem rom bank
 ; block+7  : data len
 ; ------------------------------------
-mfms = block+0;1
-mfml = block+2;3
-mfd = block+4;5
-mfmr = block+6
-mfdl = block+7
 mfill:
 ; as mfill/mswap - dec len and EOF #$FF
 ;	LDX	#mfml-block
@@ -301,11 +279,6 @@ mfillend:
 ; block+6  : mem rom bank
 ; block+7  : data len
 ; ------------------------------------
-mSms = block+0;1
-mSml = block+2;3
-mSd = block+4;5
-mSmr = block+6
-mSdl = block+7
 msearch:
                 JSR	mmcom5
                 JSR	mmcom3
@@ -369,9 +342,6 @@ msearchend:
 ; then exit with same conditions but
 ; will zero clear. (Otherwise set).
 ; *************************************
-filltmpy1 = $7B
-filltmpy2 = $7C
-
 fillend:
                 DEY
                 LDA	($F2),Y

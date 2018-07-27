@@ -9,9 +9,6 @@
 ; which are off or have nothing in them
 ; -----------------------------------
 
-pbufftab = $880
-numroms = $890
-extvec = $75
 pbuffpa:
                 SEI
                 LDA	#$FF

@@ -1,5 +1,3 @@
-lvectmp = $70
-
 vecnames:
                 .text	"USER"
                 .text	$80|"B","RK"

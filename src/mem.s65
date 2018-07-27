@@ -9,16 +9,6 @@
 ; that the code can be place in
 ; a ROM image.
 
-xpos = $8A
-hmode = $8B
-display = $73
-
-tmpblock = $82
-; 8 byte tmp
-tmpop = $70
-tmpam = $71
-tmplen = $72
-
 ; CRUNCH	MACRO
 ; count	MSET	1
 ; %loop

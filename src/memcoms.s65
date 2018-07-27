@@ -1,13 +1,6 @@
 ;	ORG	$1100
 ;	EXEC	mcopypa
 
-membuf = $74;75 76 77 78 79 7A 7B
-memsrc = membuf+0;1
-memlen = membuf+2;3
-memdest = membuf+4;5
-memsrom = membuf+6
-memdrom = membuf+7
-
 mrdnum:
                 TXA
                 PHA
@@ -88,13 +81,6 @@ memorycom1:
                 SBC	mffrom+1
                 STA	mfto+1
                 RTS
-
-mfbuf = membuf
-mffrom = mfbuf+0;1
-mfto = mfbuf+2;3
-mfdata = mfbuf+4;5
-mfbank = mfbuf+6
-mflen = mfbuf+7
 
 ; Code common to *MFILL and *MSEARCH
 memorycom3:

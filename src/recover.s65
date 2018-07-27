@@ -1,4 +1,3 @@
-basptr = $70
 ; --------------------------------
 ; Recover - recovers basic programs
 ;           from 'Bad program' errors

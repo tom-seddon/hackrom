@@ -1,20 +1,3 @@
-                .if	DFS
-drive_addr = $10C8
-                .else
-drive_addr = $1046
-                .endif
-dtrk = $70
-dlsect = $71
-dpsect = $72
-type = $73
-dedpl = $7F
-formstart = $83
-finctrk = $80
-formidblk = buffer1
-totrk = $81
-fromtrk = $82
-
-
 msg_point:
                 .word	e_not_found
                 .word	e_del_data
