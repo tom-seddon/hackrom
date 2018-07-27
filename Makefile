@@ -8,5 +8,5 @@ release:
 	mkdir -p ./releases/$(VER)
 	cp ./.build/hackrom.rom ./releases/$(VER)/
 	cp ./.build/hackrom.lst ./releases/$(VER)/
-	cp ./doc/manual.md ./releases/$(VER)/
+	cp ./docs/manual.md ./releases/$(VER)/
 
