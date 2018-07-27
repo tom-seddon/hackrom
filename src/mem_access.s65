@@ -101,10 +101,11 @@ tube:
                 
                 jsr release_tube
 
-done:
-                ldx mem_access_thunk.original_x
                 pla
                 tay
+                
+done:
+                ldx mem_access_thunk.original_x
                 
                 rts
                 .pend
