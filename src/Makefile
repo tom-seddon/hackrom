@@ -13,7 +13,7 @@ TOM:=1
 endif
 endif
 
-VER?=$(shell date)
+VER?=$(shell date '+%Y-%m-%d %H:%M:%S')
 
 .PHONY:all
 all:
