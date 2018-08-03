@@ -38,6 +38,7 @@ heloop0:
                 CMP	#$04
                 BNE	notcommand
                 JSR	command
+                jmp romquit
 notcommand:
                 CMP	#$09
                 BEQ	help
